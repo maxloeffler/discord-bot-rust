@@ -3,6 +3,7 @@ use rusqlite::{params, Connection};
 use tokio::sync::Mutex;
 
 use std::sync::Arc;
+use std::collections::HashSet;
 
 
 trait DatabaseArg {
@@ -21,6 +22,16 @@ impl DatabaseArg for String {
 impl DatabaseArg for &str {
     fn to_list(&self) -> Vec<String> {
         vec![self.to_string()]
+    }
+}
+impl DatabaseArg for str {
+    fn to_list(&self) -> Vec<String> {
+        vec![self.to_string()]
+    }
+}
+impl DatabaseArg for [&str] {
+    fn to_list(&self) -> Vec<String> {
+        self.iter().map(|s| s.to_string()).collect()
     }
 }
 
@@ -45,7 +56,23 @@ impl Database {
         Database { name: name.to_string(), connection: Arc::new(Mutex::new(connection)) }
     }
 
-    pub async fn get_multiple<T: DatabaseArg>(&self, keys: T) -> Vec<String> {
+    pub async fn get_keys(&self) -> Vec<String> {
+        let connection = self.connection.lock().await;
+        let mut keys = HashSet::new();
+        let mut statement = connection.prepare(
+            &format!("SELECT key FROM {}", self.name)
+        ).expect("Failed to prepare statement");
+        let rows = statement.query_map(
+            [],
+            |row| row.get(0)
+        ).expect("Failed to query map");
+        for key in rows {
+            keys.insert(key.unwrap());
+        }
+        keys.into_iter().collect()
+    }
+
+    pub async fn get_multiple<T: DatabaseArg + ?Sized>(&self, keys: &T) -> Vec<String> {
         let connection = self.connection.lock().await;
         let mut values = Vec::new();
         for key in keys.to_list() {
@@ -59,24 +86,23 @@ impl Database {
         values
     }
 
-    pub async fn get(&self, key: &str) -> String {
+    pub async fn get(&self, key: &str) -> Option<String> {
         let connection = self.connection.lock().await;
-        let value: String = connection.query_row(
+        let value = connection.query_row(
             &format!("SELECT value FROM {} WHERE key = ?", self.name),
-            params![key],
+            params![key.to_string()],
             |row| row.get(0),
-        ).expect("Failed to get value");
-        value
+        );
+        match value {
+            Ok(value) => Some(value),
+            Err(_) => None,
+        }
     }
 
-    pub async fn set<T: DatabaseArg>(&self, key: T, value: T) {
-
-        if key.to_list().len() != value.to_list().len() {
-            panic!("Key and value lengths do not match");
-        }
+    pub async fn set<T: DatabaseArg + ?Sized>(&self, key: &str, value: &T) {
 
         let connection = self.connection.lock().await;
-        for (key, value) in key.to_list().iter().zip(value.to_list().iter()) {
+        for value in value.to_list() {
 
             // Delete old values
             connection.execute(

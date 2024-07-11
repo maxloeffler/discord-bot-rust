@@ -50,7 +50,7 @@ impl MessageManager {
 
         // Obtian command
         if self.words.len() > 0 {
-            let prefix = self.config.lock().await.get("command_prefix").await;
+            let prefix = self.config.lock().await.get("command_prefix").await.unwrap();
             if self.words[0].starts_with(&prefix) {
                 let command = self.words[0].to_string();
                 self.command = command.strip_prefix(&prefix).map(|s| s.to_string());

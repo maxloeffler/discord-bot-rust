@@ -29,7 +29,6 @@ impl EventHandler for Handler {
                    _ctx: Context,
                    ready: Ready
     ) {
-        println!("{} is connected!", ready.user.name);
     }
 
     async fn message(&self,
@@ -49,7 +48,6 @@ impl EventHandler for Handler {
                             _new: Option<Message>,
                             _event: MessageUpdateEvent
     ) {
-        println!("Message updated");
     }
 
     async fn message_delete(&self,
@@ -58,7 +56,6 @@ impl EventHandler for Handler {
                             _deleted_message_id: MessageId,
                             _guild_id: Option<GuildId>
     ) {
-        println!("Message deleted");
     }
 
 }
