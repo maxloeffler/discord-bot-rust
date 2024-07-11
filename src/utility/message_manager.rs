@@ -112,6 +112,15 @@ impl MessageManager {
         payload
     }
 
+    pub async fn delete(&self) {
+        let timeout = 250;
+        let mut attempts = 5;
+        while self.raw_message.delete(&self.ctx).await.is_err() && attempts > 0 {
+            let _ = tokio::time::sleep(tokio::time::Duration::from_millis(timeout));
+            attempts -= 1;
+        }
+    }
+
     pub async fn reply(&self, message: &str) {
         let channel = self.get_channel();
         channel.say(&self.ctx, message).await.unwrap();

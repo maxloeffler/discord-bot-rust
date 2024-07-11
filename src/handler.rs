@@ -10,6 +10,7 @@ use std::sync::Arc;
 use crate::utility::message_manager::MessageManager;
 use crate::utility::database::Database;
 use crate::commands::command_manager::CommandManager;
+use crate::utility::chat_filter::{ChatFilterManager, FilterType};
 
 
 pub struct Handler {
@@ -39,6 +40,12 @@ impl EventHandler for Handler {
         if message.is_command() {
             let command_manager = CommandManager::new( self.clone_config(), message ).await;
             command_manager.execute().await;
+        } else {
+            let chat_filter = ChatFilterManager::new( message.clone() ).filter().await;
+            match chat_filter.filter {
+                FilterType::Fine => {},
+                _ => message.delete().await,
+            }
         }
     }
 
