@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 mod handler;
 mod utility;
+mod commands;
 
 
 #[tokio::main]
@@ -27,7 +28,7 @@ async fn main() {
 
 async fn define_config() -> Arc<Mutex<utility::database::Database>> {
     let config = Arc::new(Mutex::new(utility::database::Database::new( "config" )));
-    config.lock().await.set("command_prefix", "?").await;
+    config.lock().await.set("command_prefix", "xxx").await;
     config.lock().await.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
     config
 }

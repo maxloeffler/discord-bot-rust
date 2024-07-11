@@ -33,7 +33,7 @@ pub struct Database {
 impl Database {
 
     pub fn new(name: &str) -> Self {
-        let connection = Connection::open(format!("../databases/{}.db", name)).expect("Failed to open database");
+        let connection = Connection::open(format!("src/databases/{}.db", name)).expect("Failed to open database");
         connection.execute(&format!(
             "CREATE TABLE IF NOT EXISTS {} (
                 id      INTEGER PRIMARY KEY,

@@ -1,6 +1,6 @@
 
 use serenity::model::channel::Message;
-use serenity::all::ChannelId;
+use serenity::all::{ChannelId, User, Context};
 use tokio::sync::Mutex;
 
 use std::sync::Arc;
@@ -9,8 +9,10 @@ use std::collections::HashMap;
 use crate::utility::database::Database;
 
 
+#[derive(Clone)]
 pub struct MessageManager {
     config: Arc<Mutex<Database>>,
+    ctx: Context,
     raw_message: Message,
     command: Option<String>,
     parameters: HashMap<String, Vec<String>>,
@@ -19,9 +21,10 @@ pub struct MessageManager {
 
 impl MessageManager {
 
-    pub async fn new(config: Arc<Mutex<Database>>, raw_message: Message) -> MessageManager {
+    pub async fn new(config: Arc<Mutex<Database>>, ctx: Context, raw_message: Message) -> MessageManager {
         let mut manager = MessageManager {
             config,
+            ctx,
             raw_message,
             command: None,
             parameters: HashMap::new(),
@@ -47,8 +50,10 @@ impl MessageManager {
 
         // Obtian command
         if self.words.len() > 0 {
-            if self.words[0].starts_with(&self.config.lock().await.get("command_prefix").await) {
-                self.command = Some(self.words[0].to_string());
+            let prefix = self.config.lock().await.get("command_prefix").await;
+            if self.words[0].starts_with(&prefix) {
+                let command = self.words[0].to_string();
+                self.command = command.strip_prefix(&prefix).map(|s| s.to_string());
             }
         }
 
@@ -75,6 +80,10 @@ impl MessageManager {
         self.command.is_some()
     }
 
+    pub fn get_command(&self) -> Option<String> {
+        self.command.clone()
+    }
+
     pub fn has_parameter(&self, key: &str) -> bool {
         self.parameters.contains_key(key)
     }
@@ -83,8 +92,11 @@ impl MessageManager {
         self.parameters.get(key).unwrap().join(" ")
     }
 
-    pub fn payload(&self, starting_from: Option<i32>, excludes: Option<Vec<String>>) -> String {
-        let first_word = self.first_word_index();
+    pub fn payload(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
+        let first_word = match starting_from {
+            Some(starting_from) => self.first_word_index() + starting_from,
+            None => self.first_word_index()
+        };
         let words = &self.words[first_word..];
         let excludes = match excludes {
             Some(excludes) => excludes,
@@ -100,13 +112,18 @@ impl MessageManager {
         payload
     }
 
+    pub async fn reply(&self, message: &str) {
+        let channel = self.get_channel();
+        channel.say(&self.ctx, message).await.unwrap();
+    }
+
     // ---- Forwards ---- //
 
     pub fn get_channel(&self) -> ChannelId {
         self.raw_message.channel_id
     }
 
-    pub fn get_author(&self) -> User{
-        self.raw_message.author
+    pub fn get_author(&self) -> User {
+        self.raw_message.author.clone()
     }
 }

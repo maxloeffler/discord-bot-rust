@@ -9,10 +9,17 @@ use std::sync::Arc;
 
 use crate::utility::message_manager::MessageManager;
 use crate::utility::database::Database;
+use crate::commands::command_manager::CommandManager;
 
 
 pub struct Handler {
     pub config: Arc<Mutex<Database>>,
+}
+
+impl Handler {
+    pub fn clone_config(&self) -> Arc<Mutex<Database>> {
+        Arc::clone(&self.config)
+    }
 }
 
 #[async_trait]
@@ -26,11 +33,14 @@ impl EventHandler for Handler {
     }
 
     async fn message(&self,
-                     _ctx: Context,
+                     ctx: Context,
                      msg: Message
     ) {
-        let config = Arc::clone(&self.config);
-        let message_manager = MessageManager::new( config, msg ).await;
+        let message = MessageManager::new( self.clone_config(), ctx, msg ).await;
+        if message.is_command() {
+            let command_manager = CommandManager::new( self.clone_config(), message ).await;
+            command_manager.execute().await;
+        }
     }
 
     async fn message_update(&self,
