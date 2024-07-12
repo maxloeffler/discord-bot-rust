@@ -161,7 +161,7 @@ impl MessageManager {
                 payload.push_str(" ");
             }
         }
-        payload
+        payload.trim().to_string()
     }
 
     pub async fn delete(&self) {

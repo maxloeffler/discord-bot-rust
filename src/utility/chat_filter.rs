@@ -4,6 +4,7 @@ use regex::Regex;
 use crate::utility::message_manager::MessageManager;
 
 
+#[derive(PartialEq)]
 pub enum FilterType {
     Slur,
     Link,
