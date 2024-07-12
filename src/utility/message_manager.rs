@@ -1,12 +1,64 @@
 
 use serenity::model::channel::Message;
-use serenity::all::{ChannelId, User, Context};
+use serenity::all::{ChannelId, GuildId, Member, User, RoleId, Context};
 use tokio::sync::Mutex;
 
 use std::sync::Arc;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::utility::database::Database;
+
+
+trait RoleArg {
+    fn to_list(&self) -> Vec<RoleId>;
+}
+impl RoleArg for RoleId {
+    fn to_list(&self) -> Vec<RoleId> {
+        vec![self.clone()]
+    }
+}
+impl RoleArg for Vec<RoleId> {
+    fn to_list(&self) -> Vec<RoleId> {
+        self.clone()
+    }
+}
+impl RoleArg for Vec<&str> {
+    fn to_list(&self) -> Vec<RoleId> {
+        self.into_iter()
+            .map(|role| RoleId::from_str(&role))
+            .filter(|role| role.is_ok())
+            .map(|role| role.unwrap())
+            .collect::<Vec<RoleId>>()
+    }
+}
+impl RoleArg for &str {
+    fn to_list(&self) -> Vec<RoleId> {
+        let role = RoleId::from_str(&self);
+        if role.is_ok() {
+            return vec![role.unwrap()];
+        }
+        Vec::new()
+    }
+}
+impl RoleArg for String {
+    fn to_list(&self) -> Vec<RoleId> {
+        let role = RoleId::from_str(&self);
+        if role.is_ok() {
+            return vec![role.unwrap()];
+        }
+        Vec::new()
+    }
+}
+impl RoleArg for Vec<String> {
+    fn to_list(&self) -> Vec<RoleId> {
+        self.into_iter()
+            .map(|role| RoleId::from_str(&role))
+            .filter(|role| role.is_ok())
+            .map(|role| role.unwrap())
+            .collect::<Vec<RoleId>>()
+    }
+}
 
 
 #[derive(Clone)]
@@ -126,10 +178,82 @@ impl MessageManager {
         channel.say(&self.ctx, message).await.unwrap();
     }
 
-    // ---- Forwards ---- //
+    // ---- Permissions ---- //
+
+    pub async fn has_role<T: RoleArg>(&self, roles: T) -> bool {
+        let member_roles = self.get_roles().await;
+        if member_roles.is_some() {
+            for role in roles.to_list() {
+                if member_roles.clone().unwrap().contains(&role) {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    pub async fn is_admin(&self) -> bool {
+        let role_admin_id = self.config.lock().await.get("role_admin_id").await;
+        match role_admin_id {
+            Some(role) => self.has_role(role).await,
+            _ => false
+        }
+    }
+
+    pub async fn is_headmod(&self) -> bool {
+        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id"]).await;
+        match role_ids {
+            Some(roles) => self.has_role(roles).await,
+            _ => false
+        }
+    }
+
+    pub async fn is_mod(&self) -> bool {
+        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
+        match role_ids {
+            Some(roles) => self.has_role(roles).await,
+            _ => false
+        }
+    }
+
+    pub async fn is_trial(&self) -> bool {
+        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
+        match role_ids {
+            Some(roles) => self.has_role(roles).await,
+            _ => false
+        }
+    }
+
+
+    // ---- Basics ---- //
 
     pub fn get_channel(&self) -> ChannelId {
         self.raw_message.channel_id
+    }
+
+    pub fn get_guild(&self) -> Option<GuildId> {
+        self.raw_message.guild_id
+    }
+
+    pub async fn get_member(&self) -> Option<Member> {
+        let guild = self.get_guild();
+        if guild.is_some() {
+            let user_id = self.get_author().id;
+            let member = guild.unwrap().member(&self.ctx.http, user_id).await;
+            return match member {
+                Ok(member) => Some(member),
+                Err(..) => None
+            };
+        }
+        None
+    }
+
+    pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
+        let member = self.get_member().await;
+        if member.is_some() {
+            return Some(member.unwrap().roles);
+        }
+        None
     }
 
     pub fn get_author(&self) -> User {

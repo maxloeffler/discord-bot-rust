@@ -34,6 +34,11 @@ impl DatabaseArg for [&str] {
         self.iter().map(|s| s.to_string()).collect()
     }
 }
+impl DatabaseArg for Vec<&str> {
+    fn to_list(&self) -> Vec<String> {
+        self.iter().map(|s| s.to_string()).collect()
+    }
+}
 
 
 pub struct Database {
@@ -72,18 +77,21 @@ impl Database {
         keys.into_iter().collect()
     }
 
-    pub async fn get_multiple<T: DatabaseArg + ?Sized>(&self, keys: &T) -> Vec<String> {
+    pub async fn get_multiple<T: DatabaseArg + ?Sized>(&self, keys: &T) -> Option<Vec<String>> {
         let connection = self.connection.lock().await;
         let mut values = Vec::new();
         for key in keys.to_list() {
-            let value: String = connection.query_row(
+            let value = connection.query_row(
                 &format!("SELECT value FROM {} WHERE key = ?", self.name),
                 params![key],
                 |row| row.get(0),
-            ).expect("Failed to get value");
-            values.push(value);
+            );
+            match value {
+                Ok(value) => values.push(value),
+                Err(_) => return None,
+            };
         }
-        values
+        Some(values)
     }
 
     pub async fn get(&self, key: &str) -> Option<String> {
@@ -116,6 +124,14 @@ impl Database {
             ).expect("Failed to set value");
 
         }
+    }
+
+    pub async fn delete(&self, key: &str) {
+        let connection = self.connection.lock().await;
+        connection.execute(
+            &format!("DELETE FROM {} WHERE key = ?", self.name),
+            params![key],
+        ).expect("Failed to delete value");
     }
 
 }

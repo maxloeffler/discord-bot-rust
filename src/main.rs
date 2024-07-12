@@ -86,6 +86,18 @@ async fn spawn_database_thread(config: Arc<Mutex<Database>>) {
                             }
                         }
                     }
+                    "rm" => {
+                        match words.len() {
+                            2 => {
+                                let key = words[1];
+                                config.lock().await.delete(key).await;
+                                println!("[$] Removed key '{}'", key);
+                            }
+                            _ => {
+                                println!("[!] Invalid command");
+                            }
+                        }
+                    }
                     _ => {
                         println!("[!] Invalid command");
                     }
