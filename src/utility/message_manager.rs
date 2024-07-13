@@ -8,58 +8,31 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::utility::database::Database;
+use crate::utility::mixed_utility::ToList;
 
 
-trait RoleArg {
-    fn to_list(&self) -> Vec<RoleId>;
-}
-impl RoleArg for RoleId {
+impl ToList<RoleId> for String {
     fn to_list(&self) -> Vec<RoleId> {
-        vec![self.clone()]
-    }
-}
-impl RoleArg for Vec<RoleId> {
-    fn to_list(&self) -> Vec<RoleId> {
-        self.clone()
-    }
-}
-impl RoleArg for Vec<&str> {
-    fn to_list(&self) -> Vec<RoleId> {
-        self.into_iter()
-            .map(|role| RoleId::from_str(&role))
-            .filter(|role| role.is_ok())
-            .map(|role| role.unwrap())
-            .collect::<Vec<RoleId>>()
-    }
-}
-impl RoleArg for &str {
-    fn to_list(&self) -> Vec<RoleId> {
-        let role = RoleId::from_str(&self);
+        let role = RoleId::from_str(self);
         if role.is_ok() {
             return vec![role.unwrap()];
         }
         Vec::new()
     }
 }
-impl RoleArg for String {
-    fn to_list(&self) -> Vec<RoleId> {
-        let role = RoleId::from_str(&self);
-        if role.is_ok() {
-            return vec![role.unwrap()];
-        }
-        Vec::new()
-    }
-}
-impl RoleArg for Vec<String> {
-    fn to_list(&self) -> Vec<RoleId> {
-        self.into_iter()
-            .map(|role| RoleId::from_str(&role))
-            .filter(|role| role.is_ok())
-            .map(|role| role.unwrap())
-            .collect::<Vec<RoleId>>()
-    }
-}
 
+impl ToList<RoleId> for Vec<String> {
+    fn to_list(&self) -> Vec<RoleId> {
+        let mut roles = Vec::new();
+        for role in self {
+            let role = RoleId::from_str(role);
+            if role.is_ok() {
+                roles.push(role.unwrap());
+            }
+        }
+        roles
+    }
+}
 
 #[derive(Clone)]
 pub struct MessageManager {
@@ -180,7 +153,7 @@ impl MessageManager {
 
     // ---- Permissions ---- //
 
-    pub async fn has_role<T: RoleArg>(&self, roles: T) -> bool {
+    pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
         let member_roles = self.get_roles().await;
         if member_roles.is_some() {
             for role in roles.to_list() {
@@ -201,7 +174,7 @@ impl MessageManager {
     }
 
     pub async fn is_headmod(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id"]).await;
+        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false
@@ -209,7 +182,7 @@ impl MessageManager {
     }
 
     pub async fn is_mod(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
+        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false
@@ -217,7 +190,7 @@ impl MessageManager {
     }
 
     pub async fn is_trial(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(&vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
+        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false

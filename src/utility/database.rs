@@ -5,40 +5,7 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::collections::HashSet;
 
-
-trait DatabaseArg {
-    fn to_list(&self) -> Vec<String>;
-}
-impl DatabaseArg for Vec<String> {
-    fn to_list(&self) -> Vec<String> {
-        self.clone()
-    }
-}
-impl DatabaseArg for String {
-    fn to_list(&self) -> Vec<String> {
-        vec![self.clone()]
-    }
-}
-impl DatabaseArg for &str {
-    fn to_list(&self) -> Vec<String> {
-        vec![self.to_string()]
-    }
-}
-impl DatabaseArg for str {
-    fn to_list(&self) -> Vec<String> {
-        vec![self.to_string()]
-    }
-}
-impl DatabaseArg for [&str] {
-    fn to_list(&self) -> Vec<String> {
-        self.iter().map(|s| s.to_string()).collect()
-    }
-}
-impl DatabaseArg for Vec<&str> {
-    fn to_list(&self) -> Vec<String> {
-        self.iter().map(|s| s.to_string()).collect()
-    }
-}
+use crate::utility::mixed_utility::ToList;
 
 
 pub struct Database {
@@ -77,7 +44,7 @@ impl Database {
         keys.into_iter().collect()
     }
 
-    pub async fn get_multiple<T: DatabaseArg + ?Sized>(&self, keys: &T) -> Option<Vec<String>> {
+    pub async fn get_multiple(&self, keys: impl ToList<&str>) -> Option<Vec<String>> {
         let connection = self.connection.lock().await;
         let mut values = Vec::new();
         for key in keys.to_list() {
@@ -107,7 +74,7 @@ impl Database {
         }
     }
 
-    pub async fn set<T: DatabaseArg + ?Sized>(&self, key: &str, value: &T) {
+    pub async fn set(&self, key: &str, value: impl ToList<&str>) {
 
         let connection = self.connection.lock().await;
         for value in value.to_list() {
