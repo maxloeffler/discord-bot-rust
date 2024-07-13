@@ -1,4 +1,6 @@
 
+use nonempty::NonEmpty;
+
 use std::pin::Pin;
 use std::future::Future;
 
@@ -21,10 +23,10 @@ pub trait Command: Send + Sync {
 
     fn run(&self, message: MessageManager) -> BoxedFuture<'_>;
 
-    fn get_names(&self) -> Vec<String>;
+    fn get_names(&self) -> NonEmpty<String>;
 
     fn get_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(self.get_names())
+        UsageBuilder::new(self.get_names().into())
     }
 
 }

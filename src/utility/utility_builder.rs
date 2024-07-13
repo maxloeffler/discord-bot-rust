@@ -1,4 +1,6 @@
 
+use nonempty::NonEmpty;
+
 use crate::utility::traits::ToList;
 
 
@@ -16,13 +18,13 @@ struct Parameter {
 type Usage = Vec<Parameter>;
 
 pub struct UsageBuilder {
-    command_names: Vec<String>,
+    command_names: NonEmpty<String>,
     usage: Vec<Usage>,
 }
 
 impl UsageBuilder {
 
-    pub fn new(command_names: Vec<String>) -> UsageBuilder {
+    pub fn new(command_names: NonEmpty<String>) -> UsageBuilder {
         UsageBuilder {
             command_names,
             usage: Vec::new(),
@@ -69,9 +71,9 @@ impl UsageBuilder {
         }
     }
 
-    fn build_usage(&self, usage: &Usage) -> String {
+    fn build_usage(&self, usage: &Usage, prefix: &str) -> String {
 
-        let mut usage_string = String::new();
+        let mut usage_string = format!("{}{}", prefix, self.command_names.head);
         for parameter in usage.iter() {
             match parameter.param_type {
                 ParameterType::Constant => {
@@ -97,11 +99,17 @@ impl UsageBuilder {
         }
 
         // build usage string
-        let usage_string: String = self.usage
+        let mut usage_string: String = self.usage
             .iter()
-            .map(|usage| self.build_usage(usage))
+            .map(|usage| self.build_usage(usage, prefix))
             .collect::<Vec<String>>()
             .join("\n");
+
+        // add alternative command names
+        if !self.command_names.tail.is_empty() {
+            usage_string.push_str(&format!("Alternative names: {:?}", self.command_names.tail));
+        }
+
         Some(usage_string)
 
     }
