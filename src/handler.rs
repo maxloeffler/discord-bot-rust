@@ -3,26 +3,22 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, Ready};
 use serenity::prelude::*;
-use tokio::sync::Mutex;
-
-use std::sync::Arc;
 
 use crate::utility::message_manager::MessageManager;
-use crate::utility::database::Database;
+use crate::utility::database::{Database, DB};
 use crate::commands::command_manager::CommandManager;
 use crate::utility::chat_filter::{ChatFilterManager, FilterType};
+use crate::utility::traits::Singleton;
 
 
 pub struct Handler {
-    config: Arc<Mutex<Database>>,
     command_manager: CommandManager,
 }
 
 impl Handler {
 
-    pub fn new(config: Arc<Mutex<Database>>, command_manager: CommandManager) -> Handler {
+    pub fn new(command_manager: CommandManager) -> Handler {
         Handler {
-            config,
             command_manager,
         }
     }
@@ -41,10 +37,10 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
 
         // parse message
-        let message = MessageManager::new( self.config.clone(), ctx, msg ).await;
+        let message = MessageManager::new(ctx, msg).await;
 
         // if message pings the bot
-        let bot_id = self.config.clone().lock().await.get("bot_id").await;
+        let bot_id = Database::get_instance().lock().await.get(DB::Config, "bot_id").await;
         if bot_id.is_some() {
             let bot_pings = vec![format!("<@!{}>", bot_id.clone().unwrap()),
                                 format!("<@{}>",  bot_id.clone().unwrap())];
@@ -55,7 +51,7 @@ impl EventHandler for Handler {
         }
 
         // directly delete messages in the verify channel
-        let channel_verify_id = self.config.clone().lock().await.get("channel_verify_id").await;
+        let channel_verify_id = Database::get_instance().lock().await.get(DB::Config, "channel_verify_id").await;
         if channel_verify_id.is_some() {
             if message.get_channel().get().to_string() == channel_verify_id.unwrap() {
                 message.delete().await;

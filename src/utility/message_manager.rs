@@ -1,14 +1,12 @@
 
 use serenity::model::channel::Message;
 use serenity::all::{ChannelId, GuildId, Member, User, RoleId, Context};
-use tokio::sync::Mutex;
 
-use std::sync::Arc;
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::utility::database::Database;
-use crate::utility::traits::ToList;
+use crate::utility::database::{Database, DB};
+use crate::utility::traits::{ToList, Singleton};
 
 
 impl ToList<RoleId> for String {
@@ -36,7 +34,6 @@ impl ToList<RoleId> for Vec<String> {
 
 #[derive(Clone)]
 pub struct MessageManager {
-    config: Arc<Mutex<Database>>,
     ctx: Context,
     raw_message: Message,
     command: Option<String>,
@@ -46,9 +43,8 @@ pub struct MessageManager {
 
 impl MessageManager {
 
-    pub async fn new(config: Arc<Mutex<Database>>, ctx: Context, raw_message: Message) -> MessageManager {
+    pub async fn new(ctx: Context, raw_message: Message) -> MessageManager {
         let mut manager = MessageManager {
-            config,
             ctx,
             raw_message,
             command: None,
@@ -75,7 +71,8 @@ impl MessageManager {
 
         // Obtian command
         if self.words.len() > 0 {
-            let prefix = self.config.lock().await.get("command_prefix").await.unwrap();
+            let config = Database::get_instance().lock().await;
+            let prefix = config.get(DB::Config, "command_prefix").await.unwrap();
             if self.words[0].starts_with(&prefix) {
                 let command = self.words[0].to_string();
                 self.command = command.strip_prefix(&prefix).map(|s| s.to_string());
@@ -166,7 +163,8 @@ impl MessageManager {
     }
 
     pub async fn is_admin(&self) -> bool {
-        let role_admin_id = self.config.lock().await.get("role_admin_id").await;
+        let config = Database::get_instance().lock().await;
+        let role_admin_id = config.get(DB::Config, "role_admin_id").await;
         match role_admin_id {
             Some(role) => self.has_role(role).await,
             _ => false
@@ -174,7 +172,8 @@ impl MessageManager {
     }
 
     pub async fn is_headmod(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id"]).await;
+        let config = Database::get_instance().lock().await;
+        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false
@@ -182,7 +181,8 @@ impl MessageManager {
     }
 
     pub async fn is_mod(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
+        let config = Database::get_instance().lock().await;
+        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false
@@ -190,7 +190,8 @@ impl MessageManager {
     }
 
     pub async fn is_trial(&self) -> bool {
-        let role_ids = self.config.lock().await.get_multiple(vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
+        let config = Database::get_instance().lock().await;
+        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
         match role_ids {
             Some(roles) => self.has_role(roles).await,
             _ => false

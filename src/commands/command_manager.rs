@@ -1,26 +1,18 @@
 
-use tokio::sync::Mutex;
-
-use std::sync::Arc;
-
-use crate::utility::database::Database;
 use crate::utility::message_manager::MessageManager;
-use crate::commands::command::Command;
-use crate::commands::avatar::AvatarCommand;
+use crate::commands::*;
 
 
 pub struct CommandManager {
-    config: Arc<Mutex<Database>>,
     commands: Vec<Box<dyn Command>>,
 }
 
 impl CommandManager {
 
-    pub async fn new(config: Arc<Mutex<Database>>) -> CommandManager {
+    pub async fn new() -> CommandManager {
         let manager = CommandManager {
-            config,
             commands: vec![
-                Box::new(AvatarCommand {})
+                Box::new(AvatarCommand {}),
             ],
         };
         manager

@@ -1,17 +1,15 @@
 
 use serenity::prelude::{Client, GatewayIntents};
-use tokio::sync::Mutex;
 use tokio::runtime::Runtime;
 use std::thread;
 use std::io;
-
-use std::sync::Arc;
 
 mod handler;
 mod utility;
 mod commands;
 
-use utility::database::Database;
+use utility::database::{Database, DB};
+use utility::traits::Singleton;
 use commands::command_manager::CommandManager;
 use handler::Handler;
 
@@ -20,35 +18,36 @@ use handler::Handler;
 async fn main() {
 
     // setup
-    let config = define_config().await;
-    let command_handler = CommandManager::new(config.clone()).await;
-    let handler = Handler::new(config.clone(), command_handler);
+    let token = setup_db().await;
+    let command_handler = CommandManager::new().await;
+    let handler = Handler::new(command_handler);
 
     // start threads
-    let token = config.lock().await.get("token").await;
     let intents = GatewayIntents::GUILD_MESSAGES |
                   GatewayIntents::MESSAGE_CONTENT |
                   GatewayIntents::GUILD_MESSAGE_REACTIONS;
-    let mut client = Client::builder(token.unwrap(), intents)
+    let mut client = Client::builder(token, intents)
         .event_handler(handler)
         .await
         .expect("Error creating client");
-    spawn_database_thread(config.clone()).await;
+    spawn_database_thread().await;
     let _ = client.start().await;
 }
 
 
-async fn define_config() -> Arc<Mutex<Database>> {
-    let config = Arc::new(Mutex::new(Database::new( "config" )));
-    config.lock().await.set("command_prefix", "xxx").await;
-    config.lock().await.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
-    config
+async fn setup_db() -> String {
+    let db = Database::get_instance().lock().await;
+    db.init().await;
+    db.set(DB::Config, "command_prefix", "xxx").await;
+    db.set(DB::Config, "token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
+    "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U".to_string()
 }
 
-async fn spawn_database_thread(config: Arc<Mutex<Database>>) {
+async fn spawn_database_thread() {
+    let config = Database::get_instance();
     thread::spawn(move || {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async {
+        let runtime = Runtime::new().unwrap();
+        runtime.block_on(async {
             println!("[!] Connected to database");
             loop {
                 print!("[$] Enter a command: ");
@@ -62,16 +61,16 @@ async fn spawn_database_thread(config: Arc<Mutex<Database>>) {
                     "get" => {
                         match words.len() {
                             1 => {
-                                let keys = config.lock().await.get_keys().await;
+                                let keys = config.lock().await.get_keys(DB::Config).await;
                                 println!("[$] Keys: {:?}", keys);
                             }
                             2 => {
                                 let key = words[1];
-                                let value = config.lock().await.get(key).await;
+                                let value = config.lock().await.get(DB::Config, key).await;
                                 println!("[$] Value of key '{}': '{}'", key, value.unwrap());
                             }
                             _ => {
-                                let values = config.lock().await.get_multiple(&words[1..]).await;
+                                let values = config.lock().await.get_multiple(DB::Config, &words[1..]).await;
                                 println!("[$] Values of keys '{:?}': '{:?}'", &words[1..], values);
                             }
                         }
@@ -84,13 +83,13 @@ async fn spawn_database_thread(config: Arc<Mutex<Database>>) {
                             3 => {
                                 let key = words[1];
                                 let value = words[2];
-                                config.lock().await.set(key, value).await;
+                                config.lock().await.set(DB::Config, key, value).await;
                                 println!("[$] Set key '{}' to value '{}'", key, value);
                             }
                             _ => {
                                 let key = words[1];
                                 let values = &words[2..];
-                                config.lock().await.set(key, values).await;
+                                config.lock().await.set(DB::Config, key, values).await;
                             }
                         }
                     }
@@ -98,7 +97,7 @@ async fn spawn_database_thread(config: Arc<Mutex<Database>>) {
                         match words.len() {
                             2 => {
                                 let key = words[1];
-                                config.lock().await.delete(key).await;
+                                config.lock().await.delete(DB::Config, key).await;
                                 println!("[$] Removed key '{}'", key);
                             }
                             _ => {

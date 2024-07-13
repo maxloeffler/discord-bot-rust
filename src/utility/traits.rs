@@ -1,4 +1,34 @@
 
+use tokio::sync::Mutex;
+use once_cell::sync::Lazy;
+
+use std::sync::Arc;
+
+use crate::utility::database::Database;
+
+
+pub trait Singleton: Sized {
+    fn get_instance() -> &'static Mutex<Self>;
+    fn new() -> Self;
+}
+
+macro_rules! impl_singleton {
+    ($t:ty) => {
+        impl Singleton for $t {
+            fn get_instance() -> &'static Mutex<Self> {
+                static INSTANCE: Lazy<Arc<Mutex<$t>>> = Lazy::new(|| Arc::new(Mutex::new(<$t>::new())));
+                &INSTANCE
+            }
+
+            fn new() -> Self {
+                <$t>::new()
+            }
+        }
+    };
+}
+
+impl_singleton!(Database);
+
 
 pub trait ToList<T: ?Sized> {
     fn to_list(&self) -> Vec<T> where T: Clone;
