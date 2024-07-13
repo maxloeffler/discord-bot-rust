@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use std::sync::Arc;
 use std::collections::HashSet;
 
-use crate::utility::mixed_utility::ToList;
+use crate::utility::traits::ToList;
 
 
 pub struct Database {

@@ -21,7 +21,9 @@ impl CommandManager {
         let manager = CommandManager {
             config,
             message,
-            commands: vec![Box::new(AvatarCommand {})],
+            commands: vec![
+                Box::new(AvatarCommand {})
+            ],
         };
         manager
     }
@@ -30,7 +32,7 @@ impl CommandManager {
         if self.message.is_command() {
             let trigger = self.message.get_command().unwrap();
             for command in self.commands.iter() {
-                if command.woke_by(trigger.to_string()) {
+                if command.is_triggered_by(trigger.clone()) {
                     return Some(command);
                 }
             }

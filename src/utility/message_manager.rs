@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use crate::utility::database::Database;
-use crate::utility::mixed_utility::ToList;
+use crate::utility::traits::ToList;
 
 
 impl ToList<RoleId> for String {
