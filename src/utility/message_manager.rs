@@ -1,6 +1,7 @@
 
 use serenity::model::channel::Message;
 use serenity::all::{ChannelId, GuildId, Member, User, RoleId, Context};
+use serenity::builder::{CreateEmbed, CreateMessage, CreateEmbedFooter};
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -29,6 +30,35 @@ impl ToList<RoleId> for Vec<String> {
             }
         }
         roles
+    }
+}
+
+trait ToSend {
+    fn to_send(&self) -> CreateMessage;
+}
+impl ToSend for &str {
+    fn to_send(&self) -> CreateMessage {
+        CreateMessage::default().content(self.to_string())
+    }
+}
+impl ToSend for CreateEmbed {
+    fn to_send(&self) -> CreateMessage {
+        CreateMessage::default().embed(self.clone())
+    }
+}
+impl ToSend for CreateMessage {
+    fn to_send(&self) -> CreateMessage {
+        self.clone()
+    }
+}
+impl ToSend for String {
+    fn to_send(&self) -> CreateMessage {
+        CreateMessage::default().content(self.to_string())
+    }
+}
+impl ToSend for &String {
+    fn to_send(&self) -> CreateMessage {
+        CreateMessage::default().content(self.to_string())
     }
 }
 
@@ -143,9 +173,20 @@ impl MessageManager {
         }
     }
 
-    pub async fn reply(&self, message: &str) {
+    pub async fn reply(&self, message: impl ToSend) {
         let channel = self.get_channel();
-        channel.say(&self.ctx, message).await.unwrap();
+        let _ = channel.send_message(self.ctx.http.clone(), message.to_send()).await;
+    }
+
+    pub async fn create_embed(&self, fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> Result<CreateEmbed, &str> {
+        let color_primary = Database::get_instance().lock().await.get(DB::Config, "color_primary").await;
+        if color_primary.is_some() {
+            let embed = fn_style(CreateEmbed::default());
+            let styled_embed = embed.clone()
+                .color(color_primary.clone().unwrap().parse::<u32>().unwrap());
+            return Ok(styled_embed);
+        }
+        Err("'color_primary' not configured")
     }
 
     // ---- Permissions ---- //
