@@ -11,16 +11,14 @@ use crate::commands::avatar::AvatarCommand;
 
 pub struct CommandManager {
     config: Arc<Mutex<Database>>,
-    message: MessageManager,
     commands: Vec<Box<dyn Command>>,
 }
 
 impl CommandManager {
 
-    pub async fn new(config: Arc<Mutex<Database>>, message: MessageManager) -> CommandManager {
+    pub async fn new(config: Arc<Mutex<Database>>) -> CommandManager {
         let manager = CommandManager {
             config,
-            message,
             commands: vec![
                 Box::new(AvatarCommand {})
             ],
@@ -28,24 +26,23 @@ impl CommandManager {
         manager
     }
 
-    pub fn match_command(&self) -> Option<&Box<dyn Command>> {
-        if self.message.is_command() {
-            let trigger = self.message.get_command().unwrap();
-            for command in self.commands.iter() {
-                if command.is_triggered_by(trigger.clone()) {
-                    return Some(command);
-                }
+    fn match_command(&self, trigger: String) -> Option<&Box<dyn Command>> {
+        for command in self.commands.iter() {
+            if command.is_triggered_by(trigger.clone()) {
+                return Some(command);
             }
         }
         None
     }
 
-    pub async fn execute(&self) {
-        let command = self.match_command();
-        if command.is_some() {
-            let command = command.unwrap();
+    // note: only execute this method, when message.is_command() is true
+    pub async fn execute(&self, message: MessageManager) {
+        let trigger = message.get_command().unwrap();
+        let matched_command = self.match_command(trigger);
+        if matched_command.is_some() {
+            let command = matched_command.unwrap();
             if command.permission() {
-                command.run(self.message.clone()).await;
+                command.run(message).await;
             }
         }
     }

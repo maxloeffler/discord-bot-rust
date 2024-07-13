@@ -14,13 +14,19 @@ use crate::utility::chat_filter::{ChatFilterManager, FilterType};
 
 
 pub struct Handler {
-    pub config: Arc<Mutex<Database>>,
+    config: Arc<Mutex<Database>>,
+    command_manager: CommandManager,
 }
 
 impl Handler {
-    pub fn clone_config(&self) -> Arc<Mutex<Database>> {
-        Arc::clone(&self.config)
+
+    pub fn new(config: Arc<Mutex<Database>>, command_manager: CommandManager) -> Handler {
+        Handler {
+            config,
+            command_manager,
+        }
     }
+
 }
 
 #[async_trait]
@@ -35,10 +41,10 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
 
         // parse message
-        let message = MessageManager::new( self.clone_config(), ctx, msg ).await;
+        let message = MessageManager::new( self.config.clone(), ctx, msg ).await;
 
         // if message pings the bot
-        let bot_id = self.clone_config().lock().await.get("bot_id").await;
+        let bot_id = self.config.clone().lock().await.get("bot_id").await;
         if bot_id.is_some() {
             let bot_pings = vec![format!("<@!{}>", bot_id.clone().unwrap()),
                                 format!("<@{}>",  bot_id.clone().unwrap())];
@@ -49,7 +55,7 @@ impl EventHandler for Handler {
         }
 
         // directly delete messages in the verify channel
-        let channel_verify_id = self.clone_config().lock().await.get("channel_verify_id").await;
+        let channel_verify_id = self.config.clone().lock().await.get("channel_verify_id").await;
         if channel_verify_id.is_some() {
             if message.get_channel().get().to_string() == channel_verify_id.unwrap() {
                 message.delete().await;
@@ -62,8 +68,7 @@ impl EventHandler for Handler {
 
             // execute command
             if message.is_command() {
-                let command_manager = CommandManager::new( self.clone_config(), message ).await;
-                command_manager.execute().await;
+                self.command_manager.execute(message).await;
             }
 
         } else {

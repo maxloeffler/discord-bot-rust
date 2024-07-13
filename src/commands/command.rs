@@ -5,7 +5,7 @@ use std::pin::Pin;
 use std::future::Future;
 
 use crate::utility::message_manager::MessageManager;
-use crate::utility::utility_builder::UsageBuilder;
+use crate::utility::usage_builder::UsageBuilder;
 
 
 pub type BoxedFuture<'a> = Pin<Box<dyn Future<Output = ()> + Send + 'a>>;

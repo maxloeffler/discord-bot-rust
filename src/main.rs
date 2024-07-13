@@ -12,17 +12,25 @@ mod utility;
 mod commands;
 
 use utility::database::Database;
+use commands::command_manager::CommandManager;
+use handler::Handler;
 
 
 #[tokio::main]
 async fn main() {
+
+    // setup
     let config = define_config().await;
+    let command_handler = CommandManager::new(config.clone()).await;
+    let handler = Handler::new(config.clone(), command_handler);
+
+    // start threads
     let token = config.lock().await.get("token").await;
     let intents = GatewayIntents::GUILD_MESSAGES |
                   GatewayIntents::MESSAGE_CONTENT |
                   GatewayIntents::GUILD_MESSAGE_REACTIONS;
     let mut client = Client::builder(token.unwrap(), intents)
-        .event_handler(handler::Handler { config: config.clone() })
+        .event_handler(handler)
         .await
         .expect("Error creating client");
     spawn_database_thread(config.clone()).await;

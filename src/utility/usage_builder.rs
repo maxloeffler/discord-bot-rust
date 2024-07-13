@@ -107,7 +107,7 @@ impl UsageBuilder {
 
         // add alternative command names
         if !self.command_names.tail.is_empty() {
-            usage_string.push_str(&format!("Alternative names: {:?}", self.command_names.tail));
+            usage_string.push_str(&format!("\nAlternative names: {:?}", self.command_names.tail));
         }
 
         Some(usage_string)
