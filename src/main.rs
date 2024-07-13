@@ -1,6 +1,8 @@
 
 use serenity::prelude::{Client, GatewayIntents};
 use tokio::runtime::Runtime;
+use colored::*;
+
 use std::thread;
 use std::io;
 
@@ -40,56 +42,71 @@ async fn setup_db() -> String {
     db.init().await;
     db.set(DB::Config, "command_prefix", "xxx").await;
     db.set(DB::Config, "token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
-    "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U".to_string()
+    db.get(DB::Config, "token").await.unwrap()
+}
+
+fn logln_warn(message: &str) {
+    println!("[{}] {}: {}", "!".red(), "WARNING".red().bold(), message);
+}
+
+fn logln_info(info: &str, content: &str) {
+    println!("[{}] {}: {}", ">".green(), info.truecolor(128, 128, 128), content);
+}
+
+fn log_info(info: &str, content: &str) {
+    print!("[{}] {}: {}", ">".green(), info.truecolor(128, 128, 128), content);
 }
 
 async fn spawn_database_thread() {
-    let config = Database::get_instance();
+    let database = Database::get_instance();
+    let mut db = DB::Config;
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
+        logln_info("Connected to database", db.to_string().as_str());
         runtime.block_on(async {
-            println!("[!] Connected to database");
             loop {
-                print!("[$] Enter a command: ");
+                log_info("Enter a command", "");
                 std::io::Write::flush(&mut io::stdout()).unwrap();
 
+                // read input
                 let mut input = String::new();
                 io::stdin().read_line(&mut input).unwrap();
                 input = input.trim().to_string();
                 let words = input.split_whitespace().collect::<Vec<&str>>();
+
                 match words[0] {
                     "get" => {
                         match words.len() {
                             1 => {
-                                let keys = config.lock().await.get_keys(DB::Config).await;
-                                println!("[$] Keys: {:?}", keys);
+                                let keys = database.lock().await.get_keys(db.clone()).await;
+                                logln_info("Keys", &keys.join(", "));
                             }
                             2 => {
                                 let key = words[1];
-                                let value = config.lock().await.get(DB::Config, key).await;
-                                println!("[$] Value of key '{}': '{}'", key, value.unwrap());
+                                let value = database.lock().await.get(db.clone(), key).await;
+                                logln_info(&format!("Value of {}", key), &value.unwrap());
                             }
                             _ => {
-                                let values = config.lock().await.get_multiple(DB::Config, &words[1..]).await;
-                                println!("[$] Values of keys '{:?}': '{:?}'", &words[1..], values);
+                                let values = database.lock().await.get_multiple(db.clone(), &words[1..]).await;
+                                logln_info(&format!("Values of {}", &words[1..].join(", ")), &values.unwrap().join(", "));
                             }
                         }
                     }
                     "set" => {
                         match words.len() {
                             1..=2 => {
-                                println!("[!] Invalid command");
+                                logln_warn("Invalid command");
                             }
                             3 => {
                                 let key = words[1];
                                 let value = words[2];
-                                config.lock().await.set(DB::Config, key, value).await;
-                                println!("[$] Set key '{}' to value '{}'", key, value);
+                                database.lock().await.set(db.clone(), key, value).await;
+                                logln_info(&format!("Set value for {}", key), value);
                             }
                             _ => {
                                 let key = words[1];
                                 let values = &words[2..];
-                                config.lock().await.set(DB::Config, key, values).await;
+                                logln_warn("Currently not implemented!");
                             }
                         }
                     }
@@ -97,16 +114,34 @@ async fn spawn_database_thread() {
                         match words.len() {
                             2 => {
                                 let key = words[1];
-                                config.lock().await.delete(DB::Config, key).await;
-                                println!("[$] Removed key '{}'", key);
+                                database.lock().await.delete(db.clone(), key).await;
+                                logln_info("Removed key", key);
                             }
                             _ => {
-                                println!("[!] Invalid command");
+                                logln_warn("Invalid command");
+                            }
+                        }
+                    },
+                    "checkout" => {
+                        match words.len() {
+                            2 => {
+                                db = match words[1] {
+                                    "config" => DB::Config,
+                                    "modding" => DB::Modding,
+                                    _ => {
+                                        logln_warn("Invalid database");
+                                        continue;
+                                    }
+                                };
+                                logln_info("Switched to", db.to_string().as_str());
+                            }
+                            _ => {
+                                logln_warn("Invalid command");
                             }
                         }
                     }
                     _ => {
-                        println!("[!] Invalid command");
+                        logln_warn("Invalid command");
                     }
                 }
             }

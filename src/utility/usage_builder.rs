@@ -35,7 +35,7 @@ impl UsageBuilder {
         self.usage.push(Vec::new());
     }
 
-    pub fn add_parameter(&mut self, parameter: Parameter) {
+    fn add_parameter(&mut self, parameter: Parameter) {
         let mut current_usage = self.usage.last_mut();
         if current_usage.is_none() {
             self.new_usage();

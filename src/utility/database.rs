@@ -11,15 +11,17 @@ use std::fmt;
 use crate::utility::traits::ToList;
 
 
-#[derive(EnumIter)]
+#[derive(EnumIter, Clone)]
 pub enum DB {
     Config,
+    Modding
 }
 
 impl fmt::Display for DB {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             DB::Config => write!(f, "config"),
+            DB::Modding => write!(f, "modding"),
         }
     }
 }

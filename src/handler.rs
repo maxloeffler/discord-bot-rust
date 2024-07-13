@@ -1,7 +1,7 @@
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
-use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, Ready};
+use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent};
 use serenity::prelude::*;
 
 use crate::utility::message_manager::MessageManager;
@@ -27,12 +27,6 @@ impl Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
-
-    async fn ready(&self,
-                   _ctx: Context,
-                   ready: Ready
-    ) {
-    }
 
     async fn message(&self, ctx: Context, msg: Message) {
 
