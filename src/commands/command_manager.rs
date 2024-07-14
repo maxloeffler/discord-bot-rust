@@ -14,6 +14,7 @@ impl CommandManager {
         let manager = CommandManager {
             commands: vec![
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
+                Box::new( WarnCommand{} ),
             ],
         };
         manager

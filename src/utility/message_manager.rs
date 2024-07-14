@@ -5,6 +5,7 @@ use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::model::application::ButtonStyle;
 use serenity::builder::{
     CreateEmbed,
+    CreateMessage,
     CreateButton,
     CreateInteractionResponse,
     CreateSelectMenu,
@@ -145,6 +146,48 @@ impl MessageManager {
         let _ = channel.send_message(self.ctx.http.clone(), message.to_message()).await;
     }
 
+    pub async fn reply_success(&self) {
+
+        // prepare message
+        let embed = MessageManager::create_embed(|embed| {
+            embed
+                .title("✅")
+                .description("Success!")
+        }).await.unwrap();
+        let message = CreateMessage::new().embed(embed);
+
+        // send message
+        let channel = self.get_channel();
+        let sent_message = channel.send_message(&self.ctx.http, message).await;
+
+        // delete message
+        if let Ok(message) = sent_message {
+            let _ = tokio::time::sleep(Duration::from_secs(3)).await;
+            let _ = message.delete(&self.ctx).await;
+        }
+    }
+
+    pub async fn reply_failure(&self, context: &str) {
+
+        // prepare message
+        let embed = MessageManager::create_embed(|embed| {
+            embed
+                .title("❌")
+                .description(context)
+        }).await.unwrap();
+        let message = CreateMessage::new().embed(embed);
+
+        // send message
+        let channel = self.get_channel();
+        let sent_message = channel.send_message(&self.ctx.http, message).await;
+
+        // delete message
+        if let Ok(message) = sent_message {
+            let _ = tokio::time::sleep(Duration::from_secs(3)).await;
+            let _ = message.delete(&self.ctx).await;
+        }
+    }
+
     pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> Result<CreateEmbed, String> {
         let color_primary = Database::get_instance().lock().await.get(DB::Config, "color_primary").await;
         if color_primary.is_some() {
@@ -161,8 +204,8 @@ impl MessageManager {
 
     pub async fn create_choice_interaction<'a>(&self,
                                      message: impl ToMessage,
-                                     yes_callback: BoxedFuture<'a>,
-                                     no_callback:  BoxedFuture<'a>) {
+                                     yes_callback: BoxedFuture<'a, ()>,
+                                     no_callback:  BoxedFuture<'a, ()>) {
 
         // prepare message
         let yes_button = CreateButton::new("Yes")
@@ -205,7 +248,7 @@ impl MessageManager {
     pub async fn create_dropdown_interaction<'a>(&self,
                                         message: impl ToMessage,
                                         options: Vec<CreateSelectMenuOption>,
-                                        callback: impl FnOnce(String) -> BoxedFuture<'a>) {
+                                        callback: impl FnOnce(String) -> BoxedFuture<'a, ()>) {
 
         // prepare message
         let message = message.to_message().select_menu(
@@ -249,7 +292,7 @@ impl MessageManager {
     pub async fn create_user_dropdown_interaction<'a>(&self,
                                         message: impl ToMessage,
                                         users: Vec<User>,
-                                        callback: impl FnOnce(User) -> BoxedFuture<'a>) {
+                                        callback: impl FnOnce(User) -> BoxedFuture<'a, ()>) {
 
         // prepare message
         let message = message.to_message().select_menu(
