@@ -394,37 +394,44 @@ impl MessageManager {
 
     pub async fn get_member(&self) -> Option<Member> {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.get_member(self.ctx.clone(), user).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.get_member(self.ctx.clone(), guild_id, user).await
     }
 
     pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.has_role(self.ctx.clone(), user, roles).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.has_role(self.ctx.clone(), guild_id, user, roles).await
     }
 
     pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.get_roles(self.ctx.clone(), user).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.get_roles(self.ctx.clone(), guild_id, user).await
     }
 
     pub async fn is_admin(&self) -> bool {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.is_admin(self.ctx.clone(), user).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.is_admin(self.ctx.clone(), guild_id, user).await
     }
 
     pub async fn is_headmod(&self) -> bool {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.is_headmod(self.ctx.clone(), user).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.is_headmod(self.ctx.clone(), guild_id, user).await
     }
 
     pub async fn is_mod(&self) -> bool {
         let user = self.get_author();
-        Resolver::get_instance().lock().await.is_mod(self.ctx.clone(), user).await
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.is_mod(self.ctx.clone(), guild_id, user).await
     }
 
-    pub async fn is_trial(&self) -> bool {
-        let user = self.get_author();
-        Resolver::get_instance().lock().await.is_trial(self.ctx.clone(), user).await
+    pub async fn is_trial(&self, user: Option<User>) -> bool {
+        let user = user.unwrap_or(self.get_author());
+        let guild_id = self.get_guild();
+        Resolver::get_instance().lock().await.is_trial(self.ctx.clone(), guild_id, user).await
     }
 
 }
