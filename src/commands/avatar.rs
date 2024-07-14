@@ -19,7 +19,7 @@ impl Command for AvatarCommand {
                 let author = message.get_author();
                 let name = author.clone().global_name.unwrap_or(author.clone().name);
                 let face = author.clone().face();
-                let embed = message.create_embed(|embed| {
+                let embed = MessageManager::create_embed(|embed| {
                     embed
                         .title(&format!("{}'s avatar", name))
                         .image(face.clone())

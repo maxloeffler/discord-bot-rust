@@ -1,66 +1,20 @@
 
-use serenity::model::channel::Message;
-use serenity::all::{ChannelId, GuildId, Member, User, RoleId, Context};
-use serenity::builder::{CreateEmbed, CreateMessage, CreateEmbedFooter};
+use serenity::model::prelude::*;
+use serenity::prelude::*;
+use serenity::model::application::ButtonStyle;
+use serenity::builder::{
+    CreateEmbed,
+    CreateButton,
+    CreateInteractionResponse,
+    CreateInteractionResponseMessage
+};
 
 use std::collections::HashMap;
-use std::str::FromStr;
+use std::time::Duration;
 
 use crate::utility::database::{Database, DB};
-use crate::utility::traits::{ToList, Singleton};
+use crate::utility::traits::{Singleton, ToList, ToMessage};
 
-
-impl ToList<RoleId> for String {
-    fn to_list(&self) -> Vec<RoleId> {
-        let role = RoleId::from_str(self);
-        if role.is_ok() {
-            return vec![role.unwrap()];
-        }
-        Vec::new()
-    }
-}
-
-impl ToList<RoleId> for Vec<String> {
-    fn to_list(&self) -> Vec<RoleId> {
-        let mut roles = Vec::new();
-        for role in self {
-            let role = RoleId::from_str(role);
-            if role.is_ok() {
-                roles.push(role.unwrap());
-            }
-        }
-        roles
-    }
-}
-
-trait ToSend {
-    fn to_send(&self) -> CreateMessage;
-}
-impl ToSend for &str {
-    fn to_send(&self) -> CreateMessage {
-        CreateMessage::default().content(self.to_string())
-    }
-}
-impl ToSend for CreateEmbed {
-    fn to_send(&self) -> CreateMessage {
-        CreateMessage::default().embed(self.clone())
-    }
-}
-impl ToSend for CreateMessage {
-    fn to_send(&self) -> CreateMessage {
-        self.clone()
-    }
-}
-impl ToSend for String {
-    fn to_send(&self) -> CreateMessage {
-        CreateMessage::default().content(self.to_string())
-    }
-}
-impl ToSend for &String {
-    fn to_send(&self) -> CreateMessage {
-        CreateMessage::default().content(self.to_string())
-    }
-}
 
 #[derive(Clone)]
 pub struct MessageManager {
@@ -173,12 +127,12 @@ impl MessageManager {
         }
     }
 
-    pub async fn reply(&self, message: impl ToSend) {
+    pub async fn reply(&self, message: impl ToMessage) {
         let channel = self.get_channel();
-        let _ = channel.send_message(self.ctx.http.clone(), message.to_send()).await;
+        let _ = channel.send_message(self.ctx.http.clone(), message.to_message()).await;
     }
 
-    pub async fn create_embed(&self, fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> Result<CreateEmbed, &str> {
+    pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> Result<CreateEmbed, String> {
         let color_primary = Database::get_instance().lock().await.get(DB::Config, "color_primary").await;
         if color_primary.is_some() {
             let embed = fn_style(CreateEmbed::default());
@@ -186,7 +140,50 @@ impl MessageManager {
                 .color(color_primary.clone().unwrap().parse::<u32>().unwrap());
             return Ok(styled_embed);
         }
-        Err("'color_primary' not configured")
+        Err("'color_primary' not configured".to_string())
+    }
+
+    pub async fn create_choice_interaction(&self,
+                                     message: impl ToMessage,
+                                     yes_callback: impl Fn() -> (),
+                                     no_callback:  impl Fn() -> ()) {
+
+        // prepare message
+        let yes_button = CreateButton::new("Yes")
+            .label("Yes")
+            .style(ButtonStyle::Primary);
+        let no_button  = CreateButton::new("No")
+            .label("No")
+            .style(ButtonStyle::Secondary);
+        let message = message.to_message().button(yes_button).button(no_button);
+
+        // send message
+        let sent_message = self.get_channel()
+            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+
+        // await interaction
+        let interaction = sent_message
+            .await_component_interaction(&self.ctx.shard)
+            .timeout(Duration::from_secs(60)).await;
+
+        // execute callback
+        if interaction.is_some() {
+
+            match interaction.clone().unwrap().data.custom_id.as_str() {
+                "Yes" => yes_callback(),
+                "No"  => no_callback(),
+                _ => ()
+            };
+
+            // end interaction
+            let _ = interaction.unwrap().create_response(&self.ctx.http,
+                CreateInteractionResponse::Acknowledge
+            ).await;
+
+            // delete message
+            let _ = sent_message.delete(&self.ctx).await;
+
+        }
     }
 
     // ---- Permissions ---- //
