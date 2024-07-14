@@ -14,7 +14,7 @@ impl Command for AvatarCommand {
         nonempty!["avatar".to_string(), "av".to_string()]
     }
 
-    fn run(&self, params: CommandParams) -> BoxedFuture<'_> {
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
                 if let Some(author) = params.target {

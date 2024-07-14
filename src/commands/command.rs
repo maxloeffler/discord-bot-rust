@@ -58,11 +58,11 @@ pub trait Command: Send + Sync {
         }
     }
 
-    fn permission(&self) -> bool {
-        true
+    fn permission(&self, message: MessageManager) -> BoxedFuture<'_, bool> {
+        Box::pin(async move { true })
     }
 
-    fn run(&self, params: CommandParams) -> BoxedFuture<'_>;
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()>;
 
     fn get_names(&self) -> NonEmpty<String>;
 
@@ -129,7 +129,7 @@ impl Command for UserDecorator {
         self.command.get_names()
     }
 
-    fn run(&self, params: CommandParams) -> BoxedFuture<'_> {
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
                 let target = self.get_target(params.message.clone()).await;

@@ -20,7 +20,7 @@ impl CommandManager {
     }
 
     pub async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
-        if command.permission() {
+        if command.permission(message.clone()).await {
             message.delete().await;
             command.run(message.into()).await;
         }
