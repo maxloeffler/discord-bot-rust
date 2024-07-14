@@ -1,6 +1,7 @@
 
 use serenity::prelude::{Client, GatewayIntents};
 use tokio::runtime::Runtime;
+use strum::IntoEnumIterator;
 use colored::*;
 
 use std::thread;
@@ -125,15 +126,21 @@ async fn spawn_database_thread() {
                     "checkout" => {
                         match words.len() {
                             2 => {
-                                db = match words[1] {
-                                    "config" => DB::Config,
-                                    "modding" => DB::Modding,
-                                    _ => {
-                                        logln_warn("Invalid database");
-                                        continue;
+                                let mut new_db = db.clone();
+                                let mut switch = false;
+                                for db in DB::iter() {
+                                    if !switch && db.to_string() == words[1] {
+                                        new_db = db;
+                                        switch = true;
                                     }
-                                };
-                                logln_info("Switched to", db.to_string().as_str());
+                                }
+                                match switch {
+                                    true => {
+                                        db = new_db;
+                                        logln_info("Switched to", db.to_string().as_str());
+                                    }
+                                    false => logln_warn("Invalid database")
+                                }
                             }
                             _ => {
                                 logln_warn("Invalid command");

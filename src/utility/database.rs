@@ -14,14 +14,20 @@ use crate::utility::traits::ToList;
 #[derive(EnumIter, Clone)]
 pub enum DB {
     Config,
-    Modding
+    Warnings,
+    Mutes,
+    Flag,
+    Bans,
 }
 
 impl fmt::Display for DB {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             DB::Config => write!(f, "config"),
-            DB::Modding => write!(f, "modding"),
+            DB::Warnings => write!(f, "warnings"),
+            DB::Mutes => write!(f, "mutes"),
+            DB::Flag => write!(f, "flag"),
+            DB::Bans => write!(f, "bans"),
         }
     }
 }
@@ -115,6 +121,14 @@ impl Database {
             ).expect("Failed to set value");
 
         }
+    }
+
+    pub async fn append(&self, db: DB, key: &str, value: &str) {
+        let connection = self.connection.lock().await;
+        connection.execute(
+            &format!("INSERT INTO {} (key, value) VALUES (?, ?)", db.to_string()),
+            params![key, value],
+        ).expect("Failed to append value");
     }
 
     pub async fn delete(&self, db: DB, key: &str) {

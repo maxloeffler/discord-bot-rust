@@ -4,6 +4,8 @@ use nonempty::{NonEmpty, nonempty};
 use crate::commands::command::{Command, CommandParams};
 use crate::utility::message_manager::MessageManager;
 use crate::utility::mixed::BoxedFuture;
+use crate::utility::database::{Database, DB};
+use crate::utility::traits::{Singleton};
 
 
 pub struct WarnCommand;
@@ -37,7 +39,14 @@ impl Command for WarnCommand {
                     return;
                 }
 
-                message.reply(format!("{} has been warned.", target.name).as_str()).await;
+                let mut reason = message.payload(None, None);
+                if reason.is_empty() {
+                    reason = "No reason provided.".to_string();
+                }
+
+                Database::get_instance().lock().await
+                    .append(DB::Warnings, &target.id.to_string(), &reason).await;
+                message.reply(&format!("{} has been warned for `>` {}", target.name, reason.clone())).await;
             }
         )
     }
