@@ -1,7 +1,8 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{BoxedFuture, Command};
+use crate::commands::command::Command;
+use crate::utility::mixed::BoxedFuture;
 use crate::utility::message_manager::MessageManager;
 
 

@@ -1,6 +1,7 @@
 
 use crate::utility::message_manager::MessageManager;
 use crate::commands::*;
+use crate::commands::command::MatchType;
 
 
 pub struct CommandManager {
@@ -18,24 +19,40 @@ impl CommandManager {
         manager
     }
 
-    fn match_command(&self, trigger: String) -> Option<&Box<dyn Command>> {
-        for command in self.commands.iter() {
-            if command.is_triggered_by(trigger.clone()) {
-                return Some(command);
-            }
+    pub async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
+        if command.permission() {
+            command.run(message).await;
         }
-        None
     }
 
     // note: only execute this method, when message.is_command() is true
     pub async fn execute(&self, message: MessageManager) {
-        let trigger = message.get_command().unwrap();
-        let matched_command = self.match_command(trigger);
-        if matched_command.is_some() {
-            let command = matched_command.unwrap();
-            if command.permission() {
-                command.run(message).await;
-            }
+        for command in self.commands.iter() {
+            match command.is_triggered_by(message.clone()) {
+                MatchType::Exact => self.run_command(command, message.clone()).await,
+                MatchType::Fuzzy(closest_match) => {
+
+                    // prepare correction message
+                    let correction = format!("{}{} {}",
+                        message.get_prefix().unwrap(),
+                        closest_match,
+                        message.payload(None, None));
+                    let embed = MessageManager::create_embed(|embed| {
+                        embed.title("Did you mean ...").description(&correction)
+                    }).await;
+
+                    // send correction message
+                    if let Ok(embed) = embed {
+                        message.clone().create_choice_interaction(
+                            embed,
+                            Box::pin( async move { self.run_command(command, message.clone()).await } ),
+                            Box::pin( async move {} )
+                        ).await;
+                        return;
+                    }
+                },
+                MatchType::None => continue,
+            };
         }
     }
 

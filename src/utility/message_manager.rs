@@ -6,7 +6,6 @@ use serenity::builder::{
     CreateEmbed,
     CreateButton,
     CreateInteractionResponse,
-    CreateInteractionResponseMessage
 };
 
 use std::collections::HashMap;
@@ -14,12 +13,14 @@ use std::time::Duration;
 
 use crate::utility::database::{Database, DB};
 use crate::utility::traits::{Singleton, ToList, ToMessage};
+use crate::utility::mixed::BoxedFuture;
 
 
 #[derive(Clone)]
 pub struct MessageManager {
     ctx: Context,
     raw_message: Message,
+    prefix: Option<String>,
     command: Option<String>,
     parameters: HashMap<String, Vec<String>>,
     words: Vec<String>
@@ -31,6 +32,7 @@ impl MessageManager {
         let mut manager = MessageManager {
             ctx,
             raw_message,
+            prefix: None,
             command: None,
             parameters: HashMap::new(),
             words: Vec::new()
@@ -60,6 +62,7 @@ impl MessageManager {
             if self.words[0].starts_with(&prefix) {
                 let command = self.words[0].to_string();
                 self.command = command.strip_prefix(&prefix).map(|s| s.to_string());
+                self.prefix = Some(prefix);
             }
         }
 
@@ -88,6 +91,10 @@ impl MessageManager {
 
     pub fn get_command(&self) -> Option<String> {
         self.command.clone()
+    }
+
+    pub fn get_prefix(&self) -> Option<String> {
+        self.prefix.clone()
     }
 
     pub fn has_parameter(&self, key: &str) -> bool {
@@ -143,10 +150,10 @@ impl MessageManager {
         Err("'color_primary' not configured".to_string())
     }
 
-    pub async fn create_choice_interaction(&self,
+    pub async fn create_choice_interaction<'a>(&self,
                                      message: impl ToMessage,
-                                     yes_callback: impl Fn() -> (),
-                                     no_callback:  impl Fn() -> ()) {
+                                     yes_callback: BoxedFuture<'a>,
+                                     no_callback:  BoxedFuture<'a>) {
 
         // prepare message
         let yes_button = CreateButton::new("Yes")
@@ -170,9 +177,9 @@ impl MessageManager {
         if interaction.is_some() {
 
             match interaction.clone().unwrap().data.custom_id.as_str() {
-                "Yes" => yes_callback(),
-                "No"  => no_callback(),
-                _ => ()
+                "Yes" => yes_callback.await,
+                "No"  => no_callback.await,
+                _ => {}
             };
 
             // end interaction
