@@ -14,6 +14,7 @@ use serenity::builder::{
     GetMessages
 };
 use nonempty::NonEmpty;
+use regex::Regex;
 
 use std::collections::HashMap;
 use std::time::Duration;
@@ -114,23 +115,40 @@ impl MessageManager {
     }
 
     pub fn payload(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
-        let first_word = match starting_from {
+
+        // calculate starting index
+        let first = match starting_from {
             Some(starting_from) => self.first_word_index() + starting_from,
             None => self.first_word_index()
         };
-        let words = &self.words[first_word..];
-        let excludes = match excludes {
-            Some(excludes) => excludes,
-            None => Vec::new()
+
+        // obtain words
+        let words = &self.words[first..];
+        let payload = match excludes {
+            Some(excludes) => {
+
+                // filter words
+                let pattern = excludes.join("|");
+                let regex = Regex::new(&pattern).unwrap();
+                words.iter()
+                    .filter(|word| !regex.is_match(word))
+                    .map(|word| word.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" ")
+
+            },
+            None => words.join(" ")
         };
-        let mut payload = String::new();
-        for word in words {
-            if !excludes.contains(word) {
-                payload.push_str(word);
-                payload.push_str(" ");
-            }
-        }
+
         payload.trim().to_string()
+    }
+
+    pub async fn payload_without_mentions(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
+        let mut total_excludes = excludes.unwrap_or(Vec::new());
+        let regex_id = RegexManager::get_instance().lock().await
+            .get_id_regex();
+        total_excludes.push(regex_id.as_str().to_string());
+        self.payload(starting_from, Some(total_excludes))
     }
 
     pub async fn delete(&self) {
