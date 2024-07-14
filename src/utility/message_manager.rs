@@ -21,6 +21,7 @@ use std::time::Duration;
 use crate::utility::database::{Database, DB};
 use crate::utility::traits::{Singleton, ToList, ToMessage};
 use crate::utility::mixed::{BoxedFuture, RegexManager};
+use crate::utility::resolver::Resolver;
 
 
 #[derive(Clone)]
@@ -199,6 +200,16 @@ impl MessageManager {
         Err("'color_primary' not configured".to_string())
     }
 
+    pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
+        let channel = self.get_channel();
+        let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
+        let messages = channel.messages(&self.ctx.http, builder).await;
+        match messages {
+            Ok(messages) => messages,
+            Err(_) => Vec::new()
+        }
+    }
+
 
     // ---- Move to interaction_manager at some point ---- //
 
@@ -321,7 +332,8 @@ impl MessageManager {
             match data {
                 StringSelect{values} => {
                     let id = values[0].clone().parse::<u64>().unwrap();
-                    let user = self.get_user(UserId::from(id)).await;
+                    let user = Resolver::get_instance().lock().await
+                        .get_user(self.ctx.clone(), UserId::from(id)).await;
                     if user.is_some() {
                         callback(user.unwrap()).await;
                     }
@@ -340,58 +352,6 @@ impl MessageManager {
         }
     }
 
-
-    // ---- Permissions ---- //
-
-    pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
-        let member_roles = self.get_roles().await;
-        if member_roles.is_some() {
-            for role in roles.to_list() {
-                if member_roles.clone().unwrap().contains(&role) {
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
-    pub async fn is_admin(&self) -> bool {
-        let config = Database::get_instance().lock().await;
-        let role_admin_id = config.get(DB::Config, "role_admin_id").await;
-        match role_admin_id {
-            Some(role) => self.has_role(role).await,
-            _ => false
-        }
-    }
-
-    pub async fn is_headmod(&self) -> bool {
-        let config = Database::get_instance().lock().await;
-        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(roles).await,
-            _ => false
-        }
-    }
-
-    pub async fn is_mod(&self) -> bool {
-        let config = Database::get_instance().lock().await;
-        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id", "role_mod_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(roles).await,
-            _ => false
-        }
-    }
-
-    pub async fn is_trial(&self) -> bool {
-        let config = Database::get_instance().lock().await;
-        let role_ids = config.get_multiple(DB::Config, vec!["role_admin_id", "role_headmod_id", "role_mod_id", "role_trial_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(roles).await,
-            _ => false
-        }
-    }
-
-
     // ---- Basics ---- //
 
     pub fn get_channel(&self) -> ChannelId {
@@ -400,27 +360,6 @@ impl MessageManager {
 
     pub fn get_guild(&self) -> Option<GuildId> {
         self.raw_message.guild_id
-    }
-
-    pub async fn get_member(&self) -> Option<Member> {
-        let guild = self.get_guild();
-        if guild.is_some() {
-            let user_id = self.get_author().id;
-            let member = guild.unwrap().member(&self.ctx.http, user_id).await;
-            return match member {
-                Ok(member) => Some(member),
-                Err(..) => None
-            };
-        }
-        None
-    }
-
-    pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
-        let member = self.get_member().await;
-        if member.is_some() {
-            return Some(member.unwrap().roles);
-        }
-        None
     }
 
     pub fn get_author(&self) -> User {
@@ -451,22 +390,41 @@ impl MessageManager {
         mentions
     }
 
-    pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
-        let channel = self.get_channel();
-        let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
-        let messages = channel.messages(&self.ctx.http, builder).await;
-        match messages {
-            Ok(messages) => messages,
-            Err(_) => Vec::new()
-        }
+    // ---- Forwards to Resolver ---- //
+
+    pub async fn get_member(&self) -> Option<Member> {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.get_member(self.ctx.clone(), user).await
     }
 
-    // ---- Move to resolver at some point ---- //
-    pub async fn get_user(&self, user_id: UserId) -> Option<User> {
-        let user = self.ctx.http.get_user(user_id).await;
-        match user {
-            Ok(user) => Some(user),
-            Err(_) => None
-        }
+    pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.has_role(self.ctx.clone(), user, roles).await
     }
+
+    pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.get_roles(self.ctx.clone(), user).await
+    }
+
+    pub async fn is_admin(&self) -> bool {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.is_admin(self.ctx.clone(), user).await
+    }
+
+    pub async fn is_headmod(&self) -> bool {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.is_headmod(self.ctx.clone(), user).await
+    }
+
+    pub async fn is_mod(&self) -> bool {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.is_mod(self.ctx.clone(), user).await
+    }
+
+    pub async fn is_trial(&self) -> bool {
+        let user = self.get_author();
+        Resolver::get_instance().lock().await.is_trial(self.ctx.clone(), user).await
+    }
+
 }

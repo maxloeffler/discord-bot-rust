@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use crate::utility::database::Database;
 use crate::utility::mixed::RegexManager;
+use crate::utility::resolver::Resolver;
 
 
 pub trait Singleton: Sized {
@@ -34,6 +35,7 @@ macro_rules! impl_singleton {
 
 impl_singleton!(Database);
 impl_singleton!(RegexManager);
+impl_singleton!(Resolver);
 
 
 pub trait ToList<T: ?Sized> {
