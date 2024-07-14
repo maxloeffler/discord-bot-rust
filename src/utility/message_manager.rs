@@ -1,11 +1,16 @@
 
 use serenity::model::prelude::*;
 use serenity::prelude::*;
+use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::model::application::ButtonStyle;
 use serenity::builder::{
     CreateEmbed,
     CreateButton,
     CreateInteractionResponse,
+    CreateSelectMenu,
+    CreateSelectMenuKind,
+    CreateSelectMenuOption,
+    GetMessages
 };
 use nonempty::NonEmpty;
 
@@ -151,6 +156,9 @@ impl MessageManager {
         Err("'color_primary' not configured".to_string())
     }
 
+
+    // ---- Move to interaction_manager at some point ---- //
+
     pub async fn create_choice_interaction<'a>(&self,
                                      message: impl ToMessage,
                                      yes_callback: BoxedFuture<'a>,
@@ -193,6 +201,102 @@ impl MessageManager {
 
         }
     }
+
+    pub async fn create_dropdown_interaction<'a>(&self,
+                                        message: impl ToMessage,
+                                        options: Vec<CreateSelectMenuOption>,
+                                        callback: impl FnOnce(String) -> BoxedFuture<'a>) {
+
+        // prepare message
+        let message = message.to_message().select_menu(
+            CreateSelectMenu::new("select_menu", CreateSelectMenuKind::String {
+                options: options
+            })
+            .placeholder("Select an option")
+        );
+
+        // send message
+        let sent_message = self.get_channel()
+            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+
+        // await interaction
+        let interaction = sent_message
+            .await_component_interaction(&self.ctx.shard)
+            .timeout(Duration::from_secs(60)).await;
+
+        // execute callback
+        if interaction.is_some() {
+
+            let data = interaction.clone().unwrap().data.kind;
+            match data {
+                StringSelect{values} => {
+                    callback(values[0].clone()).await;
+                }
+                _ => {}
+            }
+
+            // end interaction
+            let _ = interaction.unwrap().create_response(&self.ctx.http,
+                CreateInteractionResponse::Acknowledge
+            ).await;
+
+            // delete message
+            let _ = sent_message.delete(&self.ctx).await;
+
+        }
+    }
+
+    pub async fn create_user_dropdown_interaction<'a>(&self,
+                                        message: impl ToMessage,
+                                        users: Vec<User>,
+                                        callback: impl FnOnce(User) -> BoxedFuture<'a>) {
+
+        // prepare message
+        let message = message.to_message().select_menu(
+            CreateSelectMenu::new("user_select_menu", CreateSelectMenuKind::String {
+                options: users.iter().map(|user| {
+                    CreateSelectMenuOption::new(user.name.clone(), user.id.to_string())
+                        .description(&user.id.to_string())
+                }).collect()
+            })
+            .placeholder("Select a user")
+        );
+
+        // send message
+        let sent_message = self.get_channel()
+            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+
+        // await interaction
+        let interaction = sent_message
+            .await_component_interaction(&self.ctx.shard)
+            .timeout(Duration::from_secs(60)).await;
+
+        // execute callback
+        if interaction.is_some() {
+
+            let data = interaction.clone().unwrap().data.kind;
+            match data {
+                StringSelect{values} => {
+                    let id = values[0].clone().parse::<u64>().unwrap();
+                    let user = self.get_user(UserId::from(id)).await;
+                    if user.is_some() {
+                        callback(user.unwrap()).await;
+                    }
+                }
+                _ => {}
+            }
+
+            // end interaction
+            let _ = interaction.unwrap().create_response(&self.ctx.http,
+                CreateInteractionResponse::Acknowledge
+            ).await;
+
+            // delete message
+            let _ = sent_message.delete(&self.ctx).await;
+
+        }
+    }
+
 
     // ---- Permissions ---- //
 
@@ -302,5 +406,24 @@ impl MessageManager {
             }
         }
         mentions
+    }
+
+    pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
+        let channel = self.get_channel();
+        let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
+        let messages = channel.messages(&self.ctx.http, builder).await;
+        match messages {
+            Ok(messages) => messages,
+            Err(_) => Vec::new()
+        }
+    }
+
+    // ---- Move to resolver at some point ---- //
+    pub async fn get_user(&self, user_id: UserId) -> Option<User> {
+        let user = self.ctx.http.get_user(user_id).await;
+        match user {
+            Ok(user) => Some(user),
+            Err(_) => None
+        }
     }
 }

@@ -1,7 +1,7 @@
 
 use crate::utility::message_manager::MessageManager;
-use crate::commands::*;
 use crate::commands::command::MatchType;
+use crate::commands::*;
 
 
 pub struct CommandManager {
@@ -13,7 +13,7 @@ impl CommandManager {
     pub async fn new() -> CommandManager {
         let manager = CommandManager {
             commands: vec![
-                Box::new(AvatarCommand {}),
+                Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
             ],
         };
         manager
@@ -22,7 +22,7 @@ impl CommandManager {
     pub async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
         if command.permission() {
             message.delete().await;
-            command.run(message).await;
+            command.run(message.into()).await;
         }
     }
 

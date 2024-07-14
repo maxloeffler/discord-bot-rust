@@ -25,8 +25,8 @@ async fn main() {
     let handler = Handler::new(command_handler);
 
     // start threads
-    let intents = GatewayIntents::GUILD_MESSAGES |
-                  GatewayIntents::MESSAGE_CONTENT |
+    let intents = GatewayIntents::GUILD_MESSAGES            |
+                  GatewayIntents::MESSAGE_CONTENT           |
                   GatewayIntents::GUILD_MESSAGE_REACTIONS;
     let mut client = Client::builder(token, intents)
         .event_handler(handler)
@@ -40,7 +40,7 @@ async fn main() {
 async fn setup_db() -> String {
     let db = Database::get_instance().lock().await;
     db.init().await;
-    db.set(DB::Config, "command_prefix", "xxx").await;
+    db.set(DB::Config, "command_prefix", ".").await;
     db.set(DB::Config, "token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
     db.get(DB::Config, "token").await.unwrap()
 }
@@ -104,8 +104,8 @@ async fn spawn_database_thread() {
                                 logln_info(&format!("Set value for {}", key), value);
                             }
                             _ => {
-                                let key = words[1];
-                                let values = &words[2..];
+                                let _key = words[1];
+                                let _values = &words[2..];
                                 logln_warn("Currently not implemented!");
                             }
                         }
