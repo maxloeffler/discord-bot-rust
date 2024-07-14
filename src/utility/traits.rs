@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::utility::database::Database;
+use crate::utility::mixed::RegexManager;
 
 
 pub trait Singleton: Sized {
@@ -32,6 +33,7 @@ macro_rules! impl_singleton {
 }
 
 impl_singleton!(Database);
+impl_singleton!(RegexManager);
 
 
 pub trait ToList<T: ?Sized> {

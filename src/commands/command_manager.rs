@@ -21,6 +21,7 @@ impl CommandManager {
 
     pub async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
         if command.permission() {
+            message.delete().await;
             command.run(message).await;
         }
     }

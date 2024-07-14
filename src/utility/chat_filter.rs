@@ -1,7 +1,7 @@
 
-use regex::Regex;
-
 use crate::utility::message_manager::MessageManager;
+use crate::utility::mixed::RegexManager;
+use crate::utility::traits::Singleton;
 
 
 #[derive(PartialEq)]
@@ -19,7 +19,6 @@ pub struct ChatFilter {
 pub struct ChatFilterManager {
     message: MessageManager,
     slurs: Vec<String>,
-    domain_regex: Regex,
     domain_whitelist: Vec<String>,
 }
 
@@ -52,7 +51,6 @@ impl ChatFilterManager {
         ChatFilterManager {
             message,
             slurs,
-            domain_regex: Regex::new(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)").unwrap(),
             domain_whitelist
         }
     }
@@ -73,7 +71,8 @@ impl ChatFilterManager {
                 };
             }
 
-            if self.domain_regex.is_match(word.as_str()) {
+            let url_regex = RegexManager::get_instance().lock().await.get_url_regex();
+            if url_regex.is_match(word.as_str()) {
                 let mut external = true;
                 for domain in self.domain_whitelist.clone() {
                     if word.contains(&domain) {

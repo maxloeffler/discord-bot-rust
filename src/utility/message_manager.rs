@@ -7,13 +7,14 @@ use serenity::builder::{
     CreateButton,
     CreateInteractionResponse,
 };
+use nonempty::NonEmpty;
 
 use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::utility::database::{Database, DB};
 use crate::utility::traits::{Singleton, ToList, ToMessage};
-use crate::utility::mixed::BoxedFuture;
+use crate::utility::mixed::{BoxedFuture, RegexManager};
 
 
 #[derive(Clone)]
@@ -277,5 +278,29 @@ impl MessageManager {
 
     pub fn get_author(&self) -> User {
         self.raw_message.author.clone()
+    }
+
+    pub async fn get_mentions(&self) -> NonEmpty<User> {
+        let author = self.get_author();
+        let mut mentions = NonEmpty::new(author);
+
+        let id_regex = RegexManager::get_instance().lock().await.get_id_regex();
+        for word in &self.words {
+            let find = id_regex.find(word);
+            if find.is_some() {
+                let id = find.unwrap().as_str().parse::<u64>();
+                match id {
+                    Ok(id) => {
+                        let user = self.ctx.http.get_user(id.into()).await;
+                        match user {
+                            Ok(user) => mentions.push(user),
+                            Err(_) => {}
+                        }
+                    },
+                    Err(_) => {}
+                };
+            }
+        }
+        mentions
     }
 }
