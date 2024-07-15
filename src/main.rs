@@ -83,11 +83,28 @@ async fn spawn_database_thread() {
                             2 => {
                                 let key = words[1];
                                 let value = database.lock().await.get(key).await;
-                                logln_info(&format!("Value of {}", key), &value.unwrap());
+                                match value {
+                                    Ok(value) => logln_info(&format!("Value of {}", key), &value),
+                                    Err(err) => logln_warn(err.as_str())
+                                }
                             }
                             _ => {
-                                let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
-                                logln_info(&format!("Values of {}", &words[1..].join(", ")), &values.unwrap().join(", "));
+                                match words[1] {
+                                    "all" => {
+                                        let values = database.lock().await.get_all(words[2]).await;
+                                        match values {
+                                            Ok(values) => logln_info(&format!("Values of {}", words[2]), &values.join(", ")),
+                                            Err(err) => logln_warn(err.as_str())
+                                        }
+                                    },
+                                    _ => {
+                                        let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
+                                        match values {
+                                            Ok(values) => logln_info(&format!("Values of {}", &words[1..].join(", ")), &values.join(", ")),
+                                            Err(err) => logln_warn(err.as_str())
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -121,6 +138,24 @@ async fn spawn_database_thread() {
                             }
                         }
                     },
+                    "append" => {
+                        match words.len() {
+                            1..=2 => {
+                                logln_warn("Invalid command");
+                            }
+                            3 => {
+                                let key = words[1];
+                                let value = words[2];
+                                database.lock().await.append(key, value).await;
+                                logln_info(&format!("Appended value to {}", key), value);
+                            }
+                            _ => {
+                                let _key = words[1];
+                                let _values = &words[2..];
+                                logln_warn("Currently not implemented!");
+                            }
+                        }
+                    }
                     "checkout" => {
                         logln_warn("Currently not implemented!");
                         continue;

@@ -70,23 +70,6 @@ impl Database {
         keys.into_iter().collect()
     }
 
-    pub async fn get_multiple(&self, keys: impl ToList<&str>) -> Option<Vec<String>> {
-        let connection = self.connection.lock().await;
-        let mut values = Vec::new();
-        for key in keys.to_list() {
-            let value = connection.query_row(
-                &format!("SELECT value FROM {} WHERE key = ?", self.identifier.to_string()),
-                params![key],
-                |row| row.get(0),
-            );
-            match value {
-                Ok(value) => values.push(value),
-                Err(_) => return None,
-            };
-        }
-        Some(values)
-    }
-
     pub async fn get(&self, key: &str) -> Result<String> {
         let connection = self.connection.lock().await;
         let value = connection.query_row(
@@ -96,6 +79,32 @@ impl Database {
         );
         value.map_err(|_| format!("Failed to get value '{}'", key))
     }
+
+    pub async fn get_multiple(&self, keys: impl ToList<&str>) -> Result<Vec<String>> {
+        let mut values = Vec::new();
+        for key in keys.to_list() {
+            let value = self.get(key).await?;
+            values.push(value);
+        }
+        Ok(values)
+    }
+
+    pub async fn get_all(&self, key: &str) -> Result<Vec<String>> {
+        let connection = self.connection.lock().await;
+        let mut values = Vec::new();
+        let mut statement = connection.prepare(
+            &format!("SELECT value FROM {} WHERE key = ?", self.identifier.to_string())
+        ).expect("Failed to prepare statement");
+        let rows = statement.query_map(
+            params![key],
+            |row| row.get(0)
+        ).expect("Failed to query map");
+        for value in rows {
+            values.push(value.unwrap());
+        }
+        Ok(values)
+    }
+
 
     pub async fn set(&self, key: &str, value: impl ToList<&str>) {
 
@@ -149,7 +158,15 @@ pub trait DatabaseWrapper {
         })
     }
 
-    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Option<Vec<String>>>
+    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<String>>
+        where Self: Sync
+    {
+        Box::pin(async move {
+            self.get_database().get(key).await
+        })
+    }
+
+    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<String>>>
         where Self: Sync
     {
         Box::pin(async move {
@@ -157,11 +174,11 @@ pub trait DatabaseWrapper {
         })
     }
 
-    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<String>>
+    fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<String>>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().get(key).await
+            self.get_database().get_all(key).await
         })
     }
 
