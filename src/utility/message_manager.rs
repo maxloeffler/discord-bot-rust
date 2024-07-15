@@ -19,7 +19,7 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::utility::database::{Database, DB};
+use crate::databases::*;
 use crate::utility::traits::{Singleton, ToList, ToMessage};
 use crate::utility::mixed::{BoxedFuture, RegexManager};
 use crate::utility::resolver::Resolver;
@@ -66,8 +66,7 @@ impl MessageManager {
 
         // Obtian command
         if self.words.len() > 0 {
-            let config = Database::get_instance().lock().await;
-            let prefix = config.get(DB::Config, "command_prefix").await.unwrap();
+            let prefix = ConfigDB::get_instance().lock().await.get("command_prefix").await.unwrap();
             if self.words[0].starts_with(&prefix) {
                 let command = self.words[0].to_string();
                 self.command = command.strip_prefix(&prefix).map(|s| s.to_string());
@@ -172,7 +171,7 @@ impl MessageManager {
             embed
                 .title("✅")
                 .description("Success!")
-        }).await.unwrap();
+        }).await;
         let message = CreateMessage::new().embed(embed);
 
         // send message
@@ -193,7 +192,7 @@ impl MessageManager {
             embed
                 .title("❌")
                 .description(context)
-        }).await.unwrap();
+        }).await;
         let message = CreateMessage::new().embed(embed);
 
         // send message
@@ -207,15 +206,12 @@ impl MessageManager {
         }
     }
 
-    pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> Result<CreateEmbed, String> {
-        let color_primary = Database::get_instance().lock().await.get(DB::Config, "color_primary").await;
-        if color_primary.is_some() {
-            let embed = fn_style(CreateEmbed::default());
-            let styled_embed = embed.clone()
-                .color(color_primary.clone().unwrap().parse::<u32>().unwrap());
-            return Ok(styled_embed);
-        }
-        Err("'color_primary' not configured".to_string())
+    pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> CreateEmbed {
+        let color_primary = ConfigDB::get_instance().lock().await.get("color_primary").await.unwrap();
+        let embed = fn_style(CreateEmbed::default());
+        let styled_embed = embed.clone()
+            .color(color_primary.clone().parse::<u32>().unwrap());
+        styled_embed
     }
 
     pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {

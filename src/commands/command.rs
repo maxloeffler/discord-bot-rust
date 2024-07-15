@@ -58,7 +58,7 @@ pub trait Command: Send + Sync {
         }
     }
 
-    fn permission(&self, message: MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission(&self, _message: MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move { true })
     }
 
@@ -102,7 +102,7 @@ impl UserDecorator {
                 // create dropdown interaction
                 let selected_user = Arc::new(Mutex::new(None));
                 let _ = message.clone().create_user_dropdown_interaction(
-                    embed.unwrap(),
+                    embed,
                     users,
                     |value: User| {
                         let selected_user = Arc::clone(&selected_user);

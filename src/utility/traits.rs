@@ -8,7 +8,7 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::utility::database::Database;
+use crate::databases::*;
 use crate::utility::mixed::RegexManager;
 use crate::utility::resolver::Resolver;
 
@@ -33,9 +33,13 @@ macro_rules! impl_singleton {
     };
 }
 
-impl_singleton!(Database);
 impl_singleton!(RegexManager);
 impl_singleton!(Resolver);
+impl_singleton!(ConfigDB);
+impl_singleton!(WarningsDB);
+impl_singleton!(MutesDB);
+impl_singleton!(FlagsDB);
+impl_singleton!(BansDB);
 
 
 pub trait ToList<T: ?Sized> {

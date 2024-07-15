@@ -6,6 +6,7 @@ use std::future::Future;
 
 
 pub type BoxedFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
+pub type Result<T> = std::result::Result<T, String>;
 
 pub fn string_distance(a: &str, b: &str) -> usize {
     a.chars().zip(b.chars()).filter(|(a, b)| a != b).count()

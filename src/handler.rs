@@ -5,10 +5,10 @@ use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent};
 use serenity::prelude::*;
 
 use crate::utility::message_manager::MessageManager;
-use crate::utility::database::{Database, DB};
 use crate::commands::command_manager::CommandManager;
 use crate::utility::chat_filter::{ChatFilterManager, FilterType};
 use crate::utility::traits::Singleton;
+use crate::databases::*;
 
 
 pub struct Handler {
@@ -34,27 +34,27 @@ impl EventHandler for Handler {
         let message = MessageManager::new(ctx, msg).await;
 
         // if message pings the bot
-        let bot_id = Database::get_instance().lock().await.get(DB::Config, "bot_id").await;
-        if bot_id.is_some() {
-            let bot_pings = vec![format!("<@!{}>", bot_id.clone().unwrap()),
-                                format!("<@{}>",  bot_id.clone().unwrap())];
-            if bot_pings.contains(&message.payload(None, None)) {
-                message.reply("Hello!").await;
-                return;
-            }
+        let bot_id = ConfigDB::get_instance().lock().await
+            .get("bot_id").await.unwrap();
+        let bot_pings = vec![format!("<@!{}>", bot_id.clone()),
+                             format!("<@{}>",  bot_id.clone())];
+        if bot_pings.contains(&message.payload(None, None)) {
+            message.reply("Hello!").await;
+            return;
         }
 
         // directly delete messages in the verify channel
-        let channel_verify_id = Database::get_instance().lock().await.get(DB::Config, "channel_verify_id").await;
-        if channel_verify_id.is_some() {
-            if message.get_channel().get().to_string() == channel_verify_id.unwrap() {
-                message.delete().await;
-            }
+        let channel_verify = ConfigDB::get_instance().lock().await
+            .get("channel_verify").await.unwrap();
+        if message.get_channel().get().to_string() == channel_verify {
+            message.delete().await;
         }
 
         // check guideline violations
         let chat_filter = ChatFilterManager::new( message.clone() ).filter().await;
-        if chat_filter.filter == FilterType::Fine || message.is_trial().await || message.get_author().bot {
+        if chat_filter.filter == FilterType::Fine
+            || message.is_trial(None).await
+            || message.get_author().bot {
 
             // execute command
             if message.is_command() {

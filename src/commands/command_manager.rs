@@ -44,14 +44,12 @@ impl CommandManager {
                     }).await;
 
                     // send correction message
-                    if let Ok(embed) = embed {
-                        message.clone().create_choice_interaction(
-                            embed,
-                            Box::pin( async move { self.run_command(command, message.clone()).await } ),
-                            Box::pin( async move {} )
-                        ).await;
-                        return;
-                    }
+                    message.clone().create_choice_interaction(
+                        embed,
+                        Box::pin( async move { self.run_command(command, message.clone()).await } ),
+                        Box::pin( async move {} )
+                    ).await;
+                    return;
                 },
                 MatchType::None => continue,
             };

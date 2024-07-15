@@ -7,14 +7,15 @@ use colored::*;
 use std::thread;
 use std::io;
 
-mod handler;
-mod utility;
-mod commands;
-
-use utility::database::{Database, DB};
 use utility::traits::Singleton;
 use commands::command_manager::CommandManager;
 use handler::Handler;
+use databases::*;
+
+mod handler;
+mod utility;
+mod databases;
+mod commands;
 
 
 #[tokio::main]
@@ -39,11 +40,9 @@ async fn main() {
 
 
 async fn setup_db() -> String {
-    let db = Database::get_instance().lock().await;
-    db.init().await;
-    db.set(DB::Config, "command_prefix", ".").await;
-    db.set(DB::Config, "token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
-    db.get(DB::Config, "token").await.unwrap()
+    let db = ConfigDB::get_instance().lock().await;
+    db.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
+    db.get("token").await.unwrap()
 }
 
 fn logln_warn(message: &str) {
@@ -59,11 +58,10 @@ fn log_info(info: &str, content: &str) {
 }
 
 async fn spawn_database_thread() {
-    let database = Database::get_instance();
-    let mut db = DB::Config;
+    let database = ConfigDB::get_instance();
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
-        logln_info("Connected to database", db.to_string().as_str());
+        logln_info("Connected to database", "config");
         runtime.block_on(async {
             loop {
                 log_info("Enter a command", "");
@@ -79,16 +77,16 @@ async fn spawn_database_thread() {
                     "get" => {
                         match words.len() {
                             1 => {
-                                let keys = database.lock().await.get_keys(db.clone()).await;
+                                let keys = database.lock().await.get_keys().await;
                                 logln_info("Keys", &keys.join(", "));
                             }
                             2 => {
                                 let key = words[1];
-                                let value = database.lock().await.get(db.clone(), key).await;
+                                let value = database.lock().await.get(key).await;
                                 logln_info(&format!("Value of {}", key), &value.unwrap());
                             }
                             _ => {
-                                let values = database.lock().await.get_multiple(db.clone(), &words[1..]).await;
+                                let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
                                 logln_info(&format!("Values of {}", &words[1..].join(", ")), &values.unwrap().join(", "));
                             }
                         }
@@ -101,7 +99,7 @@ async fn spawn_database_thread() {
                             3 => {
                                 let key = words[1];
                                 let value = words[2];
-                                database.lock().await.set(db.clone(), key, value).await;
+                                database.lock().await.set(key, value).await;
                                 logln_info(&format!("Set value for {}", key), value);
                             }
                             _ => {
@@ -115,7 +113,7 @@ async fn spawn_database_thread() {
                         match words.len() {
                             2 => {
                                 let key = words[1];
-                                database.lock().await.delete(db.clone(), key).await;
+                                database.lock().await.delete(key).await;
                                 logln_info("Removed key", key);
                             }
                             _ => {
@@ -124,22 +122,19 @@ async fn spawn_database_thread() {
                         }
                     },
                     "checkout" => {
+                        logln_warn("Currently not implemented!");
+                        continue;
                         match words.len() {
                             2 => {
-                                let mut new_db = db.clone();
                                 let mut switch = false;
-                                for db in DB::iter() {
-                                    if !switch && db.to_string() == words[1] {
-                                        new_db = db;
+                                for db_type in DB::iter() {
+                                    if db_type.to_string() == words[1] {
                                         switch = true;
                                     }
                                 }
                                 match switch {
-                                    true => {
-                                        db = new_db;
-                                        logln_info("Switched to", db.to_string().as_str());
-                                    }
-                                    false => logln_warn("Invalid database")
+                                    true => logln_info("Switched to database", "config"),
+                                    _ => logln_warn("Invalid database")
                                 }
                             }
                             _ => {

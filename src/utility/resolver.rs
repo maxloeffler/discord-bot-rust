@@ -3,7 +3,7 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 
 use crate::utility::traits::{Singleton, ToList};
-use crate::utility::database::{Database, DB};
+use crate::databases::*;
 
 
 pub struct Resolver {}
@@ -54,45 +54,27 @@ impl Resolver {
     }
 
     pub async fn is_admin(&self, ctx: Context, guild_id: Option<GuildId>, user: User) -> bool {
-        let role_id = Database::get_instance().lock().await
-            .get(DB::Config, "role_admin_id").await;
-        match role_id {
-            Some(role) => self.has_role(ctx, guild_id, user, role).await,
-            _ => false
-        }
+        let role_id = ConfigDB::get_instance().lock().await
+            .get("role_admin").await.unwrap();
+        self.has_role(ctx, guild_id, user, role_id).await
     }
 
     pub async fn is_headmod(&self, ctx: Context, guild_id: Option<GuildId>, user: User) -> bool {
-        let role_ids = Database::get_instance().lock().await
-            .get_multiple(DB::Config, vec!["role_admin_id",
-                                           "role_headmod_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(ctx, guild_id, user, roles).await,
-            _ => false
-        }
+        let role_ids = ConfigDB::get_instance().lock().await
+            .get_multiple(vec!["role_admin", "role_headmod"]).await.unwrap();
+        self.has_role(ctx, guild_id, user, role_ids).await
     }
 
     pub async fn is_mod(&self, ctx: Context, guild_id: Option<GuildId>, user: User) -> bool {
-        let role_ids = Database::get_instance().lock().await
-            .get_multiple(DB::Config, vec!["role_admin_id",
-                                           "role_headmod_id",
-                                           "role_mod_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(ctx, guild_id, user, roles).await,
-            _ => false
-        }
+        let role_ids = ConfigDB::get_instance().lock().await
+            .get_multiple(vec!["role_admin", "role_headmod", "role_mod"]).await.unwrap();
+        self.has_role(ctx, guild_id, user, role_ids).await
     }
 
     pub async fn is_trial(&self, ctx: Context, guild_id: Option<GuildId>, user: User) -> bool {
-        let role_ids = Database::get_instance().lock().await
-            .get_multiple(DB::Config, vec!["role_admin_id",
-                                           "role_headmod_id",
-                                           "role_mod_id",
-                                           "role_trial_id"]).await;
-        match role_ids {
-            Some(roles) => self.has_role(ctx, guild_id, user, roles).await,
-            _ => false
-        }
+        let role_ids = ConfigDB::get_instance().lock().await
+            .get_multiple(vec!["role_admin", "role_headmod", "role_mod", "role_trial"]).await.unwrap();
+        self.has_role(ctx, guild_id, user, role_ids).await
     }
 
 }

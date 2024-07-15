@@ -17,19 +17,15 @@ impl Command for AvatarCommand {
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
-                if let Some(author) = params.target {
-                    let name = author.clone().global_name.unwrap_or(author.clone().name);
-                    let face = author.clone().face();
-                    let embed = MessageManager::create_embed(|embed| {
-                        embed
-                            .title(&format!("{}'s avatar", name))
-                            .image(face.clone())
-                    }).await;
-                    match embed {
-                        Ok(embed) => params.message.reply(embed).await,
-                        Err(_)    => params.message.reply(face).await
-                    }
-                }
+                let target = params.target.unwrap().clone();
+                let name = target.clone().global_name.unwrap_or(target.clone().name);
+                let face = target.clone().face();
+                let embed = MessageManager::create_embed(|embed| {
+                    embed
+                        .title(&format!("{}'s avatar", name))
+                        .image(face.clone())
+                }).await;
+                params.message.reply(embed).await
             }
         )
     }
