@@ -2,12 +2,11 @@
 use serenity::prelude::{Client, GatewayIntents};
 use tokio::runtime::Runtime;
 use strum::IntoEnumIterator;
-use colored::*;
 
 use std::thread;
-use std::io;
 
 use utility::traits::Singleton;
+use utility::logger::Logger;
 use commands::command_manager::CommandManager;
 use handler::Handler;
 use databases::*;
@@ -45,32 +44,14 @@ async fn setup_db() -> String {
     db.get("token").await.unwrap()
 }
 
-fn logln_warn(message: &str) {
-    println!("[{}] {}: {}", "!".red(), "WARNING".red().bold(), message);
-}
-
-fn logln_info(info: &str, content: &str) {
-    println!("[{}] {}: {}", ">".green(), info.truecolor(128, 128, 128), content);
-}
-
-fn log_info(info: &str, content: &str) {
-    print!("[{}] {}: {}", ">".green(), info.truecolor(128, 128, 128), content);
-}
-
 async fn spawn_database_thread() {
     let database = ConfigDB::get_instance();
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
-        logln_info("Connected to database", "config");
+        Logger::info_long("Connected to database", "config");
         runtime.block_on(async {
             loop {
-                log_info("Enter a command", "");
-                std::io::Write::flush(&mut io::stdout()).unwrap();
-
-                // read input
-                let mut input = String::new();
-                io::stdin().read_line(&mut input).unwrap();
-                input = input.trim().to_string();
+                let input = Logger::input("Enter a command");
                 let words = input.split_whitespace().collect::<Vec<&str>>();
 
                 match words[0] {
@@ -78,14 +59,14 @@ async fn spawn_database_thread() {
                         match words.len() {
                             1 => {
                                 let keys = database.lock().await.get_keys().await;
-                                logln_info("Keys", &keys.join(", "));
+                                Logger::info_long("Keys", &keys.join(", "));
                             }
                             2 => {
                                 let key = words[1];
                                 let value = database.lock().await.get(key).await;
                                 match value {
-                                    Ok(value) => logln_info(&format!("Value of {}", key), &value),
-                                    Err(err) => logln_warn(err.as_str())
+                                    Ok(value) => Logger::info_long(&format!("Value of {}", key), &value),
+                                    Err(err) => Logger::err(err.as_str())
                                 }
                             }
                             _ => {
@@ -93,15 +74,15 @@ async fn spawn_database_thread() {
                                     "all" => {
                                         let values = database.lock().await.get_all(words[2]).await;
                                         match values {
-                                            Ok(values) => logln_info(&format!("Values of {}", words[2]), &values.join(", ")),
-                                            Err(err) => logln_warn(err.as_str())
+                                            Ok(values) => Logger::info_long(&format!("Values of {}", words[2]), &values.join(", ")),
+                                            Err(err) => Logger::err(err.as_str())
                                         }
                                     },
                                     _ => {
                                         let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
                                         match values {
-                                            Ok(values) => logln_info(&format!("Values of {}", &words[1..].join(", ")), &values.join(", ")),
-                                            Err(err) => logln_warn(err.as_str())
+                                            Ok(values) => Logger::info_long(&format!("Values of {}", &words[1..].join(", ")), &values.join(", ")),
+                                            Err(err) => Logger::err(err.as_str())
                                         }
                                     }
                                 }
@@ -111,18 +92,18 @@ async fn spawn_database_thread() {
                     "set" => {
                         match words.len() {
                             1..=2 => {
-                                logln_warn("Invalid command");
+                                Logger::warn("Too few parameters");
                             }
                             3 => {
                                 let key = words[1];
                                 let value = words[2];
                                 database.lock().await.set(key, value).await;
-                                logln_info(&format!("Set value for {}", key), value);
+                                Logger::info_long(&format!("Set value for {}", key), value);
                             }
                             _ => {
                                 let _key = words[1];
                                 let _values = &words[2..];
-                                logln_warn("Currently not implemented!");
+                                Logger::warn("Currently not implemented!");
                             }
                         }
                     }
@@ -131,33 +112,33 @@ async fn spawn_database_thread() {
                             2 => {
                                 let key = words[1];
                                 database.lock().await.delete(key).await;
-                                logln_info("Removed key", key);
+                                Logger::info_long("Removed key", key);
                             }
                             _ => {
-                                logln_warn("Invalid command");
+                                Logger::warn("Too many parameters");
                             }
                         }
                     },
                     "append" => {
                         match words.len() {
                             1..=2 => {
-                                logln_warn("Invalid command");
+                                Logger::warn("Too few parameters")
                             }
                             3 => {
                                 let key = words[1];
                                 let value = words[2];
                                 database.lock().await.append(key, value).await;
-                                logln_info(&format!("Appended value to {}", key), value);
+                                Logger::info_long(&format!("Appended value to {}", key), value);
                             }
                             _ => {
                                 let _key = words[1];
                                 let _values = &words[2..];
-                                logln_warn("Currently not implemented!");
+                                Logger::warn("Currently not implemented!");
                             }
                         }
                     }
                     "checkout" => {
-                        logln_warn("Currently not implemented!");
+                        Logger::warn("Currently not implemented!");
                         continue;
                         match words.len() {
                             2 => {
@@ -168,17 +149,17 @@ async fn spawn_database_thread() {
                                     }
                                 }
                                 match switch {
-                                    true => logln_info("Switched to database", "config"),
-                                    _ => logln_warn("Invalid database")
+                                    true => Logger::info_long("Switched to database", "config"),
+                                    _    => Logger::warn("Invalid database")
                                 }
                             }
                             _ => {
-                                logln_warn("Invalid command");
+                                Logger::warn("Too many parameters");
                             }
                         }
                     }
                     _ => {
-                        logln_warn("Invalid command");
+                        Logger::err("Invalid command");
                     }
                 }
             }

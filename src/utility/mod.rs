@@ -5,3 +5,4 @@ pub mod traits;
 pub mod usage_builder;
 pub mod mixed;
 pub mod resolver;
+pub mod logger;
