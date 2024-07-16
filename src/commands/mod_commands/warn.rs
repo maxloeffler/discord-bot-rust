@@ -44,8 +44,13 @@ impl Command for WarnCommand {
                     reason = "No reason provided.".to_string();
                 }
 
+                let log = ModLog {
+                    member_id: target.clone().id.to_string(),
+                    staff_id: message.get_author().id.to_string(),
+                    reason: reason.clone(),
+                };
                 WarningsDB::get_instance().lock().await
-                    .append(&target.id.to_string(), &reason).await;
+                    .append(&target.id.to_string(), &log.into()).await;
                 let embed = MessageManager::create_embed(|embed|
                     embed
                         .title(&format!("Warning"))

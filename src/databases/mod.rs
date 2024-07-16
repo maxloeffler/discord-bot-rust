@@ -1,11 +1,16 @@
 
 pub mod database;
 
-pub use database::DatabaseWrapper;
-pub use database::ConfigDB;
-pub use database::WarningsDB;
-pub use database::MutesDB;
-pub use database::FlagsDB;
-pub use database::BansDB;
 pub use database::DB;
 pub use database::DBEntry;
+
+pub mod wrappers;
+
+pub use wrappers::DatabaseWrapper;
+pub use wrappers::ModLog;
+pub use wrappers::ConfigDB;
+pub use wrappers::WarningsDB;
+pub use wrappers::MutesDB;
+pub use wrappers::FlagsDB;
+pub use wrappers::BansDB;
+
