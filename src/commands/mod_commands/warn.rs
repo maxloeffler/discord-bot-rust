@@ -39,14 +39,20 @@ impl Command for WarnCommand {
                     return;
                 }
 
-                let mut reason = message.payload(None, None);
+                let mut reason = message.payload_without_mentions(None, None).await;
                 if reason.is_empty() {
                     reason = "No reason provided.".to_string();
                 }
 
                 WarningsDB::get_instance().lock().await
                     .append(&target.id.to_string(), &reason).await;
-                message.reply(&format!("{} has been warned for `>` {}", target.name, reason.clone())).await;
+                let embed = MessageManager::create_embed(|embed|
+                    embed
+                        .title(&format!("Warning"))
+                        .description(&format!("<@{}> has been warned for `>` {}", target.id, reason))
+                        .color(0xff0000)
+                ).await;
+                message.reply(embed).await;
             }
         )
     }
