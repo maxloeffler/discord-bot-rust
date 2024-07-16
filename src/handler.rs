@@ -35,7 +35,7 @@ impl EventHandler for Handler {
 
         // if message pings the bot
         let bot_id = ConfigDB::get_instance().lock().await
-            .get("bot_id").await.unwrap();
+            .get("bot_id").await.unwrap().to_string();
         let bot_pings = vec![format!("<@!{}>", bot_id.clone()),
                              format!("<@{}>",  bot_id.clone())];
         if bot_pings.contains(&message.payload(None, None)) {
@@ -45,7 +45,7 @@ impl EventHandler for Handler {
 
         // directly delete messages in the verify channel
         let channel_verify = ConfigDB::get_instance().lock().await
-            .get("channel_verify").await.unwrap();
+            .get("channel_verify").await.unwrap().to_string();
         if message.get_channel().get().to_string() == channel_verify {
             message.delete().await;
         }

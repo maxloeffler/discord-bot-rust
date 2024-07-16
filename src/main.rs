@@ -21,7 +21,7 @@ mod commands;
 async fn main() {
 
     // setup
-    let token = setup_db().await;
+    let token = setup().await;
     let command_handler = CommandManager::new().await;
     let handler = Handler::new(command_handler);
 
@@ -38,10 +38,10 @@ async fn main() {
 }
 
 
-async fn setup_db() -> String {
-    let db = ConfigDB::get_instance().lock().await;
-    db.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
-    db.get("token").await.unwrap()
+async fn setup() -> String {
+    let config = ConfigDB::get_instance().lock().await;
+    config.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
+    config.get("token").await.unwrap().to_string()
 }
 
 async fn spawn_database_thread() {
@@ -65,7 +65,7 @@ async fn spawn_database_thread() {
                                 let key = words[1];
                                 let value = database.lock().await.get(key).await;
                                 match value {
-                                    Ok(value) => Logger::info_long(&format!("Value of {}", key), &value),
+                                    Ok(value) => Logger::info_long(&format!("Value of {}", key), &value.to_string()),
                                     Err(err) => Logger::err(err.as_str())
                                 }
                             }
@@ -74,14 +74,20 @@ async fn spawn_database_thread() {
                                     "all" => {
                                         let values = database.lock().await.get_all(words[2]).await;
                                         match values {
-                                            Ok(values) => Logger::info_long(&format!("Values of {}", words[2]), &values.join(", ")),
+                                            Ok(values) => {
+                                                let values: Vec<_> = values.iter().map(|entry| entry.to_string()).collect();
+                                                Logger::info_long(&format!("Values of {}", words[2]), &values.join(", "))
+                                            }
                                             Err(err) => Logger::err(err.as_str())
                                         }
                                     },
                                     _ => {
                                         let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
                                         match values {
-                                            Ok(values) => Logger::info_long(&format!("Values of {}", &words[1..].join(", ")), &values.join(", ")),
+                                            Ok(values) => {
+                                                let values: Vec<_> = values.iter().map(|entry| entry.to_string()).collect();
+                                                Logger::info_long(&format!("Values of {}", &words[1..].join(", ")), &values.join(", "))
+                                            }
                                             Err(err) => Logger::err(err.as_str())
                                         }
                                     }

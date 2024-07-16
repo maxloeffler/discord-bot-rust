@@ -8,3 +8,4 @@ pub use database::MutesDB;
 pub use database::FlagsDB;
 pub use database::BansDB;
 pub use database::DB;
+pub use database::DBEntry;

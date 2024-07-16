@@ -106,6 +106,29 @@ impl ToList<RoleId> for Vec<String> {
     }
 }
 
+impl ToList<RoleId> for Vec<DBEntry> {
+    fn to_list(&self) -> Vec<RoleId> {
+        let mut roles = Vec::new();
+        for role in self {
+            let role = RoleId::from_str(&role.to_string());
+            if role.is_ok() {
+                roles.push(role.unwrap());
+            }
+        }
+        roles
+    }
+}
+
+impl ToList<RoleId> for DBEntry {
+    fn to_list(&self) -> Vec<RoleId> {
+        let role = RoleId::from_str(&self.to_string());
+        if role.is_ok() {
+            return vec![role.unwrap()];
+        }
+        Vec::new()
+    }
+}
+
 
 pub trait ToMessage {
     fn to_message(&self) -> CreateMessage;
