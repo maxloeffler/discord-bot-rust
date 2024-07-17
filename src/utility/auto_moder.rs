@@ -45,6 +45,21 @@ impl AutoModerator {
             let member = resolver.resolve_member(target.clone()).await.unwrap();
             member.add_role(&resolver.ctx().http, role_muted.id).await.unwrap();
 
+            // log mute
+            let bot_id = ConfigDB::get_instance().lock().await
+                .get("bot_id").await.unwrap().to_string();
+            let log = ModLog {
+                member_id: target.id.to_string(),
+                staff_id: bot_id.clone(),
+                reason: format!("Automatically muted (1: {}, 2: {}, 3: {})",
+                    warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
+            };
+            MutesDB::get_instance().lock().await
+                .append(&target.id.to_string(), &log.into()).await;
+
+            // check for active flags
+            self.check_mutes(resolver.clone(), target.clone()).await;
+
             // create embed
             let embed = MessageManager::create_embed(|embed| {
                 embed
@@ -58,12 +73,10 @@ impl AutoModerator {
 
             // find person responsible for the last warning (to ping them)
             let last_warning = warn_logs.last().unwrap();
-            let bot_id = ConfigDB::get_instance().lock().await
-                .get("bot_id").await.unwrap().to_string();
             let role_automute = resolver.resolve_role("Auto Mute").await.unwrap()[0].clone();
-            let responsibility = match &last_warning.staff_id {
-                bot_id => format!("<@&{}>", role_automute.id),
-                _      => format!("<@{}>", last_warning.staff_id)
+            let responsibility = match last_warning.staff_id == bot_id {
+                true  => format!("<@&{}>", role_automute.id),
+                false => format!("<@{}>", last_warning.staff_id)
             };
 
             // get muted channel
@@ -74,16 +87,53 @@ impl AutoModerator {
             // send 'automute message'
             let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
             let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+        }
+    }
 
-            // log mute
-            let log = ModLog {
-                member_id: target.id.to_string(),
-                staff_id: bot_id,
-                reason: format!("Automatically muted (1: {}, 2: {}, 3: {})",
-                    warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
-            };
-            MutesDB::get_instance().lock().await
-                .append(&target.id.to_string(), &log.into()).await;
+    pub async fn check_mutes(&self, resolver: Resolver, target: User) {
+
+        // get all flags
+        let all_flags = FlagsDB::get_instance().lock().await
+            .get_all(&target.id.to_string()).await;
+
+        if let Ok(all_flags) = all_flags {
+
+            // get all active flags
+            let active_flags: Vec<FlagLog> = all_flags.iter()
+                .filter(|flag| FlagLog::from(*flag).is_active(flag.timestamp))
+                .map(|flag| FlagLog::from(flag))
+                .collect();
+
+            // if there are active flags
+            if active_flags.len() > 0 {
+
+                let flag_reason = active_flags.iter()
+                    .enumerate()
+                    .map(|(i, flag)| format!("{}: {}", i, flag.reason))
+                    .collect::<Vec<String>>()
+                    .join(", ");
+
+                // create embed
+                let embed = MessageManager::create_embed(|embed| {
+                    embed
+                        .title("Flag Notice")
+                        .description(format!("<@{}> is currently flagged `>` {}", target.id, flag_reason))
+                        .color(0xFF0000)
+                }).await;
+
+                // distribute responsibility
+                let role_ids = resolver.resolve_role(vec!["Administrator", "Head Moderator"]).await.unwrap().clone();
+                let responsibility = format!("<@&{}> <@&{}>", role_ids[0].id, role_ids[1].id);
+
+                // get muted channel
+                let muted_channel = ConfigDB::get_instance().lock().await
+                    .get("channel_muted").await.unwrap().to_string();
+                let channel = resolver.resolve_channel(muted_channel).await.unwrap();
+
+                // send 'automute message'
+                let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
+                let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+            }
         }
     }
 }

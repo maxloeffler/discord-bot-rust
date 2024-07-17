@@ -27,6 +27,35 @@ impl From<&DBEntry> for ModLog {
     }
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct FlagLog {
+    pub staff_id: String,
+    pub member_id: String,
+    pub reason: String,
+    pub monthly: bool,
+}
+
+impl FlagLog {
+    pub fn into(self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+    pub fn is_active(&self, issuance_date: i64) -> bool {
+        let duration = match self.monthly {
+            true  => 30 * 24 * 60 * 60,
+            false =>  7 * 24 * 60 * 60
+        };
+        let now = chrono::Utc::now().timestamp();
+        let expiration_date = issuance_date + duration;
+        expiration_date > now
+    }
+}
+
+impl From<&DBEntry> for FlagLog {
+    fn from(entry: &DBEntry) -> Self {
+        serde_json::from_str(&entry.value).unwrap()
+    }
+}
+
 pub trait DatabaseWrapper {
 
     fn get_database(&self) -> Database;
