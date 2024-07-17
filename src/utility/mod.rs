@@ -6,3 +6,4 @@ pub mod usage_builder;
 pub mod mixed;
 pub mod resolver;
 pub mod logger;
+pub mod auto_moder;

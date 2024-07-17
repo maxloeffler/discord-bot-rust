@@ -70,6 +70,20 @@ impl Resolver {
         None
     }
 
+    pub async fn resolve_channel(&self, channel_name: impl ToList<ChannelId>) -> Option<ChannelId> {
+        if let Some(guild_id) = self.guild_id {
+            let guild_channels = guild_id.channels(&self.ctx.http).await.unwrap();
+            for channel in channel_name.to_list() {
+                for guild_channel in guild_channels.values() {
+                    if guild_channel.id == channel {
+                        return Some(channel);
+                    }
+                }
+            }
+        }
+        None
+    }
+
     pub async fn has_role(&self, user: User, roles: impl ToList<RoleId>) -> bool {
         if let Some(guild) = self.guild_id {
             for role in roles.to_list() {

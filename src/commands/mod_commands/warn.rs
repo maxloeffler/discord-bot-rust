@@ -5,6 +5,7 @@ use crate::commands::command::{Command, CommandParams};
 use crate::utility::message_manager::MessageManager;
 use crate::utility::mixed::BoxedFuture;
 use crate::utility::traits::{Singleton};
+use crate::utility::auto_moder::AutoModerator;
 use crate::databases::*;
 
 
@@ -59,6 +60,10 @@ impl Command for WarnCommand {
                         .color(0xff0000)
                 ).await;
                 message.reply(embed).await;
+
+                AutoModerator::get_instance().lock().await
+                    .check_warnings(resolver.clone(), target).await;
+
             }
         )
     }

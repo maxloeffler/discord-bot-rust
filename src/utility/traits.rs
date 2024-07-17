@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::databases::*;
+use crate::utility::auto_moder::AutoModerator;
 
 
 pub trait Singleton: Sized {
@@ -31,6 +32,7 @@ macro_rules! impl_singleton {
     };
 }
 
+impl_singleton!(AutoModerator);
 impl_singleton!(ConfigDB);
 impl_singleton!(WarningsDB);
 impl_singleton!(MutesDB);
@@ -120,6 +122,16 @@ impl ToList<RoleId> for DBEntry {
         let role = RoleId::from_str(&self.to_string());
         if role.is_ok() {
             return vec![role.unwrap()];
+        }
+        Vec::new()
+    }
+}
+
+impl ToList<ChannelId> for String {
+    fn to_list(&self) -> Vec<ChannelId> {
+        let channel = ChannelId::from_str(self);
+        if channel.is_ok() {
+            return vec![channel.unwrap()];
         }
         Vec::new()
     }

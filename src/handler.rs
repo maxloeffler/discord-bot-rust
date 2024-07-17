@@ -1,7 +1,7 @@
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
-use serenity::all::{ChannelId, UserId, MessageId, GuildId, MessageUpdateEvent};
+use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent};
 use serenity::prelude::*;
 
 use crate::commands::command_manager::CommandManager;
