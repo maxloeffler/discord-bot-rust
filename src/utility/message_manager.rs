@@ -145,8 +145,7 @@ impl MessageManager {
 
     pub async fn payload_without_mentions(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
         let mut total_excludes = excludes.unwrap_or(Vec::new());
-        let regex_id = RegexManager::get_instance().lock().await
-            .get_id_regex();
+        let regex_id = RegexManager::get_id_regex();
         total_excludes.push(regex_id.as_str().to_string());
         self.payload(starting_from, Some(total_excludes))
     }
@@ -386,7 +385,7 @@ impl MessageManager {
         let author = self.get_author();
         let mut mentions = NonEmpty::new(author);
 
-        let id_regex = RegexManager::get_instance().lock().await.get_id_regex();
+        let id_regex = RegexManager::get_id_regex();
         for word in &self.words {
             let find = id_regex.find(word);
             if find.is_some() {

@@ -1,7 +1,6 @@
 
 use crate::utility::message_manager::MessageManager;
 use crate::utility::mixed::RegexManager;
-use crate::utility::traits::Singleton;
 
 
 #[derive(PartialEq)]
@@ -71,7 +70,7 @@ impl ChatFilterManager {
                 };
             }
 
-            let url_regex = RegexManager::get_instance().lock().await.get_url_regex();
+            let url_regex = RegexManager::get_url_regex();
             if url_regex.is_match(word.as_str()) {
                 let mut external = true;
                 for domain in self.domain_whitelist.clone() {
