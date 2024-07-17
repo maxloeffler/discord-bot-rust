@@ -1,4 +1,5 @@
 
+use serenity::model::colour::Colour;
 use rusqlite::{params, Connection};
 use tokio::sync::Mutex;
 use strum_macros::EnumIter;
@@ -49,6 +50,13 @@ impl Into<String> for DBEntry {
 impl fmt::Display for DBEntry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
+    }
+}
+
+impl From<DBEntry> for Colour {
+    fn from(entry: DBEntry) -> Colour {
+        let value = entry.value.trim_start_matches("#");
+        u64::from_str_radix(value, 16).unwrap().into()
     }
 }
 

@@ -207,10 +207,10 @@ impl MessageManager {
 
     pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> CreateEmbed {
         let color_primary = ConfigDB::get_instance().lock().await
-            .get("color_primary").await.unwrap().to_string();
+            .get("color_primary").await.unwrap();
         let embed = fn_style(CreateEmbed::default());
         let styled_embed = embed.clone()
-            .color(color_primary.clone().parse::<u32>().unwrap());
+            .color(color_primary);
         styled_embed
     }
 
