@@ -9,7 +9,6 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::databases::*;
-use crate::utility::resolver::Resolver;
 
 
 pub trait Singleton: Sized {
@@ -32,7 +31,6 @@ macro_rules! impl_singleton {
     };
 }
 
-impl_singleton!(Resolver);
 impl_singleton!(ConfigDB);
 impl_singleton!(WarningsDB);
 impl_singleton!(MutesDB);

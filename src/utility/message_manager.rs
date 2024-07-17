@@ -1,6 +1,5 @@
 
 use serenity::model::prelude::*;
-use serenity::prelude::*;
 use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::model::application::ButtonStyle;
 use serenity::builder::{
@@ -27,7 +26,7 @@ use crate::utility::resolver::Resolver;
 
 #[derive(Clone)]
 pub struct MessageManager {
-    ctx: Context,
+    resolver: Resolver,
     raw_message: Message,
     prefix: Option<String>,
     command: Option<String>,
@@ -37,10 +36,10 @@ pub struct MessageManager {
 
 impl MessageManager {
 
-    pub async fn new(ctx: Context, raw_message: Message) -> MessageManager {
+    pub async fn new(resolver: Resolver, message: Message) -> MessageManager {
         let mut manager = MessageManager {
-            ctx,
-            raw_message,
+            resolver: resolver,
+            raw_message: message,
             prefix: None,
             command: None,
             parameters: HashMap::new(),
@@ -153,7 +152,7 @@ impl MessageManager {
     pub async fn delete(&self) {
         let timeout = 250;
         let mut attempts = 5;
-        while self.raw_message.delete(&self.ctx).await.is_err() && attempts > 0 {
+        while self.raw_message.delete(&self.resolver.ctx()).await.is_err() && attempts > 0 {
             let _ = tokio::time::sleep(tokio::time::Duration::from_millis(timeout));
             attempts -= 1;
         }
@@ -161,7 +160,7 @@ impl MessageManager {
 
     pub async fn reply(&self, message: impl ToMessage) {
         let channel = self.get_channel();
-        let _ = channel.send_message(self.ctx.http.clone(), message.to_message()).await;
+        let _ = channel.send_message(self.resolver.http().clone(), message.to_message()).await;
     }
 
     pub async fn reply_success(&self) {
@@ -176,12 +175,12 @@ impl MessageManager {
 
         // send message
         let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.ctx.http, message).await;
+        let sent_message = channel.send_message(&self.resolver.http(), message).await;
 
         // delete message
         if let Ok(message) = sent_message {
             let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.ctx).await;
+            let _ = message.delete(&self.resolver.ctx()).await;
         }
     }
 
@@ -197,12 +196,12 @@ impl MessageManager {
 
         // send message
         let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.ctx.http, message).await;
+        let sent_message = channel.send_message(&self.resolver.http(), message).await;
 
         // delete message
         if let Ok(message) = sent_message {
             let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.ctx).await;
+            let _ = message.delete(&self.resolver.ctx()).await;
         }
     }
 
@@ -218,7 +217,7 @@ impl MessageManager {
     pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
         let channel = self.get_channel();
         let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
-        let messages = channel.messages(&self.ctx.http, builder).await;
+        let messages = channel.messages(&self.resolver.http(), builder).await;
         match messages {
             Ok(messages) => messages,
             Err(_) => Vec::new()
@@ -244,11 +243,11 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+            .send_message(&self.resolver.http(), message).await.unwrap();
 
         // await interaction
         let interaction = sent_message
-            .await_component_interaction(&self.ctx.shard)
+            .await_component_interaction(&self.resolver.ctx().shard)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
@@ -261,12 +260,12 @@ impl MessageManager {
             };
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.ctx.http,
+            let _ = interaction.unwrap().create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.ctx).await;
+            let _ = sent_message.delete(&self.resolver.http()).await;
 
         }
     }
@@ -286,11 +285,11 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+            .send_message(&self.resolver.http(), message).await.unwrap();
 
         // await interaction
         let interaction = sent_message
-            .await_component_interaction(&self.ctx.shard)
+            .await_component_interaction(&self.resolver.ctx().shard)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
@@ -305,12 +304,12 @@ impl MessageManager {
             }
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.ctx.http,
+            let _ = interaction.unwrap().create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.ctx).await;
+            let _ = sent_message.delete(&self.resolver.ctx()).await;
 
         }
     }
@@ -333,11 +332,11 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.ctx.http.clone(), message).await.unwrap();
+            .send_message(&self.resolver.http(), message).await.unwrap();
 
         // await interaction
         let interaction = sent_message
-            .await_component_interaction(&self.ctx.shard)
+            .await_component_interaction(&self.resolver.ctx().shard)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
@@ -347,8 +346,7 @@ impl MessageManager {
             match data {
                 StringSelect{values} => {
                     let id = values[0].clone().parse::<u64>().unwrap();
-                    let user = Resolver::get_instance().lock().await
-                        .get_user(self.ctx.clone(), UserId::from(id)).await;
+                    let user = self.resolver.resolve_user(UserId::from(id)).await;
                     if user.is_some() {
                         callback(user.unwrap()).await;
                     }
@@ -357,12 +355,12 @@ impl MessageManager {
             }
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.ctx.http,
+            let _ = interaction.unwrap().create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.ctx).await;
+            let _ = sent_message.delete(&self.resolver.ctx()).await;
 
         }
     }
@@ -392,10 +390,10 @@ impl MessageManager {
                 let id = find.unwrap().as_str().parse::<u64>();
                 match id {
                     Ok(id) => {
-                        let user = self.ctx.http.get_user(id.into()).await;
+                        let user = self.resolver.resolve_user(UserId::from(id)).await;
                         match user {
-                            Ok(user) => mentions.push(user),
-                            Err(_) => {}
+                            Some(user) => mentions.push(user),
+                            None => {}
                         }
                     },
                     Err(_) => {}
@@ -407,46 +405,40 @@ impl MessageManager {
 
     // ---- Forwards to Resolver ---- //
 
-    pub async fn get_member(&self) -> Option<Member> {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.get_member(self.ctx.clone(), guild_id, user).await
+    pub fn get_resolver(&self) -> Resolver {
+        self.resolver.clone()
+    }
+
+    pub async fn resolve_role(&self, role_name: impl ToList<&str>) -> Option<Vec<Role>> {
+        self.resolver.resolve_role(role_name).await
+    }
+
+    pub async fn resolve_member(&self) -> Option<Member> {
+        self.resolver.resolve_member(self.get_author()).await
     }
 
     pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.has_role(self.ctx.clone(), guild_id, user, roles).await
+        self.resolver.has_role(self.get_author(), roles).await
     }
 
     pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.get_roles(self.ctx.clone(), guild_id, user).await
+        self.resolver.get_roles(self.get_author()).await
     }
 
     pub async fn is_admin(&self) -> bool {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.is_admin(self.ctx.clone(), guild_id, user).await
+        self.resolver.is_admin(self.get_author()).await
     }
 
     pub async fn is_headmod(&self) -> bool {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.is_headmod(self.ctx.clone(), guild_id, user).await
+        self.resolver.is_headmod(self.get_author()).await
     }
 
     pub async fn is_mod(&self) -> bool {
-        let user = self.get_author();
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.is_mod(self.ctx.clone(), guild_id, user).await
+        self.resolver.is_mod(self.get_author()).await
     }
 
-    pub async fn is_trial(&self, user: Option<User>) -> bool {
-        let user = user.unwrap_or(self.get_author());
-        let guild_id = self.get_guild();
-        Resolver::get_instance().lock().await.is_trial(self.ctx.clone(), guild_id, user).await
+    pub async fn is_trial(&self) -> bool {
+        self.resolver.is_trial(self.get_author()).await
     }
 
 }

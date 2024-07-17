@@ -14,7 +14,7 @@ impl Command for WarnCommand {
 
     fn permission(&self, message: MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move {
-            message.is_trial(None).await
+            message.is_trial().await
         })
     }
 
@@ -34,7 +34,8 @@ impl Command for WarnCommand {
                 }
 
                 let target = mentions[1].clone();
-                if message.is_trial(Some(target.clone())).await {
+                let resolver = message.get_resolver();
+                if resolver.is_trial(target.clone()).await {
                     message.reply_failure("You can't warn a moderator.").await;
                     return;
                 }

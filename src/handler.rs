@@ -1,11 +1,12 @@
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
-use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent};
+use serenity::all::{ChannelId, UserId, MessageId, GuildId, MessageUpdateEvent};
 use serenity::prelude::*;
 
-use crate::utility::message_manager::MessageManager;
 use crate::commands::command_manager::CommandManager;
+use crate::utility::message_manager::MessageManager;
+use crate::utility::resolver::Resolver;
 use crate::utility::chat_filter::{ChatFilterManager, FilterType};
 use crate::utility::traits::Singleton;
 use crate::databases::*;
@@ -31,7 +32,8 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
 
         // parse message
-        let message = MessageManager::new(ctx, msg).await;
+        let resolver = Resolver::new( ctx.clone(), msg.guild_id );
+        let message = MessageManager::new(resolver, msg).await;
 
         // if message pings the bot
         let bot_id = ConfigDB::get_instance().lock().await
@@ -53,7 +55,7 @@ impl EventHandler for Handler {
         // check guideline violations
         let chat_filter = ChatFilterManager::new( message.clone() ).filter().await;
         if chat_filter.filter == FilterType::Fine
-            || message.is_trial(None).await
+            || message.is_trial().await
             || message.get_author().bot {
 
             // execute command
