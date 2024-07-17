@@ -10,7 +10,7 @@ pub struct CommandManager {
 
 impl CommandManager {
 
-    pub async fn new() -> CommandManager {
+    pub fn new() -> CommandManager {
         let manager = CommandManager {
             commands: vec![
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
@@ -20,7 +20,7 @@ impl CommandManager {
         manager
     }
 
-    pub async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
+    async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
         if command.permission(message.clone()).await {
             message.delete().await;
             command.run(message.into()).await;

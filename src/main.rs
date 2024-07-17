@@ -22,17 +22,22 @@ async fn main() {
 
     // setup
     let token = setup().await;
-    let command_handler = CommandManager::new().await;
+    let command_handler = CommandManager::new();
     let handler = Handler::new(command_handler);
 
     // start threads
-    let intents = GatewayIntents::GUILD_MESSAGES            |
-                  GatewayIntents::MESSAGE_CONTENT           |
-                  GatewayIntents::GUILD_MESSAGE_REACTIONS;
+    let intents = GatewayIntents::GUILDS                    |
+                  GatewayIntents::GUILD_MESSAGES            |
+                  GatewayIntents::GUILD_MEMBERS             |
+                  GatewayIntents::GUILD_VOICE_STATES        |
+                  GatewayIntents::GUILD_MESSAGE_REACTIONS   |
+                  GatewayIntents::MESSAGE_CONTENT;
     let mut client = Client::builder(token, intents)
         .event_handler(handler)
         .await
         .expect("Error creating client");
+
+    // start threads
     spawn_database_thread().await;
     let _ = client.start().await;
 }
