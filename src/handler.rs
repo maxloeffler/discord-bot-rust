@@ -8,7 +8,7 @@ use crate::commands::command_manager::CommandManager;
 use crate::utility::message_manager::MessageManager;
 use crate::utility::resolver::Resolver;
 use crate::utility::chat_filter::{ChatFilterManager, FilterType};
-use crate::utility::traits::Singleton;
+use crate::utility::traits::{Singleton, ToMessage};
 use crate::databases::*;
 
 
@@ -65,8 +65,21 @@ impl EventHandler for Handler {
 
         } else {
 
-            // message.delete().await;
-            println!("Message deleted because it contained '{}'", chat_filter.context);
+            // automatically delete message and warn
+            if chat_filter.filter != FilterType::Fine {
+
+                message.delete().await;
+
+                // warn user
+                let warn_message = format!("<@{}>, you have been **automatically warned** `>` {}",
+                    message.get_author().id.to_string(),
+                    chat_filter.context);
+                message.reply(warn_message.to_message()).await;
+                let database_reason = format!("Automatically warned ('{}')", chat_filter.context);
+                WarningsDB::get_instance().lock().await
+                    .append(&message.get_author().id.to_string(), &database_reason).await;
+
+            }
         }
     }
 

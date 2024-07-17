@@ -51,7 +51,7 @@ impl AutoModerator {
             let log = ModLog {
                 member_id: target.id.to_string(),
                 staff_id: bot_id.clone(),
-                reason: format!("Automatically muted (1: {}, 2: {}, 3: {})",
+                reason: format!("Automatically muted (1: '{}', 2: '{}', 3: '{}')",
                     warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
             };
             MutesDB::get_instance().lock().await
