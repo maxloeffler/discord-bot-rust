@@ -6,11 +6,7 @@ use serenity::prelude::*;
 use difference::{Difference, Changeset};
 
 use crate::commands::command_manager::CommandManager;
-use crate::utility::message_manager::MessageManager;
-use crate::utility::log_builder::LogBuilder;
-use crate::utility::resolver::Resolver;
-use crate::utility::chat_filter::{ChatFilterManager, FilterType};
-use crate::utility::traits::{Singleton, ToMessage};
+use crate::utility::*;
 use crate::databases::*;
 
 
@@ -61,6 +57,7 @@ impl EventHandler for Handler {
             || message.get_author().bot {
 
             // execute command
+            #[cfg(feature = "commands")]
             if message.is_command() {
                 self.command_manager.execute(message).await;
             }
@@ -68,6 +65,7 @@ impl EventHandler for Handler {
         } else {
 
             // automatically delete message and warn
+            #[cfg(feature = "auto_moderation")]
             if chat_filter.filter != FilterType::Fine {
 
                 message.delete().await;
@@ -85,6 +83,7 @@ impl EventHandler for Handler {
         }
     }
 
+    #[cfg(feature = "message_logs")]
     async fn message_update(&self,
                             ctx: Context,
                             old_if_available: Option<Message>,
@@ -159,6 +158,7 @@ impl EventHandler for Handler {
 
     }
 
+    #[cfg(feature = "message_logs")]
     async fn message_delete(&self,
                             ctx: Context,
                             channel_id: ChannelId,

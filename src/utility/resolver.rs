@@ -6,7 +6,7 @@ use serenity::cache::Cache;
 
 use std::sync::Arc;
 
-use crate::utility::traits::ToList;
+use crate::utility::*;
 
 
 #[derive(Clone)]

@@ -1,16 +1,16 @@
 
+#![allow(unused_imports)]
+use strum::IntoEnumIterator;
+use tokio::runtime::Runtime;
 use serenity::cache::Settings;
 use serenity::prelude::{Client, GatewayIntents};
-use tokio::runtime::Runtime;
-use strum::IntoEnumIterator;
 
 use std::thread;
 
-use utility::traits::Singleton;
-use utility::logger::Logger;
 use commands::command_manager::CommandManager;
 use handler::Handler;
 use databases::*;
+use utility::*;
 
 mod handler;
 mod utility;
@@ -44,7 +44,9 @@ async fn main() {
         .expect("Error creating client");
 
     // start threads
+    #[cfg(feature = "db_interface")]
     spawn_database_thread().await;
+
     let _ = client.start().await;
 }
 
@@ -55,6 +57,7 @@ async fn setup() -> String {
     config.get("token").await.unwrap().to_string()
 }
 
+#[cfg(feature = "db_interface")]
 async fn spawn_database_thread() {
     let database = ConfigDB::get_instance();
     thread::spawn(move || {

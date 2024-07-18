@@ -2,11 +2,7 @@
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::{Command, CommandParams};
-use crate::utility::message_manager::MessageManager;
-use crate::utility::mixed::BoxedFuture;
-use crate::utility::traits::{Singleton, ToMessage};
-use crate::utility::auto_moder::AutoModerator;
-use crate::utility::log_builder::LogBuilder;
+use crate::utility::*;
 use crate::databases::*;
 
 
@@ -84,6 +80,7 @@ impl Command for WarnCommand {
                 let _ = channel_modlogs.send_message(&resolver.http(), log_message.to_message()).await;
 
                 // check if the user has been warned too many times
+                #[cfg(feature = "auto_moderation")]
                 AutoModerator::get_instance().lock().await
                     .check_warnings(resolver.clone(), target).await;
 

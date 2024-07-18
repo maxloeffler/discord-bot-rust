@@ -1,6 +1,5 @@
 
-use crate::utility::message_manager::MessageManager;
-use crate::utility::mixed::RegexManager;
+use crate::utility::*;
 
 
 #[derive(PartialEq)]

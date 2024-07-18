@@ -1,13 +1,15 @@
 
-use crate::utility::message_manager::MessageManager;
 use crate::commands::command::MatchType;
+use crate::utility::*;
 use crate::commands::*;
 
 
+#[cfg(feature = "commands")]
 pub struct CommandManager {
     commands: Vec<Box<dyn Command>>,
 }
 
+#[cfg(feature = "commands")]
 impl CommandManager {
 
     pub fn new() -> CommandManager {

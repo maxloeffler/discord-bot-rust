@@ -2,8 +2,7 @@
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::{Command, CommandParams};
-use crate::utility::message_manager::MessageManager;
-use crate::utility::mixed::BoxedFuture;
+use crate::utility::*;
 
 
 pub struct AvatarCommand;

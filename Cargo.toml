@@ -3,6 +3,21 @@ name = "discord-bot-rust"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = [
+  "commands",
+]
+full = [
+  "commands",
+  "db_interface",
+  "message_logs",
+  "auto_moderation",
+]
+commands = []
+message_logs = []
+auto_moderation = []
+db_interface = []
+
 [dependencies.serenity]
 default-features = false
 features = ["full"]

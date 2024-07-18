@@ -8,8 +8,9 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 use std::str::FromStr;
 
+#[cfg(feature = "auto_moderation")]
+use crate::utility::*;
 use crate::databases::*;
-use crate::utility::auto_moder::AutoModerator;
 
 
 pub trait Singleton: Sized {
@@ -32,6 +33,7 @@ macro_rules! impl_singleton {
     };
 }
 
+#[cfg(feature = "auto_moderation")]
 impl_singleton!(AutoModerator);
 impl_singleton!(ConfigDB);
 impl_singleton!(WarningsDB);

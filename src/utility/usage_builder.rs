@@ -1,7 +1,7 @@
 
 use nonempty::NonEmpty;
 
-use crate::utility::traits::ToList;
+use crate::utility::*;
 
 
 enum ParameterType {

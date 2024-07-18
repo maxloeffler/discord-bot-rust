@@ -1,14 +1,14 @@
 
 use serenity::model::user::User;
 
-use crate::utility::resolver::Resolver;
-use crate::utility::message_manager::MessageManager;
-use crate::utility::traits::{Singleton, ToMessage};
+use crate::utility::*;
 use crate::databases::*;
 
 
+#[cfg(feature = "auto_moderation")]
 pub struct AutoModerator {}
 
+#[cfg(feature = "auto_moderation")]
 impl AutoModerator {
 
     pub fn new() -> Self {

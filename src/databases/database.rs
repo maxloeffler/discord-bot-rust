@@ -8,8 +8,7 @@ use std::sync::Arc;
 use std::collections::HashSet;
 use std::fmt;
 
-use crate::utility::traits::ToList;
-use crate::utility::mixed::Result;
+use crate::utility::*;
 
 
 #[derive(EnumIter, Clone)]

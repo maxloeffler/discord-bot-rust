@@ -18,10 +18,8 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::time::Duration;
 
+use crate::utility::*;
 use crate::databases::*;
-use crate::utility::traits::{Singleton, ToList, ToMessage};
-use crate::utility::mixed::{BoxedFuture, RegexManager};
-use crate::utility::resolver::Resolver;
 
 
 #[derive(Clone)]

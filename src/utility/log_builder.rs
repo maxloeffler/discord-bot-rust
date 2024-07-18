@@ -2,7 +2,7 @@
 use serenity::builder::{CreateEmbed, CreateEmbedAuthor};
 use serenity::model::user::User;
 
-use crate::utility::message_manager::MessageManager;
+use crate::utility::*;
 
 
 #[derive(Clone)]
