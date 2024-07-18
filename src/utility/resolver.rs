@@ -84,6 +84,17 @@ impl Resolver {
         None
     }
 
+    pub async fn resolve_message(&self, channel_id: ChannelId, message_id: MessageId) -> Option<Message> {
+        let message = self.ctx.http.get_message(channel_id, message_id).await;
+        match message {
+            Ok(message) => Some(message),
+            Err(_) => match self.ctx.cache.message(channel_id, message_id) {
+                Some(message) => Some(message.clone()),
+                None => None
+            }
+        }
+    }
+
     pub fn resolve_name(&self, user: User) -> String {
         user.clone().global_name.unwrap_or(user.clone().name)
     }

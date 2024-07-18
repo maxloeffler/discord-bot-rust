@@ -1,11 +1,12 @@
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
-use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent};
+use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter};
 use serenity::prelude::*;
 
 use crate::commands::command_manager::CommandManager;
 use crate::utility::message_manager::MessageManager;
+use crate::utility::log_builder::LogBuilder;
 use crate::utility::resolver::Resolver;
 use crate::utility::chat_filter::{ChatFilterManager, FilterType};
 use crate::utility::traits::{Singleton, ToMessage};
@@ -92,11 +93,74 @@ impl EventHandler for Handler {
     }
 
     async fn message_delete(&self,
-                            _ctx: Context,
-                            _channel_id: ChannelId,
-                            _deleted_message_id: MessageId,
-                            _guild_id: Option<GuildId>
+                            ctx: Context,
+                            channel_id: ChannelId,
+                            deleted_message_id: MessageId,
+                            guild_id: Option<GuildId>
     ) {
-    }
 
+        // get all excluded channels
+        let channel_protected_log: Vec<_> = ConfigDB::get_instance().lock().await
+            .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
+            .iter()
+            .map(|entry| entry.value.to_string())
+            .collect();
+
+        // do not log messages from protected channels
+        if channel_protected_log.contains(&channel_id.to_string()) {
+            return;
+        }
+
+        // obtain Message object
+        let resolver = Resolver::new(ctx.clone(), guild_id);
+        let channel_messagelogs_id = channel_protected_log[0].clone();
+        let channel_messagelogs = resolver.resolve_channel(channel_messagelogs_id).await.unwrap();
+        let message = resolver.resolve_message(channel_id, deleted_message_id).await;
+
+        // cannot continue if message cannot be resolved
+        if let Some(message) = message {
+
+            let message = MessageManager::new(resolver.clone(), message).await;
+
+            // do not log messages from bots
+            if message.get_author().bot {
+                return;
+            }
+
+            let name = resolver.resolve_name(message.get_author());
+            let log_builder = LogBuilder::new(message.clone())
+                .title(&format!("{}'s Message Deleted", name))
+                .description("Message Information")
+                .labeled_timestamp("Sent", message.get_timestamp())
+                .labeled_timestamp("Deleted", chrono::Utc::now().timestamp())
+                .channel();
+
+            // split message content into chunks of 1024 because of Discord embed field limit
+            let chars = message.payload(None, None)
+                .chars().collect::<Vec<_>>();
+            let chunks = chars
+                .chunks(1024)
+                .collect::<Vec<_>>();
+            let _ = chunks
+                .iter()
+                .enumerate()
+                .for_each(|(i, chunk)| {
+                    let content = chunk.iter().collect::<String>();
+                    log_builder.clone().arbitrary(
+                        &format!("Message Content ({}/{})", i + 1, chunks.len()),
+                        &content);
+                });
+
+            // add additional fields
+            let mut log_message = log_builder.build().await
+                .footer(CreateEmbedFooter::new(
+                    format!("User ID: {}", message.get_author().id)));
+            message.get_attachments().await.iter().for_each(|attachment| {
+                log_message = log_message.clone().image(attachment.url.clone());
+            });
+
+            // log message
+            let _ = channel_messagelogs.send_message(&resolver.http(), log_message.to_message()).await;
+        }
+    }
 }

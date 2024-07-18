@@ -62,9 +62,10 @@ impl Command for WarnCommand {
                 let embed = MessageManager::create_embed(|embed|
                     embed
                         .title(&format!("Warning"))
-                        .description(&format!("<@{}> has been warned for `>` {}", target.id, reason))
+                        .description(&format!("You have been warned for `>` {}", reason))
                         .color(0xff0000)
                 ).await;
+                message.reply(format!("<@{}>", target.id)).await;
                 message.reply(embed).await;
 
                 // log to mod logs

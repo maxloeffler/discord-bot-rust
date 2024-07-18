@@ -1,4 +1,5 @@
 
+use serenity::cache::Settings;
 use serenity::prelude::{Client, GatewayIntents};
 use tokio::runtime::Runtime;
 use strum::IntoEnumIterator;
@@ -25,6 +26,10 @@ async fn main() {
     let command_handler = CommandManager::new();
     let handler = Handler::new(command_handler);
 
+    // configure cache
+    let mut cache_settings = Settings::default();
+    cache_settings.max_messages = 50;
+
     // start threads
     let intents = GatewayIntents::GUILDS                    |
                   GatewayIntents::GUILD_MESSAGES            |
@@ -33,6 +38,7 @@ async fn main() {
                   GatewayIntents::GUILD_MESSAGE_REACTIONS   |
                   GatewayIntents::MESSAGE_CONTENT;
     let mut client = Client::builder(token, intents)
+        .cache_settings(cache_settings)
         .event_handler(handler)
         .await
         .expect("Error creating client");

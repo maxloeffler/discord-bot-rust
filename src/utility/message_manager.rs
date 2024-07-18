@@ -404,6 +404,10 @@ impl MessageManager {
         mentions
     }
 
+    pub async fn get_attachments(&self) -> Vec<Attachment> {
+        self.raw_message.attachments.clone()
+    }
+
     pub fn get_timestamp(&self) -> i64 {
         self.raw_message.timestamp.timestamp()
     }

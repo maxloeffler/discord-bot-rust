@@ -29,8 +29,6 @@ impl LogBuilder {
     pub async fn build(&self) -> CreateEmbed {
         MessageManager::create_embed(|embed| {
             let author = self.message.get_author();
-            let author_name = self.message.get_resolver()
-                .resolve_name(author.clone());
             let embed = embed.clone()
                 .author(CreateEmbedAuthor::new(self.title.clone())
                 .icon_url(author.face()))
@@ -76,17 +74,32 @@ impl LogBuilder {
         self
     }
 
+    fn format_timestamp(label: Option<&str>, timestamp: i64) -> String {
+        let label = match label {
+            Some(label) => format!("{}: ", label),
+            None => "".to_string(),
+        };
+        format!("{}<t:{}> *<t:{}:R>*", label, timestamp, timestamp)
+    }
+
     pub fn timestamp(mut self) -> Self {
         let timestamp = self.message.get_timestamp();
         self.fields.push(("Timestamp".to_string(),
-            format!("<t:{}> *<t:{}:R>*", timestamp, timestamp),
+            LogBuilder::format_timestamp(None, timestamp),
+            true));
+        self
+    }
+
+    pub fn labeled_timestamp(mut self, label: &str, timestamp: i64) -> Self {
+        self.fields.push((label.to_string(),
+            LogBuilder::format_timestamp(Some(label), timestamp),
             true));
         self
     }
 
     pub fn channel(mut self) -> Self {
         self.fields.push(("Channel".to_string(),
-            self.message.get_channel().get().to_string(),
+            format!("<#{}>", self.message.get_channel().get().to_string()),
             true));
         self
     }
