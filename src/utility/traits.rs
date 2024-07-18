@@ -106,6 +106,16 @@ impl ToList<RoleId> for Vec<String> {
     }
 }
 
+impl ToList<RoleId> for &str {
+    fn to_list(&self) -> Vec<RoleId> {
+        let role = RoleId::from_str(self);
+        if role.is_ok() {
+            return vec![role.unwrap()];
+        }
+        Vec::new()
+    }
+}
+
 impl ToList<RoleId> for Vec<DBEntry> {
     fn to_list(&self) -> Vec<RoleId> {
         let mut roles = Vec::new();

@@ -1,6 +1,8 @@
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
+use serenity::model::user::User;
+use serenity::model::guild::Member;
 use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter};
 use serenity::prelude::*;
 use difference::{Difference, Changeset};
@@ -83,6 +85,22 @@ impl EventHandler for Handler {
         }
     }
 
+    #[cfg(feature = "auto_moderation")]
+    async fn guild_member_removal(&self,
+                                ctx: Context,
+                                guild_id: GuildId,
+                                user: User,
+                                _member_data_if_available: Option<Member>,
+    ) {
+        let resolver = Resolver::new(ctx.clone(), Some(guild_id));
+        let is_muted = resolver.has_role(user.clone(), "Muted").await;
+        if is_muted {
+            AutoModerator::get_instance().lock().await
+                .perform_ban(resolver, user, "Left while muted.".to_string()).await;
+        }
+    }
+
+
     #[cfg(feature = "message_logs")]
     async fn message_update(&self,
                             ctx: Context,
@@ -151,9 +169,10 @@ impl EventHandler for Handler {
                 log_message = log_message.clone().image(attachment.url.clone());
             });
  
-            let channel_messagelogs_id = channel_protected_log[0].clone();
-            let channel_messagelogs = resolver.resolve_channel(channel_messagelogs_id).await.unwrap();
-            let _ = channel_messagelogs.send_message(&resolver.http(), log_message.to_message()).await;
+            // send log message
+            let channel_id = channel_protected_log[0].clone();
+            let channel = resolver.resolve_channel(channel_id).await.unwrap();
+            let _ = channel.send_message(&resolver.http(), log_message.to_message()).await;
         }
 
     }

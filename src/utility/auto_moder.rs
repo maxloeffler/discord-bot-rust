@@ -80,9 +80,9 @@ impl AutoModerator {
             };
 
             // get muted channel
-            let muted_channel = ConfigDB::get_instance().lock().await
+            let channel_muted = ConfigDB::get_instance().lock().await
                 .get("channel_muted").await.unwrap().to_string();
-            let channel = resolver.resolve_channel(muted_channel).await.unwrap();
+            let channel = resolver.resolve_channel(channel_muted).await.unwrap();
 
             // send 'automute message'
             let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
@@ -126,14 +126,59 @@ impl AutoModerator {
                 let responsibility = format!("<@&{}> <@&{}>", role_ids[0].id, role_ids[1].id);
 
                 // get muted channel
-                let muted_channel = ConfigDB::get_instance().lock().await
+                let channel_muted = ConfigDB::get_instance().lock().await
                     .get("channel_muted").await.unwrap().to_string();
-                let channel = resolver.resolve_channel(muted_channel).await.unwrap();
+                let channel = resolver.resolve_channel(channel_muted).await.unwrap();
 
                 // send 'automute message'
                 let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
                 let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
             }
+        }
+    }
+
+    pub async fn perform_ban(&self, resolver: Resolver, target: User, reason: String) {
+
+        let member = resolver.resolve_member(target.clone()).await;
+        if let Some(member) = member {
+
+            // ban user
+            let success = member.ban_with_reason(&resolver.http(), 0, &reason).await;
+            match success {
+                Ok(_) => {
+
+                    // log ban to database
+                    let bot_id = ConfigDB::get_instance().lock().await
+                        .get("bot_id").await.unwrap().to_string();
+                    let log = ModLog {
+                        member_id: target.id.to_string(),
+                        staff_id: bot_id.clone(),
+                        reason: format!("Automatically banned ('{}')", reason),
+                    };
+                    BansDB::get_instance().lock().await
+                        .append(&target.id.to_string(), &log.into()).await;
+
+                    // create embed
+                    let embed = MessageManager::create_embed(|embed| {
+                        embed
+                            .title("Automatic Ban")
+                            .description(&format!(
+                                "{} has been automatically banned for `>` {}",
+                                resolver.resolve_name(target.clone()),
+                                reason))
+                            .color(0xFF0000)
+                    }).await;
+
+                    // get modlogs channel
+                    let channel_id = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().to_string();
+                    let channel = resolver.resolve_channel(channel_id).await.unwrap();
+
+                    // send 'automute message'
+                    let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+                },
+                Err(err) => Logger::err_long("Failed to ban user", &err.to_string())
+            };
         }
     }
 }
