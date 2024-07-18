@@ -84,6 +84,10 @@ impl Resolver {
         None
     }
 
+    pub fn resolve_name(&self, user: User) -> String {
+        user.clone().global_name.unwrap_or(user.clone().name)
+    }
+
     pub async fn has_role(&self, user: User, roles: impl ToList<RoleId>) -> bool {
         if let Some(guild) = self.guild_id {
             for role in roles.to_list() {

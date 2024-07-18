@@ -18,7 +18,8 @@ impl Command for AvatarCommand {
         Box::pin(
             async move {
                 let target = params.target.unwrap().clone();
-                let name = target.clone().global_name.unwrap_or(target.clone().name);
+                let name = params.message.get_resolver()
+                    .resolve_name(target.clone());
                 let face = target.clone().face();
                 let embed = MessageManager::create_embed(|embed| {
                     embed

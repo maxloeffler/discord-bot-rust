@@ -323,7 +323,8 @@ impl MessageManager {
         let message = message.to_message().select_menu(
             CreateSelectMenu::new("user_select_menu", CreateSelectMenuKind::String {
                 options: users.iter().map(|user| {
-                    CreateSelectMenuOption::new(user.name.clone(), user.id.to_string())
+                    let name = self.resolver.resolve_name(user.clone());
+                    CreateSelectMenuOption::new(name, user.id.to_string())
                         .description(&user.id.to_string())
                 }).collect()
             })
@@ -401,6 +402,10 @@ impl MessageManager {
             }
         }
         mentions
+    }
+
+    pub fn get_timestamp(&self) -> i64 {
+        self.raw_message.timestamp.timestamp()
     }
 
     // ---- Forwards to Resolver ---- //
