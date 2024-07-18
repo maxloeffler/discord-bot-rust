@@ -3,6 +3,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter};
 use serenity::prelude::*;
+use difference::{Difference, Changeset};
 
 use crate::commands::command_manager::CommandManager;
 use crate::utility::message_manager::MessageManager;
@@ -85,11 +86,77 @@ impl EventHandler for Handler {
     }
 
     async fn message_update(&self,
-                            _ctx: Context,
-                            _old_if_available: Option<Message>,
-                            _new: Option<Message>,
-                            _event: MessageUpdateEvent
+                            ctx: Context,
+                            old_if_available: Option<Message>,
+                            new: Option<Message>,
+                            event: MessageUpdateEvent
     ) {
+
+        // get all excluded channels
+        let channel_protected_log: Vec<_> = ConfigDB::get_instance().lock().await
+            .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
+            .iter()
+            .map(|entry| entry.value.to_string())
+            .collect();
+
+        // do not log messages from protected channels
+        if channel_protected_log.contains(&event.channel_id.to_string()) {
+            return;
+        }
+
+        if let Some(new_message) = new {
+
+            let resolver = Resolver::new(ctx.clone(), event.guild_id);
+            let message = MessageManager::new(resolver.clone(), new_message.clone()).await;
+
+            // do not log messages from bots
+            if message.get_author().bot {
+                return;
+            }
+
+            let name = resolver.resolve_name(message.get_author());
+            let log_builder = LogBuilder::new(message.clone())
+                .title(&format!("{}'s Message Edited", name))
+                .description("Message Information")
+                .labeled_timestamp("Sent", message.get_timestamp())
+                .labeled_timestamp("Edited", chrono::Utc::now().timestamp())
+                .channel();
+
+            let diff_string = match old_if_available {
+                Some(old_message) => {
+                    let changeset = Changeset::new(
+                        &old_message.content,
+                        &new_message.content,
+                        " ");
+                    let mut diff = vec!["```diff".to_string()];
+                    changeset.diffs.iter().for_each(|difference| {
+                        let line = match difference {
+                            Difference::Same(text) => text.to_string(),
+                            Difference::Add(text) => format!("+ {}", text),
+                            Difference::Rem(text) => format!("- {}", text),
+                        };
+                        diff.push(line);
+                    });
+                    diff.push("```".to_string());
+                    diff.join("\n")
+                },
+                None => "Content of original message is not available.".to_string(),
+            };
+
+            // add additional fields
+            let mut log_message = log_builder.build().await
+                .field("Message Content", diff_string, true)
+                .footer(CreateEmbedFooter::new(
+                    format!("User ID: {}", message.get_author().id)));
+            message.get_attachments().await.iter().for_each(|attachment| {
+                log_message = log_message.clone().image(attachment.url.clone());
+            });
+ 
+            let channel_messagelogs_id = channel_protected_log[0].clone();
+            let channel_messagelogs = resolver.resolve_channel(channel_messagelogs_id).await.unwrap();
+            let _ = channel_messagelogs.send_message(&resolver.http(), log_message.to_message()).await;
+        }
+
     }
 
     async fn message_delete(&self,
