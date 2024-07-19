@@ -3,7 +3,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
 use serenity::model::guild::Member;
-use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter};
+use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter, EditChannel};
 use serenity::prelude::*;
 use difference::{Difference, Changeset};
 
@@ -82,6 +82,28 @@ impl EventHandler for Handler {
                     .append(&message.get_author().id.to_string(), &database_reason).await;
 
             }
+        }
+    }
+
+    async fn guild_member_addition(&self,
+                                   ctx: Context,
+                                   new_member: Member
+    ) {
+        // get guild
+        let guild_id = new_member.guild_id;
+        let resolver = Resolver::new(ctx.clone(), Some(guild_id));
+        let guild = resolver.resolve_guild(guild_id).await;
+
+        // get welcome channel
+        let channel_id = ConfigDB::get_instance().lock().await
+            .get("channel_welcome").await.unwrap().to_string();
+        let channel = resolver.resolve_channel(channel_id).await;
+
+        // update channel name
+        if guild.is_some() && channel.is_some() {
+            let edit = EditChannel::new()
+                .name(&format!("Kalopsians: {}", guild.unwrap().member_count));
+            let _ = channel.unwrap().edit(&resolver.http(), edit).await;
         }
     }
 

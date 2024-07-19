@@ -33,6 +33,14 @@ impl Resolver {
         self.ctx.clone().cache
     }
 
+    pub async fn resolve_guild(&self, guild_id: GuildId) -> Option<Guild> {
+        let guild = self.ctx.cache.guild(guild_id);
+        match guild {
+            Some(guild) => Some(guild.clone()),
+            None => None
+        }
+    }
+
     pub async fn resolve_user(&self, user_id: UserId) -> Option<User> {
         let user = self.ctx.http.get_user(user_id).await;
         match user {
