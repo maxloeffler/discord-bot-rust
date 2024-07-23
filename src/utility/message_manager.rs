@@ -69,20 +69,24 @@ impl MessageManager {
             }
         }
 
-        // Obtain parameters
+        // Obtain keys
         let keys = self.words.iter()
             .filter(|word| word.starts_with("-"))
             .map(|word| word.to_string())
             .collect::<Vec<String>>();
-        let split_regex = Regex::new(keys.join("|").as_str());
 
-        if let Ok(regex) = split_regex {
-            let splits = regex.split(&self.raw_message.content);
-            splits
-                .enumerate()
-                .for_each(|(i, split)| {
-                    self.parameters.insert(keys[i].to_string(), split.trim().to_string());
-                });
+        // Iterate over keys
+        if keys.len() > 0 {
+            let split_regex = Regex::new(keys.join("|").as_str());
+
+            if let Ok(regex) = split_regex {
+                let splits = regex.split(&self.raw_message.content);
+                splits
+                    .enumerate()
+                    .for_each(|(i, split)| {
+                        self.parameters.insert(keys[i].to_string(), split.trim().to_string());
+                    });
+            }
         }
     }
 

@@ -13,6 +13,7 @@ pub struct LogBuilder<'a> {
     color: Option<u64>,
     image: Option<String>,
     target: Option<&'a User>,
+    thumbnail: bool,
     fields: Vec<(String, String, bool)>,
 }
 
@@ -26,6 +27,7 @@ impl<'a> LogBuilder<'a> {
             color: None,
             image: None,
             target: None,
+            thumbnail: true,
             fields: Vec::new(),
         }
     }
@@ -39,8 +41,10 @@ impl<'a> LogBuilder<'a> {
             let mut embed = embed
                 .author(CreateEmbedAuthor::new(self.title.clone())
                     .icon_url(author.face()))
-                .fields(self.fields.clone())
-                .thumbnail(author.face());
+                .fields(self.fields.clone());
+            if self.thumbnail {
+                embed = embed.thumbnail(author.face());
+            }
             if let Some(color) = self.color {
                 embed = embed.color(color);
             }
@@ -121,6 +125,11 @@ impl<'a> LogBuilder<'a> {
 
     pub fn image(mut self, url: impl Into<String>) -> Self {
         self.image = Some(url.into());
+        self
+    }
+
+    pub fn no_thumbnail(mut self) -> Self {
+        self.thumbnail = false;
         self
     }
 

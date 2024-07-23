@@ -22,6 +22,7 @@ impl Command for AvatarCommand {
                 let embed = message.get_log_builder()
                     .title(&format!("{}'s avatar", message.resolve_name()))
                     .image(target.face())
+                    .no_thumbnail()
                     .build().await;
                 message.reply(embed).await
             }
