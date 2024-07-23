@@ -32,30 +32,44 @@ impl CommandManager {
 
     // note: only execute this method, when message.is_command() is true
     pub async fn execute(&self, message: &MessageManager) {
+
+        // initialize search
+        let mut fuzzy_matches = Vec::new();
+        let mut exact_match = false;
+
+        // search for command
         for command in self.commands.iter() {
             match command.is_triggered_by(message) {
-                MatchType::Exact => self.run_command(command, message).await,
-                MatchType::Fuzzy(closest_match) => {
-
-                    // prepare correction message
-                    let correction = format!("{}{} {}",
-                        message.get_prefix().unwrap(),
-                        closest_match,
-                        message.payload(None, None));
-                    let embed = MessageManager::create_embed(|embed| {
-                        embed.title("Did you mean ...").description(&correction)
-                    }).await;
-
-                    // send correction message
-                    message.create_choice_interaction(
-                        embed,
-                        Box::pin( async move { self.run_command(command, message).await } ),
-                        Box::pin( async move {} )
-                    ).await;
-                    return;
+                MatchType::Exact => {
+                    self.run_command(command, message).await;
+                    exact_match = true;
+                    break;
                 },
+                MatchType::Fuzzy(closest_match) => fuzzy_matches.push((command, closest_match)),
                 MatchType::None => continue,
             };
+        }
+        if !exact_match {
+            for (command, closest_match) in fuzzy_matches {
+
+                // create correction message
+                let correction = format!("{}{} {}",
+                    message.get_prefix().unwrap(),
+                    closest_match,
+                    message.payload(None, None));
+
+                // create embed
+                let embed = MessageManager::create_embed(|embed| {
+                    embed.title("Did you mean ...").description(&correction)
+                }).await;
+
+                // create choice interaction
+                message.create_choice_interaction(
+                    embed,
+                        Box::pin( async move { self.run_command(command, message).await } ),
+                        Box::pin( async move {} )
+                ).await;
+            }
         }
     }
 

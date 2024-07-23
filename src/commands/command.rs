@@ -35,11 +35,12 @@ pub trait Command: Send + Sync {
         match message.get_command() {
             Some(word) => {
                 let trigger = word.to_lowercase();
-                for name in self.get_names().iter() {
+                let names = &self.get_names();
+                if names.contains(&trigger) {
+                    return MatchType::Exact;
+                }
+                for name in names.iter() {
                     let threshold = name.len() / 3;
-                    if trigger.eq(name) {
-                        return MatchType::Exact;
-                    }
                     if string_distance(&trigger, &name) < threshold {
                         return MatchType::Fuzzy(name.to_string());
                     }
