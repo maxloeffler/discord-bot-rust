@@ -75,7 +75,7 @@ impl UserDecorator {
         let mentions = message.get_mentions().await;
         match mentions.len() {
 
-            0..=1 => {
+            0 => {
                 // prepare message
                 let embed = MessageManager::create_embed(|embed| {
                     embed
