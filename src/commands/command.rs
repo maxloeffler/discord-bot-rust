@@ -110,7 +110,7 @@ impl UserDecorator {
                 user
             },
 
-            _ => Some(mentions[1].clone())
+            _ => Some(mentions[0].clone())
         }
     }
 

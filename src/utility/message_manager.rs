@@ -319,7 +319,7 @@ impl MessageManager {
         let message = message.to_message().select_menu(
             CreateSelectMenu::new("user_select_menu", CreateSelectMenuKind::String {
                 options: users.iter().map(|user| {
-                    CreateSelectMenuOption::new(self.resolve_name(), user.id.to_string())
+                    CreateSelectMenuOption::new(self.resolver.resolve_name(user), user.id.to_string())
                         .description(&user.id.to_string())
                 }).collect()
             })
