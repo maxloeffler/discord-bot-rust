@@ -321,8 +321,7 @@ impl MessageManager {
         let message = message.to_message().select_menu(
             CreateSelectMenu::new("user_select_menu", CreateSelectMenuKind::String {
                 options: users.iter().map(|user| {
-                    let name = self.resolver.resolve_name(user.clone());
-                    CreateSelectMenuOption::new(name, user.id.to_string())
+                    CreateSelectMenuOption::new(self.resolve_name(), user.id.to_string())
                         .description(&user.id.to_string())
                 }).collect()
             })
@@ -410,6 +409,10 @@ impl MessageManager {
         self.raw_message.timestamp.timestamp()
     }
 
+    pub fn get_log_builder(&self) -> LogBuilder {
+        LogBuilder::new(self.clone())
+    }
+
     // ---- Forwards to Resolver ---- //
 
     pub fn get_resolver(&self) -> Resolver {
@@ -424,12 +427,12 @@ impl MessageManager {
         self.resolver.resolve_member(self.get_author()).await
     }
 
-    pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
-        self.resolver.has_role(self.get_author(), roles).await
+    pub fn resolve_name(&self) -> String {
+        self.resolver.resolve_name(self.get_author())
     }
 
-    pub async fn get_roles(&self) -> Option<Vec<RoleId>> {
-        self.resolver.get_roles(self.get_author()).await
+    pub async fn has_role(&self, roles: impl ToList<RoleId>) -> bool {
+        self.resolver.has_role(self.get_author(), roles).await
     }
 
     pub async fn is_admin(&self) -> bool {

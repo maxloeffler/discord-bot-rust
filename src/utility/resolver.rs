@@ -119,14 +119,6 @@ impl Resolver {
         false
     }
 
-    pub async fn get_roles(&self, user: User) -> Option<Vec<RoleId>> {
-        let member = self.resolve_member(user).await;
-        if member.is_some() {
-            return Some(member.unwrap().roles);
-        }
-        None
-    }
-
     pub async fn is_admin(&self, user: User) -> bool {
         let role_id = self.resolve_role("Administrator")
             .await.unwrap()[0].id;

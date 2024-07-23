@@ -6,32 +6,39 @@ use crate::utility::*;
 
 
 #[derive(Clone)]
-pub struct LogBuilder {
+pub struct LogBuilder<'a> {
     message: MessageManager,
     title: String,
     description: Option<String>,
     color: Option<u64>,
+    image: Option<String>,
+    target: Option<&'a User>,
     fields: Vec<(String, String, bool)>,
 }
 
-impl LogBuilder {
+impl<'a> LogBuilder<'a> {
 
-    pub fn new(message: MessageManager) -> LogBuilder {
+    pub fn new(message: MessageManager) -> Self {
         LogBuilder {
             message: message,
             title: "No title provided".to_string(),
             description: None,
             color: None,
+            image: None,
+            target: None,
             fields: Vec::new(),
         }
     }
 
     pub async fn build(&self) -> CreateEmbed {
         MessageManager::create_embed(|embed| {
-            let author = self.message.get_author();
+            let author = match &self.target {
+                Some(user) => user,
+                None => &self.message.get_author()
+            };
             let embed = embed.clone()
                 .author(CreateEmbedAuthor::new(self.title.clone())
-                .icon_url(author.face()))
+                    .icon_url(author.face()))
                 .fields(self.fields.clone())
                 .thumbnail(author.face());
             if let Some(color) = self.color {
@@ -40,17 +47,20 @@ impl LogBuilder {
             if let Some(description) = &self.description {
                 let _ = embed.clone().description(description);
             }
+            if let Some(image) = &self.image {
+                let _ = embed.clone().image(image);
+            }
             embed
         }).await
     }
 
-    pub fn title(mut self, title: &str) -> Self {
-        self.title = title.to_string();
+    pub fn title(mut self, title: impl Into<String>) -> Self {
+        self.title = title.into();
         self
     }
 
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = Some(description.to_string());
+    pub fn description(mut self, description: impl Into<String>) -> Self {
+        self.description = Some(description.into());
         self
     }
 
@@ -90,10 +100,10 @@ impl LogBuilder {
         self
     }
 
-    pub fn labeled_timestamp(mut self, label: &str, timestamp: i64) -> Self {
-        self.fields.push((label.to_string(),
-            LogBuilder::format_timestamp(Some(label), timestamp),
-            true));
+    pub fn labeled_timestamp(mut self, label: impl Into<String>, timestamp: i64) -> Self {
+        let label = label.into();
+        let timestamp = LogBuilder::format_timestamp(Some(&label), timestamp);
+        self.fields.push((label, timestamp, true));
         self
     }
 
@@ -104,8 +114,18 @@ impl LogBuilder {
         self
     }
 
-    pub fn arbitrary(mut self, label: &str, content: &str) -> Self {
-        self.fields.push((label.to_string(), content.to_string(), false));
+    pub fn arbitrary(mut self, label: impl Into<String>, content: impl Into<String>) -> Self {
+        self.fields.push((label.into(), content.into(), false));
+        self
+    }
+
+    pub fn image(mut self, url: impl Into<String>) -> Self {
+        self.image = Some(url.into());
+        self
+    }
+
+    pub fn target(mut self, target: &'a User) -> Self {
+        self.target = Some(target);
         self
     }
 

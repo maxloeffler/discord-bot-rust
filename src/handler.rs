@@ -153,7 +153,7 @@ impl EventHandler for Handler {
                 return;
             }
 
-            let name = resolver.resolve_name(message.get_author());
+            let name = message.resolve_name();
             let log_builder = LogBuilder::new(message.clone())
                 .title(&format!("{}'s Message Edited", name))
                 .description("Message Information")
