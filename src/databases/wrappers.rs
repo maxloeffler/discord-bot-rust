@@ -58,7 +58,7 @@ impl From<&DBEntry> for FlagLog {
 
 pub trait DatabaseWrapper {
 
-    fn get_database(&self) -> Database;
+    fn get_database(&self) -> &Database;
 
     fn get_keys<'a>(&'a self) -> BoxedFuture<'a, Vec<String>>
         where Self: Sync
@@ -143,8 +143,8 @@ impl ConfigDB {
 }
 
 impl DatabaseWrapper for ConfigDB {
-    fn get_database(&self) -> Database {
-        self.database.clone()
+    fn get_database(&self) -> &Database {
+        &self.database
     }
 }
 
@@ -157,8 +157,8 @@ impl WarningsDB {
 }
 
 impl DatabaseWrapper for WarningsDB {
-    fn get_database(&self) -> Database {
-        self.database.clone()
+    fn get_database(&self) -> &Database {
+        &self.database
     }
 }
 
@@ -171,8 +171,8 @@ impl MutesDB {
 }
 
 impl DatabaseWrapper for MutesDB {
-    fn get_database(&self) -> Database {
-        self.database.clone()
+    fn get_database(&self) -> &Database {
+        &self.database
     }
 }
 
@@ -185,8 +185,8 @@ impl FlagsDB {
 }
 
 impl DatabaseWrapper for FlagsDB {
-    fn get_database(&self) -> Database {
-        self.database.clone()
+    fn get_database(&self) -> &Database {
+        &self.database
     }
 }
 
@@ -199,8 +199,8 @@ impl BansDB {
 }
 
 impl DatabaseWrapper for BansDB {
-    fn get_database(&self) -> Database {
-        self.database.clone()
+    fn get_database(&self) -> &Database {
+        &self.database
     }
 }
 

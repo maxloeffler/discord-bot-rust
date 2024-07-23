@@ -20,7 +20,7 @@ impl Command for InfoCommand {
                 let message = &params.message;
                 let target  = &params.target.unwrap();
 
-                let embed = message.get_log_builder()
+                let mut embed = message.get_log_builder()
                     .target(target)
                     .title(&format!("{}' a Information", message.resolve_name()))
                     .arbitrary("Handle", &format!("<@{}>", target.id.to_string()))
@@ -30,7 +30,7 @@ impl Command for InfoCommand {
                 if let Some(member) = member {
 
                     if let Some(timestamp) = member.joined_at {
-                        embed.clone().labeled_timestamp("Joined At", timestamp.unix_timestamp());
+                        embed = embed.labeled_timestamp("Joined At", timestamp.unix_timestamp());
                     }
 
                     let roles = member.roles.iter()
@@ -38,9 +38,9 @@ impl Command for InfoCommand {
                         .collect::<Vec<_>>()
                         .join(", ");
 
-                    match roles.is_empty() {
-                        true  => embed.clone().arbitrary("Roles", "None"),
-                        false => embed.clone().arbitrary("Roles", roles)
+                    embed = match roles.is_empty() {
+                        true  => embed.arbitrary("Roles", "None"),
+                        false => embed.arbitrary("Roles", roles)
                     };
                 }
 

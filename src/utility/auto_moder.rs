@@ -15,7 +15,7 @@ impl AutoModerator {
         AutoModerator {}
     }
 
-    pub async fn check_warnings(&self, resolver: Resolver, target: User) {
+    pub async fn check_warnings(&self, resolver: &Resolver, target: &User) {
 
         // get timestamp of last mute
         let last_mute = MutesDB::get_instance().lock().await
@@ -28,69 +28,72 @@ impl AutoModerator {
         }
 
         // get all warnings since last mute
-        let recent_warnings = WarningsDB::get_instance().lock().await
+        let recent_warnings = &WarningsDB::get_instance().lock().await
             .query(&target.id.to_string(),
                    &format!("AND timestamp > {} LIMIT 3", last_mute_timestamp)).await;
 
-        // check if the user has reached 3 warnings
-        if recent_warnings.is_ok() && recent_warnings.clone().unwrap().len() == 3 {
+        if let Ok(recent_warnings) = recent_warnings {
 
-            // convert to logs
-            let warn_logs: Vec<ModLog> = recent_warnings.clone().unwrap().iter()
-                .map(|log| log.into()).collect();
+            // check if the user has reached 3 warnings
+            if recent_warnings.len() == 3 {
+
+                // convert to logs
+                let warn_logs: Vec<ModLog> = recent_warnings.iter()
+                    .map(|log| log.into()).collect();
 
 
-            // mute user
-            let role_muted = resolver.resolve_role("Muted").await.unwrap()[0].clone();
-            let member = resolver.resolve_member(target.clone()).await.unwrap();
-            member.add_role(&resolver.ctx().http, role_muted.id).await.unwrap();
+                // mute user
+                let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
+                let member = resolver.resolve_member(&target).await.unwrap();
+                member.add_role(&resolver.ctx().http, role_muted.id).await.unwrap();
 
-            // log mute
-            let bot_id = ConfigDB::get_instance().lock().await
-                .get("bot_id").await.unwrap().to_string();
-            let log = ModLog {
-                member_id: target.id.to_string(),
-                staff_id: bot_id.clone(),
-                reason: format!("Automatically muted (1: '{}', 2: '{}', 3: '{}')",
-                    warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
-            };
-            MutesDB::get_instance().lock().await
-                .append(&target.id.to_string(), &log.into()).await;
+                // log mute
+                let bot_id = ConfigDB::get_instance().lock().await
+                    .get("bot_id").await.unwrap().to_string();
+                let log = ModLog {
+                    member_id: target.id.to_string(),
+                    staff_id: bot_id.clone(),
+                    reason: format!("Automatically muted (1: '{}', 2: '{}', 3: '{}')",
+                        warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
+                };
+                MutesDB::get_instance().lock().await
+                    .append(&target.id.to_string(), &log.into()).await;
 
-            // check for active flags
-            self.check_mutes(resolver.clone(), target.clone()).await;
+                // check for active flags
+                self.check_mutes(resolver, target).await;
 
-            // create embed
-            let embed = MessageManager::create_embed(|embed| {
-                embed
-                    .title("Automatic Mute")
-                    .description(
-                        "You have been **automatically muted** because you reached **3** warnings.
-                         A staff member will shortly open a **ticket** with you to discuss your warnings.
-                         The staff member to delete this note should be the one to create the ticket.")
-                    .color(0xFF0000)
-            }).await;
+                // create embed
+                let embed = MessageManager::create_embed(|embed| {
+                    embed
+                        .title("Automatic Mute")
+                        .description(
+                            "You have been **automatically muted** because you reached **3** warnings.
+                            A staff member will shortly open a **ticket** with you to discuss your warnings.
+                            The staff member to delete this note should be the one to create the ticket.")
+                        .color(0xFF0000)
+                }).await;
 
-            // find person responsible for the last warning (to ping them)
-            let last_warning = warn_logs.last().unwrap();
-            let role_automute = resolver.resolve_role("Auto Mute").await.unwrap()[0].clone();
-            let responsibility = match last_warning.staff_id == bot_id {
-                true  => format!("<@&{}>", role_automute.id),
-                false => format!("<@{}>", last_warning.staff_id)
-            };
+                // find person responsible for the last warning (to ping them)
+                let last_warning = warn_logs.last().unwrap();
+                let role_automute = &resolver.resolve_role("Auto Mute").await.unwrap()[0];
+                let responsibility = match last_warning.staff_id == bot_id {
+                    true  => format!("<@&{}>", role_automute.id),
+                    false => format!("<@{}>", last_warning.staff_id)
+                };
 
-            // get muted channel
-            let channel_muted = ConfigDB::get_instance().lock().await
-                .get("channel_muted").await.unwrap().to_string();
-            let channel = resolver.resolve_channel(channel_muted).await.unwrap();
+                // get muted channel
+                let channel_muted = ConfigDB::get_instance().lock().await
+                    .get("channel_muted").await.unwrap().to_string();
+                let channel = resolver.resolve_channel(channel_muted).await.unwrap();
 
-            // send 'automute message'
-            let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
-            let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+                // send 'automute message'
+                let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
+                let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+            }
         }
     }
 
-    pub async fn check_mutes(&self, resolver: Resolver, target: User) {
+    pub async fn check_mutes(&self, resolver: &Resolver, target: &User) {
 
         // get all flags
         let all_flags = FlagsDB::get_instance().lock().await
@@ -122,7 +125,7 @@ impl AutoModerator {
                 }).await;
 
                 // distribute responsibility
-                let role_ids = resolver.resolve_role(vec!["Administrator", "Head Moderator"]).await.unwrap().clone();
+                let role_ids = &resolver.resolve_role(vec!["Administrator", "Head Moderator"]).await.unwrap();
                 let responsibility = format!("<@&{}> <@&{}>", role_ids[0].id, role_ids[1].id);
 
                 // get muted channel
@@ -137,9 +140,9 @@ impl AutoModerator {
         }
     }
 
-    pub async fn perform_ban(&self, resolver: Resolver, target: User, reason: String) {
+    pub async fn perform_ban(&self, resolver: &Resolver, target: &User, reason: String) {
 
-        let member = resolver.resolve_member(target.clone()).await;
+        let member = &resolver.resolve_member(target).await;
         if let Some(member) = member {
 
             // ban user
@@ -164,7 +167,7 @@ impl AutoModerator {
                             .title("Automatic Ban")
                             .description(&format!(
                                 "{} has been automatically banned for `>` {}",
-                                resolver.resolve_name(target.clone()),
+                                resolver.resolve_name(target),
                                 reason))
                             .color(0xFF0000)
                     }).await;

@@ -28,7 +28,7 @@ pub struct MessageManager {
     raw_message: Message,
     prefix: Option<String>,
     command: Option<String>,
-    parameters: HashMap<String, Vec<String>>,
+    parameters: HashMap<String, String>,
     words: Vec<String>
 }
 
@@ -52,16 +52,13 @@ impl MessageManager {
     }
 
     async fn parse_message(&mut self) {
-        let mut key = String::new();
-        let mut value = Vec::new();
-
         // Obtain words
         self.words = self.raw_message.content
             .split_whitespace()
             .map(|word| word.to_string())
             .collect();
 
-        // Obtian command
+        // Obtain command
         if self.words.len() > 0 {
             let prefix = ConfigDB::get_instance().lock().await
                 .get("command_prefix").await.unwrap().to_string();
@@ -73,21 +70,19 @@ impl MessageManager {
         }
 
         // Obtain parameters
-        if self.words.len() > self.first_word_index() {
-            for word in &self.words[1..] {
-                if word.starts_with("-") {
-                    if key != "" {
-                        self.parameters.insert(key, value.clone());
-                        value = Vec::new();
-                    }
-                    key = word.to_string();
-                } else {
-                    value.push(word.to_string());
-                }
-            }
-            if key != "" && !self.parameters.contains_key(&key) {
-                self.parameters.insert(key, value);
-            }
+        let keys = self.words.iter()
+            .filter(|word| word.starts_with("-"))
+            .map(|word| word.to_string())
+            .collect::<Vec<String>>();
+        let split_regex = Regex::new(keys.join("|").as_str());
+
+        if let Ok(regex) = split_regex {
+            let splits = regex.split(&self.raw_message.content);
+            splits
+                .enumerate()
+                .for_each(|(i, split)| {
+                    self.parameters.insert(keys[i].to_string(), split.trim().to_string());
+                });
         }
     }
 
@@ -108,7 +103,7 @@ impl MessageManager {
     }
 
     pub fn get_parameter(&self, key: &str) -> String {
-        self.parameters.get(key).unwrap().join(" ")
+        self.parameters.get(key).unwrap().to_string()
     }
 
     pub fn payload(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
@@ -158,7 +153,7 @@ impl MessageManager {
 
     pub async fn reply(&self, message: impl ToMessage) {
         let channel = self.get_channel();
-        let _ = channel.send_message(self.resolver.http().clone(), message.to_message()).await;
+        let _ = channel.send_message(self.resolver.http(), message.to_message()).await;
     }
 
     pub async fn reply_success(&self) {
@@ -207,8 +202,7 @@ impl MessageManager {
         let color_primary = ConfigDB::get_instance().lock().await
             .get("color_primary").await.unwrap();
         let embed = fn_style(CreateEmbed::default());
-        let styled_embed = embed.clone()
-            .color(color_primary);
+        let styled_embed = embed.color(color_primary);
         styled_embed
     }
 
@@ -244,21 +238,21 @@ impl MessageManager {
             .send_message(&self.resolver.http(), message).await.unwrap();
 
         // await interaction
-        let interaction = sent_message
+        let interaction = &sent_message
             .await_component_interaction(&self.resolver.ctx().shard)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
-        if interaction.is_some() {
+        if let Some(interaction) = interaction {
 
-            match interaction.clone().unwrap().data.custom_id.as_str() {
+            match interaction.data.custom_id.as_str() {
                 "Yes" => yes_callback.await,
                 "No"  => no_callback.await,
                 _ => {}
             };
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
@@ -271,7 +265,7 @@ impl MessageManager {
     pub async fn create_dropdown_interaction<'a>(&self,
                                         message: impl ToMessage,
                                         options: Vec<CreateSelectMenuOption>,
-                                        callback: impl FnOnce(String) -> BoxedFuture<'a, ()>) {
+                                        callback: impl FnOnce(&String) -> BoxedFuture<'a, ()>) {
 
         // prepare message
         let message = message.to_message().select_menu(
@@ -286,23 +280,23 @@ impl MessageManager {
             .send_message(&self.resolver.http(), message).await.unwrap();
 
         // await interaction
-        let interaction = sent_message
+        let interaction = &sent_message
             .await_component_interaction(&self.resolver.ctx().shard)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
-        if interaction.is_some() {
+        if let Some(interaction) = interaction {
 
-            let data = interaction.clone().unwrap().data.kind;
+            let data = &interaction.data.kind;
             match data {
                 StringSelect{values} => {
-                    callback(values[0].clone()).await;
+                    callback(&values[0]).await;
                 }
                 _ => {}
             }
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
@@ -314,7 +308,7 @@ impl MessageManager {
 
     pub async fn create_user_dropdown_interaction<'a>(&self,
                                         message: impl ToMessage,
-                                        users: Vec<User>,
+                                        users: Vec<&User>,
                                         callback: impl FnOnce(User) -> BoxedFuture<'a, ()>) {
 
         // prepare message
@@ -338,12 +332,12 @@ impl MessageManager {
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
-        if interaction.is_some() {
+        if let Some(interaction) = interaction {
 
-            let data = interaction.clone().unwrap().data.kind;
+            let data = &interaction.data.kind;
             match data {
                 StringSelect{values} => {
-                    let id = values[0].clone().parse::<u64>().unwrap();
+                    let id = values[0].parse::<u64>().unwrap();
                     let user = self.resolver.resolve_user(UserId::from(id)).await;
                     if user.is_some() {
                         callback(user.unwrap()).await;
@@ -353,7 +347,7 @@ impl MessageManager {
             }
 
             // end interaction
-            let _ = interaction.unwrap().create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver.http(),
                 CreateInteractionResponse::Acknowledge
             ).await;
 
@@ -373,13 +367,12 @@ impl MessageManager {
         self.raw_message.guild_id
     }
 
-    pub fn get_author(&self) -> User {
-        self.raw_message.author.clone()
+    pub fn get_author(&self) -> &User {
+        &self.raw_message.author
     }
 
-    pub async fn get_mentions(&self) -> NonEmpty<User> {
-        let author = self.get_author();
-        let mut mentions = NonEmpty::new(author);
+    pub async fn get_mentions(&self) -> Vec<User> {
+        let mut mentions = Vec::new();
 
         let id_regex = RegexManager::get_id_regex();
         for word in &self.words {
@@ -401,8 +394,8 @@ impl MessageManager {
         mentions
     }
 
-    pub async fn get_attachments(&self) -> Vec<Attachment> {
-        self.raw_message.attachments.clone()
+    pub async fn get_attachments(&self) -> &Vec<Attachment> {
+        &self.raw_message.attachments
     }
 
     pub fn get_timestamp(&self) -> i64 {
@@ -410,13 +403,13 @@ impl MessageManager {
     }
 
     pub fn get_log_builder(&self) -> LogBuilder {
-        LogBuilder::new(self.clone())
+        LogBuilder::new(self)
     }
 
     // ---- Forwards to Resolver ---- //
 
-    pub fn get_resolver(&self) -> Resolver {
-        self.resolver.clone()
+    pub fn get_resolver(&self) -> &Resolver {
+        &self.resolver
     }
 
     pub async fn resolve_role(&self, role_name: impl ToList<&str>) -> Option<Vec<Role>> {

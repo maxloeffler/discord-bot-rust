@@ -7,7 +7,7 @@ use crate::utility::*;
 
 #[derive(Clone)]
 pub struct LogBuilder<'a> {
-    message: MessageManager,
+    message: &'a MessageManager,
     title: String,
     description: Option<String>,
     color: Option<u64>,
@@ -18,7 +18,7 @@ pub struct LogBuilder<'a> {
 
 impl<'a> LogBuilder<'a> {
 
-    pub fn new(message: MessageManager) -> Self {
+    pub fn new(message: &MessageManager) -> LogBuilder<'_> {
         LogBuilder {
             message: message,
             title: "No title provided".to_string(),
@@ -36,19 +36,19 @@ impl<'a> LogBuilder<'a> {
                 Some(user) => user,
                 None => &self.message.get_author()
             };
-            let embed = embed.clone()
+            let mut embed = embed
                 .author(CreateEmbedAuthor::new(self.title.clone())
                     .icon_url(author.face()))
                 .fields(self.fields.clone())
                 .thumbnail(author.face());
             if let Some(color) = self.color {
-                let _ = embed.clone().color(color);
+                embed = embed.color(color);
             }
             if let Some(description) = &self.description {
-                let _ = embed.clone().description(description);
+                embed = embed.description(description);
             }
             if let Some(image) = &self.image {
-                let _ = embed.clone().image(image);
+                embed = embed.image(image);
             }
             embed
         }).await
@@ -69,11 +69,11 @@ impl<'a> LogBuilder<'a> {
         self
     }
 
-    fn format_user(&self, user: User) -> String {
+    fn format_user(&self, user: &User) -> String {
         format!("<@{}>", user.id.to_string())
     }
 
-    pub fn user(mut self, user: User) -> Self {
+    pub fn user(mut self, user: &User) -> Self {
         self.fields.push(("User".to_string(), self.format_user(user), true));
         self
     }

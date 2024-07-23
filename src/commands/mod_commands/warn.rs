@@ -10,7 +10,7 @@ pub struct WarnCommand;
 
 impl Command for WarnCommand {
 
-    fn permission(&self, message: MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move {
             message.is_trial().await
         })
@@ -34,9 +34,9 @@ impl Command for WarnCommand {
                 }
 
                 // check if the user is a moderator
-                let target = mentions[1].clone();
+                let target = &mentions[1];
                 let resolver = message.get_resolver();
-                if resolver.is_trial(target.clone()).await {
+                if resolver.is_trial(&target).await {
                     message.reply_failure("You can't warn a moderator.").await;
                     return;
                 }
@@ -49,7 +49,7 @@ impl Command for WarnCommand {
 
                 // log to database
                 let log = ModLog {
-                    member_id: target.clone().id.to_string(),
+                    member_id: target.id.to_string(),
                     staff_id: message.get_author().id.to_string(),
                     reason: reason.clone(),
                 };
@@ -68,12 +68,12 @@ impl Command for WarnCommand {
                 let channel_modlogs_id = ConfigDB::get_instance().lock().await
                     .get("channel_modlogs").await.unwrap().to_string();
                 let channel_modlogs = resolver.resolve_channel(channel_modlogs_id).await.unwrap();
-                let log_message = LogBuilder::new(message.clone())
+                let log_message = message.get_log_builder()
                     .title("[WARNING]")
                     .description(&format!("<@{}> has been warned", target.id))
                     .color(0xff8200)
                     .staff()
-                    .user(target.clone())
+                    .user(&target)
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
@@ -82,7 +82,7 @@ impl Command for WarnCommand {
                 // check if the user has been warned too many times
                 #[cfg(feature = "auto_moderation")]
                 AutoModerator::get_instance().lock().await
-                    .check_warnings(resolver.clone(), target).await;
+                    .check_warnings(resolver, &target).await;
 
             }
         )

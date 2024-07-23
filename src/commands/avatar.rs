@@ -17,11 +17,11 @@ impl Command for AvatarCommand {
         Box::pin(
             async move {
                 let message = params.message;
-                let target = params.target.unwrap().clone();
+                let target = params.target.unwrap();
 
                 let embed = message.get_log_builder()
                     .title(&format!("{}'s avatar", message.resolve_name()))
-                    .image(target.clone().face())
+                    .image(target.face())
                     .build().await;
                 message.reply(embed).await
             }

@@ -22,11 +22,6 @@ impl CommandParams {
         Self { message: self.message.clone(), target }
     }
 }
-impl Into<CommandParams> for MessageManager {
-    fn into(self) -> CommandParams {
-        CommandParams::new(self, None)
-    }
-}
 
 pub enum MatchType {
     Exact,
@@ -36,9 +31,8 @@ pub enum MatchType {
 
 pub trait Command: Send + Sync {
 
-    fn is_triggered_by(&self, message: MessageManager) -> MatchType {
-        let trigger = message.get_command();
-        match trigger {
+    fn is_triggered_by(&self, message: &MessageManager) -> MatchType {
+        match message.get_command() {
             Some(word) => {
                 let trigger = word.to_lowercase();
                 for name in self.get_names().iter() {
@@ -56,7 +50,7 @@ pub trait Command: Send + Sync {
         }
     }
 
-    fn permission(&self, _message: MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, _message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move { true })
     }
 
@@ -76,7 +70,7 @@ pub struct UserDecorator {
 
 impl UserDecorator {
 
-    async fn get_target(&self, message: MessageManager) -> Option<User> {
+    async fn get_target(&self, message: &MessageManager) -> Option<User> {
         let mentions = message.get_mentions().await;
         match mentions.len() {
 
@@ -91,15 +85,15 @@ impl UserDecorator {
                 // prepare dropdown options
                 let last_messages = message.get_last_messages(10).await;
                 let mut set = HashSet::new();
-                for message in last_messages.iter() {
-                    set.insert(message.author.clone());
-                }
-                let mut users: Vec<User> = set.into_iter().collect();
-                users.push(message.get_author().clone());
+                last_messages.iter().for_each(|message| {
+                    set.insert(&message.author);
+                });
+                let mut users: Vec<&User> = set.into_iter().collect();
+                users.push(message.get_author());
 
                 // create dropdown interaction
                 let selected_user = Arc::new(Mutex::new(None));
-                let _ = message.clone().create_user_dropdown_interaction(
+                let _ = message.create_user_dropdown_interaction(
                     embed,
                     users,
                     |value: User| {
@@ -115,7 +109,7 @@ impl UserDecorator {
                 user
             },
 
-            _ => Some(mentions[1].clone()),
+            _ => Some(mentions[1].clone())
         }
     }
 
@@ -130,7 +124,7 @@ impl Command for UserDecorator {
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
-                let target = self.get_target(params.message.clone()).await;
+                let target = self.get_target(&params.message).await;
                 let augmented_params = params.set_target(target);
                 self.command.run(augmented_params.into()).await;
             }

@@ -32,14 +32,14 @@ impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
 
         // parse message
-        let resolver = Resolver::new( ctx.clone(), msg.guild_id );
+        let resolver = Resolver::new(ctx, msg.guild_id);
         let message = MessageManager::new(resolver, msg).await;
 
         // if message pings the bot
         let bot_id = ConfigDB::get_instance().lock().await
             .get("bot_id").await.unwrap().to_string();
-        let bot_pings = vec![format!("<@!{}>", bot_id.clone()),
-                             format!("<@{}>",  bot_id.clone())];
+        let bot_pings = vec![format!("<@!{}>", &bot_id),
+                             format!("<@{}>",  &bot_id)];
         if bot_pings.contains(&message.payload(None, None)) {
             message.reply("Hello!").await;
             return;
@@ -53,7 +53,7 @@ impl EventHandler for Handler {
         }
 
         // check guideline violations
-        let chat_filter = ChatFilterManager::new( message.clone() ).filter().await;
+        let chat_filter = ChatFilterManager::new(&message).filter().await;
         if chat_filter.filter == FilterType::Fine
             || message.is_trial().await
             || message.get_author().bot {
@@ -61,7 +61,7 @@ impl EventHandler for Handler {
             // execute command
             #[cfg(feature = "commands")]
             if message.is_command() {
-                self.command_manager.execute(message).await;
+                self.command_manager.execute(&message).await;
             }
 
         } else {
@@ -91,7 +91,7 @@ impl EventHandler for Handler {
     ) {
         // get guild
         let guild_id = new_member.guild_id;
-        let resolver = Resolver::new(ctx.clone(), Some(guild_id));
+        let resolver = Resolver::new(ctx, Some(guild_id));
         let guild = resolver.resolve_guild(guild_id).await;
 
         // get welcome channel
@@ -114,11 +114,11 @@ impl EventHandler for Handler {
                                 user: User,
                                 _member_data_if_available: Option<Member>,
     ) {
-        let resolver = Resolver::new(ctx.clone(), Some(guild_id));
-        let is_muted = resolver.has_role(user.clone(), "Muted").await;
+        let resolver = Resolver::new(ctx, Some(guild_id));
+        let is_muted = resolver.has_role(&user, "Muted").await;
         if is_muted {
             AutoModerator::get_instance().lock().await
-                .perform_ban(resolver, user, "Left while muted.".to_string()).await;
+                .perform_ban(&resolver, &user, "Left while muted.".to_string()).await;
         }
     }
 
@@ -145,8 +145,8 @@ impl EventHandler for Handler {
 
         if let Some(new_message) = new {
 
-            let resolver = Resolver::new(ctx.clone(), event.guild_id);
-            let message = MessageManager::new(resolver.clone(), new_message.clone()).await;
+            let resolver = Resolver::new(ctx, event.guild_id);
+            let message = &MessageManager::new(resolver, new_message).await;
 
             // do not log messages from bots
             if message.get_author().bot {
@@ -154,7 +154,7 @@ impl EventHandler for Handler {
             }
 
             let name = message.resolve_name();
-            let log_builder = LogBuilder::new(message.clone())
+            let log_builder = message.get_log_builder()
                 .title(&format!("{}'s Message Edited", name))
                 .description("Message Information")
                 .labeled_timestamp("Sent", message.get_timestamp())
@@ -165,7 +165,7 @@ impl EventHandler for Handler {
                 Some(old_message) => {
                     let changeset = Changeset::new(
                         &old_message.content,
-                        &new_message.content,
+                        &message.payload(None, None),
                         " ");
                     let mut diff = vec!["```diff".to_string()];
                     changeset.diffs.iter().for_each(|difference| {
@@ -187,14 +187,17 @@ impl EventHandler for Handler {
                 .field("Message Content", diff_string, true)
                 .footer(CreateEmbedFooter::new(
                     format!("User ID: {}", message.get_author().id)));
-            message.get_attachments().await.iter().for_each(|attachment| {
-                log_message = log_message.clone().image(attachment.url.clone());
-            });
+            for attachment in message.get_attachments().await.iter() {
+                log_message = log_message.image(attachment.url.clone());
+            }
  
             // send log message
             let channel_id = channel_protected_log[0].clone();
-            let channel = resolver.resolve_channel(channel_id).await.unwrap();
-            let _ = channel.send_message(&resolver.http(), log_message.to_message()).await;
+            let channel = message.get_resolver()
+                .resolve_channel(channel_id).await.unwrap();
+            let _ = channel.send_message(
+                &message.get_resolver().http(),
+                log_message.to_message()).await;
         }
 
     }
@@ -220,7 +223,7 @@ impl EventHandler for Handler {
         }
 
         // obtain Message object
-        let resolver = Resolver::new(ctx.clone(), guild_id);
+        let resolver = Resolver::new(ctx, guild_id);
         let channel_messagelogs_id = channel_protected_log[0].clone();
         let channel_messagelogs = resolver.resolve_channel(channel_messagelogs_id).await.unwrap();
         let message = resolver.resolve_message(channel_id, deleted_message_id).await;
@@ -236,7 +239,7 @@ impl EventHandler for Handler {
             }
 
             let name = resolver.resolve_name(message.get_author());
-            let log_builder = LogBuilder::new(message.clone())
+            let log_builder = message.get_log_builder()
                 .title(&format!("{}'s Message Deleted", name))
                 .description("Message Information")
                 .labeled_timestamp("Sent", message.get_timestamp())
@@ -263,9 +266,9 @@ impl EventHandler for Handler {
             let mut log_message = log_builder.build().await
                 .footer(CreateEmbedFooter::new(
                     format!("User ID: {}", message.get_author().id)));
-            message.get_attachments().await.iter().for_each(|attachment| {
-                log_message = log_message.clone().image(attachment.url.clone());
-            });
+            for attachment in message.get_attachments().await.iter() {
+                log_message = log_message.image(attachment.url.clone());
+            }
 
             // log message
             let _ = channel_messagelogs.send_message(&resolver.http(), log_message.to_message()).await;

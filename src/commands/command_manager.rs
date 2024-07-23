@@ -1,5 +1,5 @@
 
-use crate::commands::command::MatchType;
+use crate::commands::command::{CommandParams, MatchType};
 use crate::utility::*;
 use crate::commands::*;
 
@@ -23,18 +23,18 @@ impl CommandManager {
         manager
     }
 
-    async fn run_command(&self, command: &Box<dyn Command>, message: MessageManager) {
-        if command.permission(message.clone()).await {
+    async fn run_command(&self, command: &Box<dyn Command>, message: &MessageManager) {
+        if command.permission(message).await {
             message.delete().await;
-            command.run(message.into()).await;
+            command.run(CommandParams::new(message.clone(), None)).await;
         }
     }
 
     // note: only execute this method, when message.is_command() is true
-    pub async fn execute(&self, message: MessageManager) {
+    pub async fn execute(&self, message: &MessageManager) {
         for command in self.commands.iter() {
-            match command.is_triggered_by(message.clone()) {
-                MatchType::Exact => self.run_command(command, message.clone()).await,
+            match command.is_triggered_by(message) {
+                MatchType::Exact => self.run_command(command, message).await,
                 MatchType::Fuzzy(closest_match) => {
 
                     // prepare correction message
@@ -47,9 +47,9 @@ impl CommandManager {
                     }).await;
 
                     // send correction message
-                    message.clone().create_choice_interaction(
+                    message.create_choice_interaction(
                         embed,
-                        Box::pin( async move { self.run_command(command, message.clone()).await } ),
+                        Box::pin( async move { self.run_command(command, message).await } ),
                         Box::pin( async move {} )
                     ).await;
                     return;

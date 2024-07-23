@@ -14,15 +14,15 @@ pub struct ChatFilter {
     pub context: String
 }
 
-pub struct ChatFilterManager {
-    message: MessageManager,
+pub struct ChatFilterManager<'a> {
+    message: &'a MessageManager,
     slurs: Vec<String>,
     domain_whitelist: Vec<String>,
 }
 
-impl ChatFilterManager {
+impl<'a> ChatFilterManager<'_> {
 
-    pub fn new(message: MessageManager) -> ChatFilterManager {
+    pub fn new(message: &'a MessageManager) -> ChatFilterManager<'a> {
         let slurs = vec![
             "nigga",
             "nigger",
