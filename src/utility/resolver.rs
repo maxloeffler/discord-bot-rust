@@ -91,6 +91,17 @@ impl Resolver {
         None
     }
 
+    pub async fn resolve_guild_channels(&self) -> Option<Vec<GuildChannel>> {
+        if let Some(guild_id) = self.guild_id {
+            let guild_channels = guild_id.channels(&self.http()).await;
+            if let Ok(channels) = guild_channels {
+                let values: Vec<_> = channels.values().cloned().collect();
+                return Some(values);
+            }
+        }
+        None
+    }
+
     pub async fn resolve_message(&self, channel_id: ChannelId, message_id: MessageId) -> Option<Message> {
         let message = self.http().get_message(channel_id, message_id).await;
         match message {

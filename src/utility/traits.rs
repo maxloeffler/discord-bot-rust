@@ -9,7 +9,8 @@ use std::sync::Arc;
 use std::str::FromStr;
 
 #[cfg(feature = "auto_moderation")]
-use crate::utility::*;
+use crate::utility::auto_moder::AutoModerator;
+use crate::utility::ticket_handler::TicketHandler;
 use crate::databases::*;
 
 
@@ -40,6 +41,7 @@ impl_singleton!(WarningsDB);
 impl_singleton!(MutesDB);
 impl_singleton!(FlagsDB);
 impl_singleton!(BansDB);
+impl_singleton!(TicketHandler);
 
 
 pub trait ToList<T: ?Sized> {

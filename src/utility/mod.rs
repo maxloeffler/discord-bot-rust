@@ -1,4 +1,7 @@
 
+pub mod ticket_handler;
+pub use ticket_handler::{Ticket, TicketHandler};
+
 pub mod message_manager;
 pub use message_manager::MessageManager;
 

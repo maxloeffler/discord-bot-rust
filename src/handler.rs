@@ -4,8 +4,11 @@ use serenity::model::channel::Message;
 use serenity::model::user::User;
 use serenity::model::guild::Member;
 use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter, EditChannel};
+use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use difference::{Difference, Changeset};
+
+use std::str::FromStr;
 
 use crate::commands::command_manager::CommandManager;
 use crate::utility::*;
@@ -28,6 +31,20 @@ impl Handler {
 
 #[async_trait]
 impl EventHandler for Handler {
+
+    async fn ready(&self, ctx: Context, _ready: Ready) {
+
+        #[cfg(feature = "debug")]
+        Logger::info("Bot is ready!");
+
+        let main_guild = ConfigDB::get_instance().lock().await
+            .get("guild_main").await.unwrap().to_string();
+        let guild_id = GuildId::from_str(&main_guild).unwrap();
+        let resolver = Resolver::new(ctx, Some(guild_id));
+
+        TicketHandler::get_instance().lock().await
+            .init(&resolver).await;
+    }
 
     async fn message(&self, ctx: Context, msg: Message) {
 
