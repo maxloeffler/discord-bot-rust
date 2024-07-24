@@ -375,7 +375,7 @@ impl MessageManager {
         &self.raw_message.author
     }
 
-    pub async fn get_mentions(&self) -> Vec<User> {
+    pub async fn get_mentions(&self) -> Vec<UserId> {
         let mut mentions = Vec::new();
 
         let id_regex = RegexManager::get_id_regex();
@@ -384,13 +384,26 @@ impl MessageManager {
             if find.is_some() {
                 let id = find.unwrap().as_str().parse::<u64>();
                 match id {
-                    Ok(id) => {
-                        let user = self.resolver.resolve_user(UserId::from(id)).await;
-                        match user {
-                            Some(user) => mentions.push(user),
-                            None => {}
-                        }
-                    },
+                    Ok(id) => mentions.push(UserId::from(id)),
+                    Err(_) => {}
+                };
+            }
+        }
+        mentions
+    }
+
+    pub async fn get_mentioned_roles(&self) -> Vec<RoleId> {
+        let mut mentions = Vec::new();
+
+        let role_regex = RegexManager::get_role_regex();
+        let id_regex = RegexManager::get_id_regex();
+        for word in &self.words {
+            let find = role_regex.find(word);
+            if find.is_some() {
+                let find = id_regex.find(find.unwrap().as_str());
+                let id = find.unwrap().as_str().parse::<u64>();
+                match id {
+                    Ok(id) => mentions.push(RoleId::from(id)),
                     Err(_) => {}
                 };
             }

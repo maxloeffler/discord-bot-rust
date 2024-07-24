@@ -84,7 +84,7 @@ impl UserDecorator {
                 }).await;
 
                 // prepare dropdown options
-                let last_messages = message.get_last_messages(10).await;
+                let last_messages = message.get_last_messages(20).await;
                 let mut set = HashSet::new();
                 last_messages.iter().for_each(|message| {
                     set.insert(&message.author);
@@ -109,8 +109,10 @@ impl UserDecorator {
                 let user = selected_user.lock().unwrap().clone();
                 user
             },
-
-            _ => Some(mentions[0].clone())
+            _ => {
+                let user = message.get_resolver().resolve_user(mentions[0]).await;
+                Some(user.unwrap())
+            }
         }
     }
 

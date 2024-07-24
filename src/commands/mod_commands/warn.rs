@@ -34,8 +34,8 @@ impl Command for WarnCommand {
                 }
 
                 // check if the user is a moderator
-                let target = &mentions[1];
                 let resolver = message.get_resolver();
+                let target = &resolver.resolve_user(mentions[0]).await.unwrap();
                 if resolver.is_trial(&target).await {
                     message.reply_failure("You can't warn a moderator.").await;
                     return;

@@ -9,7 +9,7 @@ use std::sync::Arc;
 use crate::utility::*;
 
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Resolver {
     ctx: Context,
     guild_id: Option<GuildId>
@@ -33,7 +33,11 @@ impl Resolver {
         &self.ctx.cache
     }
 
-    pub async fn resolve_guild(&self, guild_id: GuildId) -> Option<Guild> {
+    pub async fn resolve_guild(&self, guild_id: Option<GuildId>) -> Option<Guild> {
+        let guild_id = match guild_id {
+            Some(guild_id) => guild_id,
+            None => self.guild_id.unwrap()
+        };
         let guild = self.ctx.cache.guild(guild_id);
         match guild {
             Some(guild) => Some(guild.clone()),

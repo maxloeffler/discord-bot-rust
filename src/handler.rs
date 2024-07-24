@@ -109,7 +109,7 @@ impl EventHandler for Handler {
         // get guild
         let guild_id = new_member.guild_id;
         let resolver = Resolver::new(ctx, Some(guild_id));
-        let guild = resolver.resolve_guild(guild_id).await;
+        let guild = resolver.resolve_guild(None).await;
 
         // get welcome channel
         let channel_id = ConfigDB::get_instance().lock().await

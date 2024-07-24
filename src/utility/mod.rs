@@ -1,6 +1,9 @@
 
+pub mod permission_handler;
+pub use permission_handler::PermissionHandler;
+
 pub mod ticket_handler;
-pub use ticket_handler::{Ticket, TicketHandler};
+pub use ticket_handler::{Ticket, TicketHandler, TicketType};
 
 pub mod message_manager;
 pub use message_manager::MessageManager;
