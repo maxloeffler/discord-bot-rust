@@ -231,6 +231,8 @@ impl TicketHandler {
 
 impl Ticket {
 
+    const ACCESS_PERM: Permissions = Permissions::SEND_MESSAGES.union(Permissions::VIEW_CHANNEL);
+
     pub fn get_permissions<'a>(&'a self) -> PermissionHandler<'a> {
         PermissionHandler::new(&self.resolver, &self.channel)
     }
@@ -320,28 +322,23 @@ impl Ticket {
     pub async fn allow_participants(&self) {
         let handler = self.get_permissions();
         for user_id in self.present_members.lock().await.iter() {
-            handler.allow_member(&Permissions::SEND_MESSAGES, user_id).await;
-            handler.allow_member(&Permissions::VIEW_CHANNEL, user_id).await;
+            handler.allow_member(&Ticket::ACCESS_PERM, user_id).await;
         }
         for user_id in self.present_staff.lock().await.iter() {
-            handler.allow_member(&Permissions::SEND_MESSAGES, user_id).await;
-            handler.allow_member(&Permissions::VIEW_CHANNEL, user_id).await;
+            handler.allow_member(&Ticket::ACCESS_PERM, user_id).await;
         }
     }
 
     pub async fn deny_all(&self) {
         let handler = self.get_permissions();
         for user_id in self.present_members.lock().await.iter() {
-            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
-            handler.deny_member(&Permissions::VIEW_CHANNEL, user_id).await;
+            handler.deny_member(&Ticket::ACCESS_PERM, user_id).await;
         }
         for user_id in self.present_staff.lock().await.iter() {
-            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
-            handler.deny_member(&Permissions::VIEW_CHANNEL, user_id).await;
+            handler.deny_member(&Ticket::ACCESS_PERM, user_id).await;
         }
-        for role in self.allowed_roles.iter() {
-            handler.deny_role(&Permissions::SEND_MESSAGES, role).await;
-            handler.deny_role(&Permissions::VIEW_CHANNEL, role).await;
+        for role_id in self.allowed_roles.iter() {
+            handler.deny_role(&Ticket::ACCESS_PERM, role_id).await;
         }
     }
 
@@ -357,22 +354,19 @@ impl Ticket {
     pub async fn unclaim(&self, staff: &UserId) {
         self.present_staff.lock().await.remove(staff);
         let handler = self.get_permissions();
-        handler.deny_member(&Permissions::SEND_MESSAGES, staff).await;
-        handler.deny_member(&Permissions::VIEW_CHANNEL, staff).await;
+        handler.deny_member(&Ticket::ACCESS_PERM, staff).await;
     }
 
     pub async fn add_member(&self, member: &UserId) {
         self.present_members.lock().await.insert(*member);
         let handler = self.get_permissions();
-        handler.allow_member(&Permissions::VIEW_CHANNEL, member).await;
-        handler.allow_member(&Permissions::SEND_MESSAGES, member).await;
+        handler.allow_member(&Ticket::ACCESS_PERM, member).await;
     }
 
     pub async fn remove_member(&self, member: &UserId) {
         self.present_members.lock().await.remove(member);
         let handler = self.get_permissions();
-        handler.deny_member(&Permissions::VIEW_CHANNEL, member).await;
-        handler.deny_member(&Permissions::SEND_MESSAGES, member).await;
+        handler.deny_member(&Ticket::ACCESS_PERM, member).await;
     }
 
 }

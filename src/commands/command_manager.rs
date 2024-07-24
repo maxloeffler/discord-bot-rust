@@ -25,6 +25,7 @@ impl CommandManager {
                 // ticket commands
                 Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
                 Box::new( ClaimTicketCommand{} ),
+                Box::new( UserDecorator{ command: Box::new(AddMemberToTicketCommand) }),
             ],
         };
         manager
