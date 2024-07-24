@@ -14,23 +14,18 @@ pub struct Logger {}
 impl Logger {
 
     fn log(level: Level, label: &str, content: Option<&str>, inline: bool) {
-        let sign = match level {
-            Level::Info  => ">".green(),
-            Level::Warn  => "!".truecolor(255, 130, 0),
-            Level::Error => "X".truecolor(255, 20, 0),
-        };
         let prefix = match level {
-            Level::Warn  => "WARNING ".truecolor(255, 130, 0).bold().to_string(),
-            Level::Error => "ERROR ".truecolor(255, 20, 0).bold().to_string(),
-            _     => "".to_string(),
+            Level::Info  => "INFO".green(),
+            Level::Warn  => "WARN".truecolor(255, 130, 0),
+            Level::Error => "ERROR".truecolor(255, 20, 0),
         };
         let content = match content {
             Some(content) => format!("{}: {}", label.truecolor(140, 140, 140), content),
             None          => label.to_string()
         };
         match inline {
-            true => print!("[{}] {}{}", sign, prefix, content),
-            false  => println!("[{}] {}{}", sign, prefix, content),
+            true => print!("[{}] {}", prefix, content),
+            false  => println!("[{}] {}", prefix, content),
         }
     }
 

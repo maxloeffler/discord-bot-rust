@@ -20,5 +20,6 @@ pub use mod_commands::warn::WarnCommand;
 pub mod ticket_commands;
 
 pub use ticket_commands::open::OpenTicketCommand;
+pub use ticket_commands::close::CloseTicketCommand;
 pub use ticket_commands::claim::ClaimTicketCommand;
 pub use ticket_commands::add::AddMemberToTicketCommand;

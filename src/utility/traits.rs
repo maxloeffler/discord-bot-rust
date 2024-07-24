@@ -151,6 +151,16 @@ impl ToList<ChannelId> for String {
     }
 }
 
+impl ToList<ChannelId> for &String {
+    fn to_list(&self) -> Vec<ChannelId> {
+        let channel = ChannelId::from_str(self);
+        if channel.is_ok() {
+            return vec![channel.unwrap()];
+        }
+        Vec::new()
+    }
+}
+
 
 pub trait ToMessage {
     fn to_message(&self) -> CreateMessage;

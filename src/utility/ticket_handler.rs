@@ -6,6 +6,7 @@ use serenity::builder::{CreateChannel, GetMessages};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use futures::stream::StreamExt;
+use uuid::Uuid;
 
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
@@ -56,8 +57,9 @@ pub struct Ticket {
     pub channel: GuildChannel,
     pub ticket_type: TicketType,
     pub resolver: Resolver,
-    pub pinged_staff: bool,
+    pub uuid: Uuid,
 
+    pub pinged_staff: bool,
     pub present_members: Arc<Mutex<HashSet<UserId>>>,
     pub present_staff: Arc<Mutex<HashSet<UserId>>>,
     pub allowed_roles: Vec<RoleId>,
@@ -188,8 +190,9 @@ impl TicketHandler {
                     channel: channel,
                     ticket_type: ticket_type,
                     resolver: resolver.clone(),
-                    pinged_staff: false,
+                    uuid: Uuid::new_v4(),
 
+                    pinged_staff: false,
                     present_members: present_members,
                     present_staff: Arc::new(Mutex::new(HashSet::new())),
                     allowed_roles: allowed_roles.clone(),
@@ -206,14 +209,23 @@ impl TicketHandler {
         }
 
         Err("Failed to create ticket".into())
-
     }
 
     pub async fn close_ticket(&self, channel: &ChannelId) {
+
         let ticket = self.get_ticket(channel).await;
         if let Some(ticket) = ticket {
+
+            #[cfg(feature = "debug")]
+            let logstr = &format!("Closing ticket '{}'", ticket.channel.name);
+            #[cfg(feature = "debug")]
+            Logger::info_long("Start", logstr);
+
             ticket.deny_all().await;
             let _ = ticket.channel.delete(&ticket.resolver.http()).await;
+
+            #[cfg(feature = "debug")]
+            Logger::info_long("End", logstr);
         }
     }
 
@@ -298,8 +310,9 @@ impl Ticket {
                     channel: channel.clone(),
                     ticket_type: ticket_type,
                     resolver: resolver.clone(),
-                    pinged_staff: false,
+                    uuid: Uuid::new_v4(),
 
+                    pinged_staff: false,
                     present_members: present_members,
                     present_staff: present_staff,
                     allowed_roles: allowed_roles.clone(),
