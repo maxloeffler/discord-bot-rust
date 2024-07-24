@@ -59,7 +59,7 @@ impl Command for OpenTicketCommand {
                 let embed = CreateMessage::new()
                     .content(format!("<@{}>", target.id))
                     .embed(embed);
-                let a = ticket.unwrap().channel.send_message(message.get_resolver().http(), embed).await;
+                let _ = ticket.unwrap().channel.send_message(message.get_resolver().http(), embed).await;
             }
         )
     }

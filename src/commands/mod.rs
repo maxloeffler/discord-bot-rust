@@ -18,4 +18,6 @@ pub use mod_commands::warn::WarnCommand;
 // ---- src/commands/ticket_commands/ ----
 
 pub mod ticket_commands;
+
 pub use ticket_commands::open::OpenTicketCommand;
+pub use ticket_commands::claim::ClaimTicketCommand;

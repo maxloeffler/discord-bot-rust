@@ -15,10 +15,16 @@ impl CommandManager {
     pub fn new() -> CommandManager {
         let manager = CommandManager {
             commands: vec![
+                // general commands
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
+
+                // moderation commands
                 Box::new( WarnCommand{} ),
+
+                // ticket commands
                 Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
+                Box::new( ClaimTicketCommand{} ),
             ],
         };
         manager

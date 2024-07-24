@@ -97,7 +97,6 @@ impl TicketHandler {
                 .get("category_tickets").await.unwrap().to_string();
 
             // recover all tickets
-            let tickets = Arc::new(Mutex::new(HashMap::new()));
             let parse = futures::stream::iter(channels.iter()
                 .filter(|channel| {
                     let category = channel.parent_id;
@@ -108,7 +107,7 @@ impl TicketHandler {
                 })
                 .collect::<Vec<&GuildChannel>>())
                 .for_each_concurrent(None, |channel| {
-                    let tickets = Arc::clone(&tickets);
+                    let tickets = Arc::clone(&self.tickets);
                     async move {
                         let ticket = Ticket::parse_ticket(resolver, channel).await;
                         if let Ok(ticket) = ticket {
@@ -132,7 +131,9 @@ impl TicketHandler {
     {
 
         #[cfg(feature = "debug")]
-        Logger::info_long("Start", "Creating new ticket");
+        let logstr = &format!("Creating new ticket '{}'", target.name);
+        #[cfg(feature = "debug")]
+        Logger::info_long("Start", logstr);
 
         // resolve guild
         let guild = resolver.resolve_guild(None).await;
@@ -195,14 +196,14 @@ impl TicketHandler {
                 });
 
                 ticket.allow_participants().await;
-                self.tickets.lock().await.insert(ticket.channel.to_string(), Arc::clone(&ticket));
+                self.tickets.lock().await.insert(ticket.channel.id.to_string(), Arc::clone(&ticket));
+
+                #[cfg(feature = "debug")]
+                Logger::info_long("End", logstr);
 
                 return Ok(ticket);
             }
         }
-
-        #[cfg(feature = "debug")]
-        Logger::info_long("End", "Creating new ticket");
 
         Err("Failed to create ticket".into())
 
@@ -237,7 +238,9 @@ impl Ticket {
     pub async fn parse_ticket(resolver: &Resolver, channel: &GuildChannel) -> Result<Ticket> {
 
         #[cfg(feature = "debug")]
-        Logger::info_long("Parsing ticket", &channel.name);
+        let logstr = &format!("Parsing ticket '{}'", channel.name);
+        #[cfg(feature = "debug")]
+        Logger::info_long("Start", logstr);
 
         let last_message = channel.last_message_id;
         if let Some(last_message) = last_message {
@@ -305,6 +308,9 @@ impl Ticket {
                 handler.deny_role(&Permissions::SEND_MESSAGES, allowed_roles).await;
                 ticket.allow_participants().await;
 
+                #[cfg(feature = "debug")]
+                Logger::info_long("End", logstr);
+
                 return Ok(ticket);
             }
         }
@@ -342,7 +348,7 @@ impl Ticket {
     pub async fn claim(&self, staff: &UserId) {
         let handler = self.get_permissions();
         for role in self.allowed_roles.iter() {
-            handler.allow_role(&Permissions::SEND_MESSAGES, role).await;
+            handler.deny_role(&Permissions::SEND_MESSAGES, role).await;
         }
         self.present_staff.lock().await.insert(*staff);
         self.allow_participants().await;

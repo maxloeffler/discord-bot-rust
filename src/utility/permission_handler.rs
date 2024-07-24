@@ -3,6 +3,7 @@ use serenity::model::permissions::Permissions;
 use serenity::model::channel::{PermissionOverwriteType, PermissionOverwrite};
 use serenity::model::channel::GuildChannel;
 use serenity::model::id::{RoleId, UserId};
+use futures::StreamExt;
 
 use crate::utility::*;
 
@@ -21,6 +22,16 @@ impl<'a> PermissionHandler<'_> {
         }
     }
 
+    async fn update_permissions(&self, overwrites: Vec<PermissionOverwrite>) {
+        let present_overwrites = &self.channel.permission_overwrites;
+        let new_overwrites = overwrites.into_iter()
+            .filter(|overwrite| !present_overwrites.contains(&overwrite));
+        futures::stream::iter(new_overwrites)
+            .for_each_concurrent(None, |overwrite| async move {
+                let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
+            }).await;
+    }
+
     pub async fn allow_role(&self, permission: &Permissions, ids: impl ToList<RoleId>) {
         let overwrites: Vec<_> = ids.to_list().iter().map(|id| {
             PermissionOverwrite {
@@ -29,9 +40,7 @@ impl<'a> PermissionHandler<'_> {
                 kind: PermissionOverwriteType::Role(id.into())
             }
         }).collect();
-        for overwrite in overwrites {
-            let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
-        }
+        self.update_permissions(overwrites).await;
     }
 
     pub async fn deny_role(&self, permission: &Permissions, ids: impl ToList<RoleId>) {
@@ -42,9 +51,7 @@ impl<'a> PermissionHandler<'_> {
                 kind: PermissionOverwriteType::Role(id.into())
             }
         }).collect();
-        for overwrite in overwrites {
-            let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
-        }
+        self.update_permissions(overwrites).await;
     }
 
     pub async fn allow_member(&self, permission: &Permissions, ids: impl ToList<UserId>) {
@@ -55,9 +62,7 @@ impl<'a> PermissionHandler<'_> {
                 kind: PermissionOverwriteType::Member(id.into())
             }
         }).collect();
-        for overwrite in overwrites {
-            let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
-        }
+        self.update_permissions(overwrites).await;
     }
 
     pub async fn deny_member(&self, permission: &Permissions, ids: impl ToList<UserId>) {
@@ -68,9 +73,7 @@ impl<'a> PermissionHandler<'_> {
                 kind: PermissionOverwriteType::Member(id.into())
             }
         }).collect();
-        for overwrite in overwrites {
-            let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
-        }
+        self.update_permissions(overwrites).await;
     }
 
 }
