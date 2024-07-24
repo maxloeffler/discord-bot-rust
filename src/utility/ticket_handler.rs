@@ -41,12 +41,12 @@ impl Into<String> for TicketType {
 impl From<String> for TicketType {
     fn from(value: String) -> Self {
         match value.as_str() {
-            "Muted" => TicketType::Muted,
-            "Discussion" => TicketType::Discussion,
-            "Question" => TicketType::Question,
-            "Bug Report" => TicketType::BugReport,
-            "User Report" => TicketType::UserReport,
-            "Staff Report" => TicketType::StaffReport,
+            "Muted"      | "m"  => TicketType::Muted,
+            "Discussion" | "d"  => TicketType::Discussion,
+            "Question"          => TicketType::Question,
+            "Bug Report"        => TicketType::BugReport,
+            "User Report"       => TicketType::UserReport,
+            "Staff Report"      => TicketType::StaffReport,
             _ => TicketType::Discussion,
         }
     }
@@ -128,7 +128,7 @@ impl TicketHandler {
     pub async fn new_ticket(&self,
             resolver: &Resolver,
             target: &User,
-            ticket_type: TicketType) -> Result<Ticket>
+            ticket_type: TicketType) -> Result<Arc<Ticket>>
     {
 
         #[cfg(feature = "debug")]
@@ -183,7 +183,7 @@ impl TicketHandler {
                 present_members.lock().await.insert(target.id);
 
                 // create ticket
-                let ticket = Ticket {
+                let ticket = Arc::new(Ticket {
                     channel: channel,
                     ticket_type: ticket_type,
                     resolver: resolver.clone(),
@@ -192,10 +192,12 @@ impl TicketHandler {
                     present_members: present_members,
                     present_staff: Arc::new(Mutex::new(HashSet::new())),
                     allowed_roles: allowed_roles.clone(),
-                };
+                });
 
                 ticket.allow_participants().await;
-                self.tickets.lock().await.insert(ticket.channel.to_string(), Arc::new(ticket));
+                self.tickets.lock().await.insert(ticket.channel.to_string(), Arc::clone(&ticket));
+
+                return Ok(ticket);
             }
         }
 
@@ -241,33 +243,15 @@ impl Ticket {
         if let Some(last_message) = last_message {
 
             // get all messages in the channel
-            let builder = GetMessages::new().before(last_message).limit(255);
+            let builder = GetMessages::new().around(last_message).limit(255);
             let messages = channel.messages(&resolver.http(), builder).await;
 
             if let Ok(messages) = messages {
-                let first_message = messages.last().unwrap();
-                let second_message = messages.get(messages.len() - 2).unwrap();
-
-                // get first message in ticket
-                let first_message = &MessageManager::new(resolver.clone(), first_message.clone()).await;
-                let second_message = &MessageManager::new(resolver.clone(), second_message.clone()).await;
-
-                // get all allowed staff roles for the ticket
-                let allowed_roles = second_message.get_mentioned_roles().await;
-                let allowed_staff_roles = match allowed_roles.len() {
-                    0 => {
-                        resolver.resolve_role(vec!["Trial Moderator", "Moderator", "Head Moderator", "Administrator"]).await
-                            .unwrap().iter()
-                            .map(|role| role.id)
-                            .collect::<Vec<RoleId>>()
-                    },
-                    _ => allowed_roles,
-                };
 
                 // get all present staff and members in the ticket
                 let present_staff = Arc::new(Mutex::new(HashSet::new()));
                 let present_members = Arc::new(Mutex::new(HashSet::new()));
-                let message_iter = futures::stream::iter(messages)
+                let message_iter = futures::stream::iter(messages.clone())
                     .for_each_concurrent(None, |message: Message| {
                         let present_staff = Arc::clone(&present_staff);
                         let present_members = Arc::clone(&present_members);
@@ -283,8 +267,23 @@ impl Ticket {
                 message_iter.await;
 
                 // target should always be present in the ticket
+                let first_message = messages.last().unwrap();
+                let first_message = &MessageManager::new(resolver.clone(), first_message.clone()).await;
                 let mentions = first_message.get_mentions().await;
                 present_members.lock().await.insert(mentions[0]);
+
+                // get all allowed staff roles for the ticket
+                let mut allowed_roles = resolver.resolve_role(
+                    vec!["Administrator", "Head Moderator", "Moderator", "Trial Moderator"])
+                        .await.unwrap().iter()
+                        .map(|role| role.id)
+                        .collect::<Vec<RoleId>>();
+
+                // get mentioned roles
+                let role_mentions = first_message.get_mentioned_roles().await;
+                if role_mentions.len() > 0 {
+                    allowed_roles = role_mentions;
+                }
 
                 // get ticket type
                 let ticket_type: TicketType = channel.topic.clone().unwrap_or("Discussion".to_string()).into();
@@ -298,12 +297,12 @@ impl Ticket {
 
                     present_members: present_members,
                     present_staff: present_staff,
-                    allowed_roles: allowed_staff_roles.clone(),
+                    allowed_roles: allowed_roles.clone(),
                 };
 
                 // setup permissions
                 let handler = ticket.get_permissions();
-                handler.deny_role(&Permissions::SEND_MESSAGES, allowed_staff_roles).await;
+                handler.deny_role(&Permissions::SEND_MESSAGES, allowed_roles).await;
                 ticket.allow_participants().await;
 
                 return Ok(ticket);

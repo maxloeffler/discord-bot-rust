@@ -18,6 +18,7 @@ impl CommandManager {
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
                 Box::new( WarnCommand{} ),
+                Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
             ],
         };
         manager
