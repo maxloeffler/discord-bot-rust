@@ -11,6 +11,7 @@ use uuid::Uuid;
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
+use std::process::Command;
 
 use crate::utility::*;
 use crate::databases::*;
@@ -384,5 +385,38 @@ impl Ticket {
         handler.deny_member(&Ticket::ACCESS_PERM, member).await;
     }
 
+    pub async fn transcribe(&self) {
+
+        #[cfg(feature = "debug")]
+        let logstr = &format!("Transcribing ticket '{}'", self.channel.name);
+        #[cfg(feature = "debug")]
+        Logger::info_long("Start", logstr);
+
+        let token = ConfigDB::get_instance().lock().await
+            .get("token").await.unwrap().to_string();
+
+        if cfg!(target_os = "linux") {
+            let process = Command::new("python3")
+                .arg("src/commands/ticket_commands/transcribe.py")
+                .arg(token)
+                .arg(self.channel.id.to_string())
+                .arg(self.channel.guild_id.to_string())
+                .arg(self.uuid.to_string())
+                .output()
+                .expect("Failed to transcribe ticket");
+
+            let err = String::from_utf8_lossy(&process.stderr);
+            if !err.is_empty() {
+                #[cfg(feature = "debug")]
+                Logger::err_long("Failed to transcribe ticket", &err);
+            }
+        } else {
+            #[cfg(feature = "debug")]
+            Logger::warn("Transcription is only supported on linux");
+        }
+
+        #[cfg(feature = "debug")]
+        Logger::info_long("End", logstr);
+    }
 }
 

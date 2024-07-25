@@ -44,6 +44,18 @@ impl Command for CloseTicketCommand {
                         TicketHandler::get_instance().lock().await
                             .close_ticket(&ticket.channel.id).await;
 
+                        // obtain channel to dump log
+                        let dump_channel = match ticket.ticket_type {
+                            TicketType::StaffReport => ConfigDB::get_instance().lock()
+                                .await.get("channel_admin").await.unwrap().to_string(),
+                            _ => ConfigDB::get_instance().lock()
+                                .await.get("channel_transcripts").await.unwrap().to_string()
+                        };
+                        let dump_channel = message.get_resolver().resolve_channel(&dump_channel).await.unwrap();
+
+                        // produce transcript
+                        ticket.transcribe().await;
+
                         // obtain ticket information
                         let transcript_url = format!(
                             "[External Link](http://thevent.xyz:5000/transcripts/transcript-{}---{}---.html?auth)",
@@ -70,14 +82,7 @@ impl Command for CloseTicketCommand {
                             .build().await;
                         let log = CreateMessage::default().embed(embed);
 
-                        // send log to dump channel
-                        let dump_channel = match ticket.ticket_type {
-                            TicketType::StaffReport => ConfigDB::get_instance().lock()
-                                .await.get("channel_admin").await.unwrap().to_string(),
-                            _ => ConfigDB::get_instance().lock()
-                                .await.get("channel_transcripts").await.unwrap().to_string()
-                        };
-                        let dump_channel = message.get_resolver().resolve_channel(&dump_channel).await.unwrap();
+                        // send log
                         let _ = dump_channel.send_message(message.get_resolver().http(), log).await;
 
                     },

@@ -6,7 +6,6 @@ edition = "2021"
 [features]
 default = [
   "commands",
-  "debug",
 ]
 full = [
   "commands",

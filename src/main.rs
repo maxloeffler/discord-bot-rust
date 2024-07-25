@@ -72,7 +72,8 @@ async fn spawn_database_thread() {
                     "get" => {
                         match words.len() {
                             1 => {
-                                let keys = database.lock().await.get_keys().await;
+                                let mut keys = database.lock().await.get_keys().await;
+                                keys.sort();
                                 Logger::info_long("Keys", &keys.join(", "));
                             }
                             2 => {
