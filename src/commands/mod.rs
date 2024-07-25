@@ -11,6 +11,7 @@ pub mod casual;
 pub use casual::avatar::AvatarCommand;
 pub use casual::info::InfoCommand;
 pub use casual::nick::NicknameCommand;
+pub use casual::verify::VerifyCommand;
 
 // ---- src/commands/moderation/ ---- //
 

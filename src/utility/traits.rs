@@ -147,6 +147,12 @@ impl ToList<RoleId> for Vec<Role> {
     }
 }
 
+impl ToList<RoleId> for &Role {
+    fn to_list(&self) -> Vec<RoleId> {
+        vec![self.id]
+    }
+}
+
 impl ToList<ChannelId> for String {
     fn to_list(&self) -> Vec<ChannelId> {
         let channel = ChannelId::from_str(self);

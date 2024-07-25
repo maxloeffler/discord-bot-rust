@@ -19,6 +19,7 @@ impl CommandManager {
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
+                Box::new( VerifyCommand{} ),
 
                 // moderation commands
                 Box::new( WarnCommand{} ),
@@ -40,7 +41,7 @@ impl CommandManager {
             message.delete().await;
             command.run(CommandParams::new(message.clone(), None)).await;
         } else {
-            message.reply_failure("You don't have permission to use this command").await;
+            message.reply_failure("You do not have permission to use this command").await;
         }
     }
 

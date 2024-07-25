@@ -402,6 +402,7 @@ dependencies = [
  "lazy_static",
  "nonempty",
  "once_cell",
+ "rand",
  "regex",
  "rusqlite",
  "serde",

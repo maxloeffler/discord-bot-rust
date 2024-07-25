@@ -163,12 +163,7 @@ impl MessageManager {
     }
 
     pub async fn delete(&self) {
-        let timeout = 250;
-        let mut attempts = 5;
-        while self.raw_message.delete(&self.resolver).await.is_err() && attempts > 0 {
-            let _ = tokio::time::sleep(tokio::time::Duration::from_millis(timeout));
-            attempts -= 1;
-        }
+        let _ = self.raw_message.delete(&self.resolver).await;
     }
 
     pub async fn reply(&self, message: impl ToMessage) {
