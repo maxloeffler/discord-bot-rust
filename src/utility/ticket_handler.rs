@@ -17,6 +17,7 @@ use crate::utility::*;
 use crate::databases::*;
 
 
+#[cfg(feature = "tickets")]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TicketType {
     Muted,
@@ -27,6 +28,7 @@ pub enum TicketType {
     StaffReport,
 }
 
+#[cfg(feature = "tickets")]
 impl Into<String> for TicketType {
     fn into(self) -> String {
         match self {
@@ -40,6 +42,7 @@ impl Into<String> for TicketType {
     }
 }
 
+#[cfg(feature = "tickets")]
 impl From<String> for TicketType {
     fn from(value: String) -> Self {
         match value.as_str() {
@@ -54,6 +57,7 @@ impl From<String> for TicketType {
     }
 }
 
+#[cfg(feature = "tickets")]
 pub struct Ticket {
     pub channel: GuildChannel,
     pub ticket_type: TicketType,
@@ -66,6 +70,7 @@ pub struct Ticket {
     pub allowed_roles: Vec<RoleId>,
 }
 
+#[cfg(feature = "tickets")]
 impl Debug for Ticket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let ticket_type: String = self.ticket_type.into();
@@ -73,10 +78,12 @@ impl Debug for Ticket {
     }
 }
 
+#[cfg(feature = "tickets")]
 pub struct TicketHandler {
     tickets: Arc<Mutex<HashMap<String, Arc<Ticket>>>>,
 }
 
+#[cfg(feature = "tickets")]
 impl TicketHandler {
 
     pub fn new() -> Self {
@@ -242,6 +249,7 @@ impl TicketHandler {
     }
 }
 
+#[cfg(feature = "tickets")]
 impl Ticket {
 
     const ACCESS_PERM: Permissions = Permissions::SEND_MESSAGES.union(Permissions::VIEW_CHANNEL);
@@ -361,6 +369,9 @@ impl Ticket {
         }
         for user_id in self.present_staff.lock().await.iter() {
             handler.allow_member(&Ticket::ACCESS_PERM, user_id).await;
+        }
+        for role_id in self.allowed_roles.iter() {
+            handler.allow_role(&Ticket::ACCESS_PERM, role_id).await;
         }
     }
 

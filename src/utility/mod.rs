@@ -2,7 +2,9 @@
 pub mod permission_handler;
 pub use permission_handler::PermissionHandler;
 
+#[cfg(feature = "tickets")]
 pub mod ticket_handler;
+#[cfg(feature = "tickets")]
 pub use ticket_handler::{Ticket, TicketHandler, TicketType};
 
 pub mod message_manager;

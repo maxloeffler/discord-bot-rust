@@ -42,6 +42,7 @@ impl EventHandler for Handler {
         let guild_id = GuildId::from_str(&main_guild).unwrap();
         let resolver = Resolver::new(ctx, Some(guild_id));
 
+        #[cfg(feature = "tickets")]
         TicketHandler::get_instance().lock().await
             .init(&resolver).await;
     }

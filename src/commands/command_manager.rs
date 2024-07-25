@@ -14,27 +14,29 @@ pub struct CommandManager {
 impl CommandManager {
 
     pub fn new() -> CommandManager {
-        let manager = CommandManager {
-            commands: vec![
-                // casual commands
-                Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
-                Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
-                Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
-                Box::new( VerifyCommand{} ),
-                Box::new( AboutCommand{} ),
-
-                // moderation commands
-                Box::new( WarnCommand{} ),
-
-                // ticket commands
-                Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
-                Box::new( CloseTicketCommand{} ),
-                Box::new( ClaimTicketCommand{} ),
-                Box::new( UnclaimTicketCommand{} ),
-                Box::new( UserDecorator{ command: Box::new(AddMemberToTicketCommand) }),
-                Box::new( UserDecorator{ command: Box::new(RemoveMemberFromTicketCommand) }),
-            ],
-        };
+        let mut commands: Vec<Box<dyn Command>> = vec![
+            // casual commands
+            Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
+            Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
+            Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
+            Box::new( VerifyCommand{} ),
+            Box::new( AboutCommand{} ),
+            // moderation commands
+            Box::new( WarnCommand{} ),
+        ];
+        #[cfg(feature = "tickets")]
+        let ticket_commands: Vec<Box<dyn Command>> = vec![
+            // ticket command
+            Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
+            Box::new( CloseTicketCommand{} ),
+            Box::new( ClaimTicketCommand{} ),
+            Box::new( UnclaimTicketCommand{} ),
+            Box::new( UserDecorator{ command: Box::new(AddMemberToTicketCommand) }),
+            Box::new( UserDecorator{ command: Box::new(RemoveMemberFromTicketCommand) }),
+        ];
+        #[cfg(feature = "tickets")]
+        commands.extend(ticket_commands);
+        let manager = CommandManager { commands };
         manager
     }
 

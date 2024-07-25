@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 #[cfg(feature = "auto_moderation")]
 use crate::utility::auto_moder::AutoModerator;
+#[cfg(feature = "tickets")]
 use crate::utility::ticket_handler::TicketHandler;
 use crate::databases::*;
 
@@ -36,12 +37,14 @@ macro_rules! impl_singleton {
 
 #[cfg(feature = "auto_moderation")]
 impl_singleton!(AutoModerator);
+#[cfg(feature = "tickets")]
+impl_singleton!(TicketHandler);
+
 impl_singleton!(ConfigDB);
 impl_singleton!(WarningsDB);
 impl_singleton!(MutesDB);
 impl_singleton!(FlagsDB);
 impl_singleton!(BansDB);
-impl_singleton!(TicketHandler);
 
 
 pub trait ToList<T: ?Sized> {

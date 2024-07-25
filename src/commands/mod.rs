@@ -22,11 +22,18 @@ pub use moderation::warn::WarnCommand;
 
 // ---- src/commands/tickets/ ---- //
 
+#[cfg(feature = "tickets")]
 pub mod tickets;
 
+#[cfg(feature = "tickets")]
 pub use tickets::open::OpenTicketCommand;
+#[cfg(feature = "tickets")]
 pub use tickets::close::CloseTicketCommand;
+#[cfg(feature = "tickets")]
 pub use tickets::claim::ClaimTicketCommand;
+#[cfg(feature = "tickets")]
 pub use tickets::unclaim::UnclaimTicketCommand;
+#[cfg(feature = "tickets")]
 pub use tickets::add::AddMemberToTicketCommand;
+#[cfg(feature = "tickets")]
 pub use tickets::remove::RemoveMemberFromTicketCommand;
