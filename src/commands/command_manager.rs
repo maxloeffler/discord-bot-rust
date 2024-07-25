@@ -41,13 +41,19 @@ impl CommandManager {
     }
 
     async fn run_command(&self, command: &Box<dyn Command>, message: &MessageManager) {
+
         if command.permission(message).await {
+
+            // execute command
             message.delete().await;
             command.run(CommandParams::new(message.clone(), None)).await;
+
+            // increment executed commands
             let executed_commands = ConfigDB::get_instance().lock().await.
                 get("executed_commands").await.unwrap().to_string().parse::<i64>().unwrap() + 1;
             ConfigDB::get_instance().lock().await.
                 set("executed_commands", &executed_commands.to_string()).await;
+
         } else {
             message.reply_failure("You do not have permission to use this command").await;
         }

@@ -258,12 +258,6 @@ impl MessageManager {
         // execute callback
         if let Some(interaction) = interaction {
 
-            match interaction.data.custom_id.as_str() {
-                "Yes" => yes_callback.await,
-                "No"  => no_callback.await,
-                _ => {}
-            };
-
             // end interaction
             let _ = interaction.create_response(&self.resolver,
                 CreateInteractionResponse::Acknowledge
@@ -272,6 +266,11 @@ impl MessageManager {
             // delete message
             let _ = sent_message.delete(&self.resolver).await;
 
+            match interaction.data.custom_id.as_str() {
+                "Yes" => yes_callback.await,
+                "No"  => no_callback.await,
+                _ => {}
+            };
         }
     }
 
@@ -300,14 +299,6 @@ impl MessageManager {
         // execute callback
         if let Some(interaction) = interaction {
 
-            let data = &interaction.data.kind;
-            match data {
-                StringSelect{values} => {
-                    callback(&values[0]).await;
-                }
-                _ => {}
-            }
-
             // end interaction
             let _ = interaction.create_response(&self.resolver,
                 CreateInteractionResponse::Acknowledge
@@ -316,6 +307,13 @@ impl MessageManager {
             // delete message
             let _ = sent_message.delete(&self.resolver).await;
 
+            let data = &interaction.data.kind;
+            match data {
+                StringSelect{values} => {
+                    callback(&values[0]).await;
+                }
+                _ => {}
+            }
         }
     }
 
@@ -347,6 +345,14 @@ impl MessageManager {
         // execute callback
         if let Some(interaction) = interaction {
 
+            // end interaction
+            let _ = interaction.create_response(&self.resolver,
+                CreateInteractionResponse::Acknowledge
+            ).await;
+
+            // delete message
+            let _ = sent_message.delete(&self.resolver).await;
+
             let data = &interaction.data.kind;
             match data {
                 StringSelect{values} => {
@@ -358,15 +364,6 @@ impl MessageManager {
                 }
                 _ => {}
             }
-
-            // end interaction
-            let _ = interaction.create_response(&self.resolver,
-                CreateInteractionResponse::Acknowledge
-            ).await;
-
-            // delete message
-            let _ = sent_message.delete(&self.resolver).await;
-
         }
     }
 
