@@ -21,6 +21,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
             Box::new( VerifyCommand{} ),
             Box::new( AboutCommand{} ),
+            Box::new( ServerInfoCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
         ];

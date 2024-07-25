@@ -115,7 +115,7 @@ impl<'a> LogBuilder<'a> {
     }
 
     pub fn arbitrary(mut self, label: impl Into<String>, content: impl Into<String>) -> Self {
-        self.fields.push((label.into(), content.into(), false));
+        self.fields.push((label.into(), content.into(), true));
         self
     }
 

@@ -13,6 +13,7 @@ pub use casual::info::InfoCommand;
 pub use casual::nick::NicknameCommand;
 pub use casual::verify::VerifyCommand;
 pub use casual::about::AboutCommand;
+pub use casual::server_info::ServerInfoCommand;
 
 // ---- src/commands/moderation/ ---- //
 
