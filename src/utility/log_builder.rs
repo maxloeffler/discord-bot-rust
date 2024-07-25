@@ -88,25 +88,21 @@ impl<'a> LogBuilder<'a> {
         self
     }
 
-    fn format_timestamp(label: Option<&str>, timestamp: i64) -> String {
-        let label = match label {
-            Some(label) => format!("{}: ", label),
-            None => "".to_string(),
-        };
-        format!("{}<t:{}> *<t:{}:R>*", label, timestamp, timestamp)
+    fn format_timestamp(timestamp: i64) -> String {
+        format!("<t:{}> *<t:{}:R>*", timestamp, timestamp)
     }
 
     pub fn timestamp(mut self) -> Self {
         let timestamp = self.message.get_timestamp();
         self.fields.push(("Timestamp".to_string(),
-            LogBuilder::format_timestamp(None, timestamp),
+            LogBuilder::format_timestamp(timestamp),
             true));
         self
     }
 
     pub fn labeled_timestamp(mut self, label: impl Into<String>, timestamp: i64) -> Self {
         let label = label.into();
-        let timestamp = LogBuilder::format_timestamp(Some(&label), timestamp);
+        let timestamp = LogBuilder::format_timestamp(timestamp);
         self.fields.push((label, timestamp, true));
         self
     }

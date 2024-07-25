@@ -2,6 +2,7 @@
 use crate::commands::command::{CommandParams, MatchType};
 use crate::utility::*;
 use crate::commands::*;
+use crate::databases::*;
 
 
 #[cfg(feature = "commands")]
@@ -20,6 +21,7 @@ impl CommandManager {
                 Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
                 Box::new( VerifyCommand{} ),
+                Box::new( AboutCommand{} ),
 
                 // moderation commands
                 Box::new( WarnCommand{} ),
@@ -40,6 +42,10 @@ impl CommandManager {
         if command.permission(message).await {
             message.delete().await;
             command.run(CommandParams::new(message.clone(), None)).await;
+            let executed_commands = ConfigDB::get_instance().lock().await.
+                get("executed_commands").await.unwrap().to_string().parse::<i64>().unwrap() + 1;
+            ConfigDB::get_instance().lock().await.
+                set("executed_commands", &executed_commands.to_string()).await;
         } else {
             message.reply_failure("You do not have permission to use this command").await;
         }
