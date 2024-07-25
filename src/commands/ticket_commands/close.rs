@@ -1,5 +1,4 @@
 
-use serenity::builder::CreateMessage;
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::{Command, CommandParams};
@@ -25,9 +24,9 @@ impl Command for CloseTicketCommand {
         Box::pin(
             async move {
 
-                let message = params.message;
-                let staff = message.get_author().id;
-                let ticket = TicketHandler::get_instance().lock().await
+                let message = &params.message;
+                let staff = &message.get_author().id;
+                let ticket = &TicketHandler::get_instance().lock().await
                     .get_ticket(&message.get_channel()).await;
 
                 match ticket {
@@ -80,11 +79,15 @@ impl Command for CloseTicketCommand {
                             .arbitrary("Members", &members)
                             .arbitrary("Transcript", &transcript_url)
                             .build().await;
-                        let log = CreateMessage::default().embed(embed);
 
                         // send log
-                        let _ = dump_channel.send_message(message.get_resolver().http(), log).await;
+                        let _ = dump_channel.send_message(message, embed.to_message()).await;
 
+                        if ticket.ticket_type == TicketType::Muted {
+                            let dms = message.get_author().create_dm_channel(message).await.unwrap();
+                            let note = format!("Do not forget to `unmute`, `flag`, or `ban` the member(s) in {}", ticket.channel.name);
+                            let _ = dms.send_message(message, note.to_message()).await;
+                        }
                     },
                     None => message.reply_failure("This channel is not a ticket!").await
                 }
