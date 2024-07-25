@@ -26,6 +26,7 @@ impl CommandManager {
                 Box::new( UserDecorator{ command: Box::new(OpenTicketCommand{}) }),
                 Box::new( CloseTicketCommand{} ),
                 Box::new( ClaimTicketCommand{} ),
+                Box::new( UnclaimTicketCommand{} ),
                 Box::new( UserDecorator{ command: Box::new(AddMemberToTicketCommand) }),
                 Box::new( UserDecorator{ command: Box::new(RemoveMemberFromTicketCommand) }),
             ],

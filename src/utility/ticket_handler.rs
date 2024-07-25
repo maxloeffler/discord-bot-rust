@@ -282,16 +282,13 @@ impl Ticket {
                         async move {
                             let author = &message.author;
                             if !author.bot {
-                                match resolver.is_trial(author).await {
-                                    true => present_members.lock().await.insert(author.id),
-                                    false => present_staff.lock().await.insert(author.id),
-                                };
+                                present_members.lock().await.insert(author.id);
                             } else {
                                 if author.id.to_string() == *bot_id {
                                     if message.embeds.len() > 0 {
                                         if let Some(description) = &message.embeds[0].description {
                                             let splits = &description.split_whitespace().collect::<Vec<&str>>();
-                                            let user_id = regex.find(splits[1])
+                                            let user_id = regex.find(splits.last().unwrap())
                                                 .map(|hit| UserId::from(hit.as_str().parse::<u64>().unwrap()))
                                                 .unwrap_or(UserId::from(1));
                                             match splits[0] {

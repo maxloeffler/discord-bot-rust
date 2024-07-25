@@ -6,9 +6,9 @@ use crate::utility::*;
 use crate::databases::*;
 
 
-pub struct ClaimTicketCommand;
+pub struct UnclaimTicketCommand;
 
-impl Command for ClaimTicketCommand {
+impl Command for UnclaimTicketCommand {
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move {
@@ -17,7 +17,7 @@ impl Command for ClaimTicketCommand {
     }
 
     fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["claim".to_string()]
+        nonempty!["unclaim".to_string()]
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -32,15 +32,15 @@ impl Command for ClaimTicketCommand {
                 match ticket {
                     Some(ticket) => {
 
-                        if ticket.present_staff.lock().await.contains(&staff) {
-                            message.reply_failure("You have already claimed this ticket!").await;
+                        if !ticket.present_staff.lock().await.contains(&staff) {
+                            message.reply_failure("You have not claimed this ticket").await;
                             return;
                         }
 
-                        ticket.add_staff(&staff).await;
+                        ticket.remove_staff(&staff).await;
                         let embed = MessageManager::create_embed(|embed| {
                             embed
-                                .description(format!("Claimed by <@{}>", staff))
+                                .description(format!("Unclaimed by <@{}>", staff))
                             }).await;
                         message.reply(embed).await;
                     },
