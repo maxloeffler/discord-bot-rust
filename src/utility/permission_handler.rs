@@ -25,7 +25,7 @@ impl<'a> PermissionHandler<'_> {
     async fn update_permissions(&self, overwrites: Vec<PermissionOverwrite>) {
         futures::stream::iter(overwrites)
             .for_each_concurrent(None, |overwrite| async move {
-                let _ = self.channel.create_permission(self.resolver.ctx(), overwrite).await;
+                let _ = self.channel.create_permission(self.resolver, overwrite).await;
             }).await;
     }
 

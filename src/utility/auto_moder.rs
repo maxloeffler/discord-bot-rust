@@ -45,7 +45,7 @@ impl AutoModerator {
                 // mute user
                 let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
                 let member = resolver.resolve_member(&target).await.unwrap();
-                member.add_role(&resolver.ctx().http, role_muted.id).await.unwrap();
+                member.add_role(&resolver, role_muted.id).await.unwrap();
 
                 // log mute
                 let bot_id = ConfigDB::get_instance().lock().await
@@ -87,8 +87,8 @@ impl AutoModerator {
                 let channel = resolver.resolve_channel(channel_muted).await.unwrap();
 
                 // send 'automute message'
-                let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
-                let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+                let _ = channel.send_message(resolver, responsibility.to_message()).await;
+                let _ = channel.send_message(resolver, embed.to_message()).await;
             }
         }
     }
@@ -134,8 +134,8 @@ impl AutoModerator {
                 let channel = resolver.resolve_channel(channel_muted).await.unwrap();
 
                 // send 'automute message'
-                let _ = channel.send_message(&resolver.ctx().http, responsibility.to_message()).await;
-                let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+                let _ = channel.send_message(resolver, responsibility.to_message()).await;
+                let _ = channel.send_message(resolver, embed.to_message()).await;
             }
         }
     }
@@ -178,7 +178,7 @@ impl AutoModerator {
                     let channel = resolver.resolve_channel(channel_id).await.unwrap();
 
                     // send 'automute message'
-                    let _ = channel.send_message(&resolver.ctx().http, embed.to_message()).await;
+                    let _ = channel.send_message(resolver, embed.to_message()).await;
                 },
                 Err(err) => Logger::err_long("Failed to ban user", &err.to_string())
             };

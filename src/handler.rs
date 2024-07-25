@@ -120,7 +120,7 @@ impl EventHandler for Handler {
         if guild.is_some() && channel.is_some() {
             let edit = EditChannel::new()
                 .name(&format!("Kalopsians: {}", guild.unwrap().member_count));
-            let _ = channel.unwrap().edit(&resolver.http(), edit).await;
+            let _ = channel.unwrap().edit(&resolver, edit).await;
         }
     }
 
@@ -212,9 +212,7 @@ impl EventHandler for Handler {
             let channel_id = channel_protected_log[0].clone();
             let channel = message.get_resolver()
                 .resolve_channel(channel_id).await.unwrap();
-            let _ = channel.send_message(
-                &message.get_resolver().http(),
-                log_message.to_message()).await;
+            let _ = channel.send_message(message, log_message.to_message()).await;
         }
 
     }
@@ -288,7 +286,7 @@ impl EventHandler for Handler {
             }
 
             // log message
-            let _ = channel_messagelogs.send_message(&resolver.http(), log_message.to_message()).await;
+            let _ = channel_messagelogs.send_message(resolver, log_message.to_message()).await;
         }
     }
 }

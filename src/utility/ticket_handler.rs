@@ -17,7 +17,7 @@ use crate::utility::*;
 use crate::databases::*;
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum TicketType {
     Muted,
     Discussion,
@@ -151,7 +151,7 @@ impl TicketHandler {
             let builder = CreateChannel::new(resolver.resolve_name(target))
                 .category(ChannelId::from(ticket_category))
                 .topic(ticket_type);
-            let channel = guild.create_channel(resolver.http(), builder).await;
+            let channel = guild.create_channel(resolver, builder).await;
 
             if let Ok(channel) = channel {
 
@@ -223,7 +223,7 @@ impl TicketHandler {
             Logger::info_long("Start", logstr);
 
             ticket.deny_all().await;
-            let _ = ticket.channel.delete(&ticket.resolver.http()).await;
+            let _ = ticket.channel.delete(&ticket.resolver).await;
 
             #[cfg(feature = "debug")]
             Logger::info_long("End", logstr);
@@ -262,7 +262,7 @@ impl Ticket {
 
             // get all messages in the channel
             let builder = GetMessages::new().around(last_message).limit(255);
-            let messages = channel.messages(&resolver.http(), builder).await;
+            let messages = channel.messages(&resolver, builder).await;
 
             if let Ok(messages) = messages {
 

@@ -4,7 +4,6 @@ use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::model::application::ButtonStyle;
 use serenity::builder::{
     CreateEmbed,
-    CreateMessage,
     CreateButton,
     CreateInteractionResponse,
     CreateSelectMenu,
@@ -12,11 +11,13 @@ use serenity::builder::{
     CreateSelectMenuOption,
     GetMessages
 };
+use serenity::all::{CacheHttp, Cache, Http};
 use nonempty::NonEmpty;
 use regex::Regex;
 
 use std::collections::HashMap;
 use std::time::Duration;
+use std::sync::Arc;
 
 use crate::utility::*;
 use crate::databases::*;
@@ -30,6 +31,21 @@ pub struct MessageManager {
     command: Option<String>,
     parameters: HashMap<String, String>,
     words: Vec<String>
+}
+
+impl CacheHttp for MessageManager {
+    fn http(&self) -> &Http {
+        self.resolver.http()
+    }
+    fn cache(&self) -> Option<&Arc<Cache>> {
+        Some(self.resolver.cache())
+    }
+}
+
+impl AsRef<Http> for MessageManager {
+    fn as_ref(&self) -> &Http {
+        self.resolver.http()
+    }
 }
 
 impl MessageManager {
@@ -149,7 +165,7 @@ impl MessageManager {
     pub async fn delete(&self) {
         let timeout = 250;
         let mut attempts = 5;
-        while self.raw_message.delete(&self.resolver.ctx()).await.is_err() && attempts > 0 {
+        while self.raw_message.delete(&self.resolver).await.is_err() && attempts > 0 {
             let _ = tokio::time::sleep(tokio::time::Duration::from_millis(timeout));
             attempts -= 1;
         }
@@ -157,7 +173,7 @@ impl MessageManager {
 
     pub async fn reply(&self, message: impl ToMessage) {
         let channel = self.get_channel();
-        let _ = channel.send_message(self.resolver.http(), message.to_message()).await;
+        let _ = channel.send_message(&self.resolver, message.to_message()).await;
     }
 
     pub async fn reply_success(&self) {
@@ -168,16 +184,15 @@ impl MessageManager {
                 .title("✅")
                 .description("Success!")
         }).await;
-        let message = CreateMessage::new().embed(embed);
 
         // send message
         let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.resolver.http(), message).await;
+        let sent_message = channel.send_message(&self.resolver, embed.to_message()).await;
 
         // delete message
         if let Ok(message) = sent_message {
             let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.resolver.ctx()).await;
+            let _ = message.delete(&self.resolver).await;
         }
     }
 
@@ -189,16 +204,15 @@ impl MessageManager {
                 .title("❌")
                 .description(context)
         }).await;
-        let message = CreateMessage::new().embed(embed);
 
         // send message
         let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.resolver.http(), message).await;
+        let sent_message = channel.send_message(&self.resolver, embed.to_message()).await;
 
         // delete message
         if let Ok(message) = sent_message {
             let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.resolver.ctx()).await;
+            let _ = message.delete(&self.resolver).await;
         }
     }
 
@@ -213,7 +227,7 @@ impl MessageManager {
     pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
         let channel = self.get_channel();
         let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
-        let messages = channel.messages(&self.resolver.http(), builder).await;
+        let messages = channel.messages(&self.resolver, builder).await;
         match messages {
             Ok(messages) => messages,
             Err(_) => Vec::new()
@@ -239,7 +253,7 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.resolver.http(), message).await.unwrap();
+            .send_message(&self.resolver, message).await.unwrap();
 
         // await interaction
         let interaction = &sent_message
@@ -256,12 +270,12 @@ impl MessageManager {
             };
 
             // end interaction
-            let _ = interaction.create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver,
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.resolver.http()).await;
+            let _ = sent_message.delete(&self.resolver).await;
 
         }
     }
@@ -281,7 +295,7 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.resolver.http(), message).await.unwrap();
+            .send_message(&self.resolver, message).await.unwrap();
 
         // await interaction
         let interaction = &sent_message
@@ -300,12 +314,12 @@ impl MessageManager {
             }
 
             // end interaction
-            let _ = interaction.create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver,
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.resolver.ctx()).await;
+            let _ = sent_message.delete(&self.resolver).await;
 
         }
     }
@@ -328,7 +342,7 @@ impl MessageManager {
 
         // send message
         let sent_message = self.get_channel()
-            .send_message(&self.resolver.http(), message).await.unwrap();
+            .send_message(&self.resolver, message).await.unwrap();
 
         // await interaction
         let interaction = sent_message
@@ -351,12 +365,12 @@ impl MessageManager {
             }
 
             // end interaction
-            let _ = interaction.create_response(&self.resolver.http(),
+            let _ = interaction.create_response(&self.resolver,
                 CreateInteractionResponse::Acknowledge
             ).await;
 
             // delete message
-            let _ = sent_message.delete(&self.resolver.ctx()).await;
+            let _ = sent_message.delete(&self.resolver).await;
 
         }
     }

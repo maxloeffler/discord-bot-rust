@@ -1,5 +1,4 @@
 
-use serenity::builder::CreateMessage;
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::{Command, CommandParams};
@@ -56,10 +55,8 @@ impl Command for OpenTicketCommand {
                 }).await;
 
                 // send message
-                let embed = CreateMessage::new()
-                    .content(format!("<@{}>", target.id))
-                    .embed(embed);
-                let _ = ticket.unwrap().channel.send_message(message.get_resolver().http(), embed).await;
+                let embed = embed.to_message().content(format!("<@{}>", target.id));
+                let _ = ticket.unwrap().channel.send_message(message, embed).await;
             }
         )
     }

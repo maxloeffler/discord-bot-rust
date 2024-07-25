@@ -1,8 +1,7 @@
 
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use serenity::http::Http;
-use serenity::cache::Cache;
+use serenity::all::{CacheHttp, Cache, Http};
 
 use std::sync::Arc;
 
@@ -13,6 +12,21 @@ use crate::utility::*;
 pub struct Resolver {
     ctx: Context,
     guild_id: Option<GuildId>
+}
+
+impl CacheHttp for Resolver {
+    fn http(&self) -> &Http {
+        self.http()
+    }
+    fn cache(&self) -> Option<&Arc<Cache>> {
+        Some(self.cache())
+    }
+}
+
+impl AsRef<Http> for Resolver {
+    fn as_ref(&self) -> &Http {
+        self.http()
+    }
 }
 
 impl Resolver {

@@ -1,5 +1,4 @@
 
-use serenity::builder::CreateMessage;
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::{Command, CommandParams};

@@ -77,7 +77,7 @@ impl Command for WarnCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
-                let _ = channel_modlogs.send_message(&resolver.http(), log_message.to_message()).await;
+                let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
 
                 // check if the user has been warned too many times
                 #[cfg(feature = "auto_moderation")]
