@@ -141,6 +141,12 @@ impl ToList<RoleId> for DBEntry {
     }
 }
 
+impl ToList<RoleId> for Vec<Role> {
+    fn to_list(&self) -> Vec<RoleId> {
+        self.iter().map(|role| role.id).collect()
+    }
+}
+
 impl ToList<ChannelId> for String {
     fn to_list(&self) -> Vec<ChannelId> {
         let channel = ChannelId::from_str(self);

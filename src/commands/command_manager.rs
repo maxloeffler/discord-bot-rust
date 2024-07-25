@@ -15,9 +15,10 @@ impl CommandManager {
     pub fn new() -> CommandManager {
         let manager = CommandManager {
             commands: vec![
-                // general commands
+                // casual commands
                 Box::new( UserDecorator{ command: Box::new(AvatarCommand{}) }),
                 Box::new( UserDecorator{ command: Box::new(InfoCommand{}) }),
+                Box::new( UserDecorator{ command: Box::new(NicknameCommand{}) }),
 
                 // moderation commands
                 Box::new( WarnCommand{} ),
@@ -38,6 +39,8 @@ impl CommandManager {
         if command.permission(message).await {
             message.delete().await;
             command.run(CommandParams::new(message.clone(), None)).await;
+        } else {
+            message.reply_failure("You don't have permission to use this command").await;
         }
     }
 

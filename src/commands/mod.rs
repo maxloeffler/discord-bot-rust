@@ -10,6 +10,7 @@ pub mod casual;
 
 pub use casual::avatar::AvatarCommand;
 pub use casual::info::InfoCommand;
+pub use casual::nick::NicknameCommand;
 
 // ---- src/commands/moderation/ ---- //
 
