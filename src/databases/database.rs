@@ -18,6 +18,7 @@ pub enum DB {
     Mutes,
     Flags,
     Bans,
+    Afk,
 }
 
 impl fmt::Display for DB {
@@ -28,6 +29,7 @@ impl fmt::Display for DB {
             DB::Mutes => write!(f, "mutes"),
             DB::Flags => write!(f, "flags"),
             DB::Bans => write!(f, "bans"),
+            DB::Afk => write!(f, "afk"),
         }
     }
 }
@@ -117,9 +119,9 @@ impl Database {
     }
 
     pub async fn get(&self, key: &str) -> Result<DBEntry> {
-        self.query(key, "ORDER BY timestamp ASC LIMIT 1").await
-            .map(|mut entries|
-                entries.pop().ok_or(&format!("Failed to get value for '{}'", key)).unwrap())
+        self.query(key, "ORDER BY timestamp ASC LIMIT 1").await?
+            .pop()
+            .ok_or(format!("Failed to get value for '{}'", key))
     }
 
     pub async fn get_all(&self, key: &str) -> Result<Vec<DBEntry>> {

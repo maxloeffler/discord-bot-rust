@@ -204,3 +204,16 @@ impl DatabaseWrapper for BansDB {
     }
 }
 
+pub struct AfkDB { database: Database }
+
+impl AfkDB {
+    pub fn new() -> Self {
+        AfkDB { database: Database::new(DB::Afk) }
+    }
+}
+
+impl DatabaseWrapper for AfkDB {
+    fn get_database(&self) -> &Database {
+        &self.database
+    }
+}

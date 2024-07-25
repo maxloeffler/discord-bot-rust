@@ -22,6 +22,7 @@ impl CommandManager {
             Box::new( VerifyCommand{} ),
             Box::new( AboutCommand{} ),
             Box::new( ServerInfoCommand{} ),
+            Box::new( AfkCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
         ];

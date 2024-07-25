@@ -45,6 +45,7 @@ impl_singleton!(WarningsDB);
 impl_singleton!(MutesDB);
 impl_singleton!(FlagsDB);
 impl_singleton!(BansDB);
+impl_singleton!(AfkDB);
 
 
 pub trait ToList<T: ?Sized> {

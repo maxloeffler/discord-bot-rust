@@ -7,7 +7,9 @@ use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmb
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use difference::{Difference, Changeset};
+use futures::stream::StreamExt;
 
+use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::commands::command_manager::CommandManager;
@@ -32,6 +34,7 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
 
+    #[cfg(feature = "tickets")]
     async fn ready(&self, ctx: Context, _ready: Ready) {
 
         #[cfg(feature = "debug")]
@@ -42,7 +45,6 @@ impl EventHandler for Handler {
         let guild_id = GuildId::from_str(&main_guild).unwrap();
         let resolver = Resolver::new(ctx, Some(guild_id));
 
-        #[cfg(feature = "tickets")]
         TicketHandler::get_instance().lock().await
             .init(&resolver).await;
     }
@@ -51,7 +53,7 @@ impl EventHandler for Handler {
 
         // parse message
         let resolver = Resolver::new(ctx, msg.guild_id);
-        let message = MessageManager::new(resolver, msg).await;
+        let message = Arc::new(MessageManager::new(resolver, msg).await);
 
         // if message pings the bot
         let bot_id = ConfigDB::get_instance().lock().await
@@ -69,6 +71,35 @@ impl EventHandler for Handler {
         if message.get_channel().get().to_string() == channel_verify {
             message.delete().await;
         }
+
+        // check if author is afk
+        let author = message.get_author().id.to_string();
+        let author_afk = AfkDB::get_instance().lock().await.get(&author).await;
+        if author_afk.is_ok() {
+            let embed = MessageManager::create_embed(|embed| {
+                embed.description("Removed your afk.")
+            }).await;
+            message.reply(embed).await;
+            AfkDB::get_instance().lock().await.delete(&author).await;
+        }
+
+        // check if message mentions an afk user
+        let mentions = message.get_mentions().await;
+        futures::stream::iter(mentions)
+            .for_each_concurrent(None, |mention| {
+                let message = Arc::clone(&message);
+                async move {
+                    let mention_afk = AfkDB::get_instance().lock().await.get(&mention.to_string()).await;
+                    if let Ok(afk) = mention_afk {
+                        let embed = MessageManager::create_embed(|embed| {
+                            embed.description(
+                                &format!("<@{}> is currently afk `>` {}",
+                                    mention.to_string(),
+                                    afk.to_string()))
+                        }).await;
+                        message.reply(embed).await;
+                    }
+                }}).await;
 
         // check guideline violations
         let chat_filter = ChatFilterManager::new(&message).filter().await;
@@ -92,7 +123,7 @@ impl EventHandler for Handler {
 
                 // warn user
                 let warn_message = format!("<@{}>, you have been **automatically warned** `>` {}",
-                    message.get_author().id.to_string(),
+                    author,
                     chat_filter.context);
                 message.reply(warn_message.to_message()).await;
                 let database_reason = format!("Automatically warned ('{}')", chat_filter.context);
