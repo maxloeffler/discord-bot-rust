@@ -418,7 +418,7 @@ impl Ticket {
 
         if cfg!(target_os = "linux") {
             let process = Command::new("python3")
-                .arg("src/commands/ticket_commands/transcribe.py")
+                .arg("src/commands/tickets/transcribe.py")
                 .arg(token)
                 .arg(self.channel.id.to_string())
                 .arg(self.channel.guild_id.to_string())

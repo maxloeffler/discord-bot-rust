@@ -4,24 +4,26 @@ pub mod command_manager;
 pub mod command;
 pub use command::{Command, UserDecorator};
 
-pub mod avatar;
-pub mod info;
+// ---- src/commands/casual/ ---- //
 
-pub use avatar::AvatarCommand;
-pub use info::InfoCommand;
+pub mod casual;
 
-// ---- src/commands/mod_commands/ ----
+pub use casual::avatar::AvatarCommand;
+pub use casual::info::InfoCommand;
 
-pub mod mod_commands;
-pub use mod_commands::warn::WarnCommand;
+// ---- src/commands/moderation/ ---- //
 
-// ---- src/commands/ticket_commands/ ----
+pub mod moderation;
 
-pub mod ticket_commands;
+pub use moderation::warn::WarnCommand;
 
-pub use ticket_commands::open::OpenTicketCommand;
-pub use ticket_commands::close::CloseTicketCommand;
-pub use ticket_commands::claim::ClaimTicketCommand;
-pub use ticket_commands::unclaim::UnclaimTicketCommand;
-pub use ticket_commands::add::AddMemberToTicketCommand;
-pub use ticket_commands::remove::RemoveMemberFromTicketCommand;
+// ---- src/commands/tickets/ ---- //
+
+pub mod tickets;
+
+pub use tickets::open::OpenTicketCommand;
+pub use tickets::close::CloseTicketCommand;
+pub use tickets::claim::ClaimTicketCommand;
+pub use tickets::unclaim::UnclaimTicketCommand;
+pub use tickets::add::AddMemberToTicketCommand;
+pub use tickets::remove::RemoveMemberFromTicketCommand;
