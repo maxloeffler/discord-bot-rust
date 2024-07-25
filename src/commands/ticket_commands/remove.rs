@@ -6,9 +6,9 @@ use crate::utility::*;
 use crate::databases::*;
 
 
-pub struct AddMemberToTicketCommand;
+pub struct RemoveMemberFromTicketCommand;
 
-impl Command for AddMemberToTicketCommand {
+impl Command for RemoveMemberFromTicketCommand {
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move {
@@ -17,7 +17,7 @@ impl Command for AddMemberToTicketCommand {
     }
 
     fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["add".to_string()]
+        nonempty!["remove".to_string()]
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -32,15 +32,15 @@ impl Command for AddMemberToTicketCommand {
                 match ticket {
                     Some(ticket) => {
 
-                        if ticket.present_members.lock().await.contains(&member) {
-                            message.reply_failure(&format!("<@{}> is already in this ticket!", member)).await;
+                        if !ticket.present_members.lock().await.contains(&member) {
+                            message.reply_failure(&format!("<@{}> is not in this ticket!", member)).await;
                             return;
                         }
 
-                        ticket.add_member(&member).await;
+                        ticket.remove_member(&member).await;
                         let embed = MessageManager::create_embed(|embed| {
                             embed
-                                .description(format!("Added <@{}>", member))
+                                .description(format!("Removed <@{}>", member))
                             }).await;
                         message.reply(embed).await;
                     },
