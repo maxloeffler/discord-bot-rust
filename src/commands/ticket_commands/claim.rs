@@ -31,7 +31,7 @@ impl Command for ClaimTicketCommand {
 
                 match ticket {
                     Some(ticket) => {
-                        ticket.claim(&staff).await;
+                        ticket.add_staff(&staff).await;
                         let embed = MessageManager::create_embed(|embed| {
                             embed
                                 .description(format!("Claimed by <@{}>", staff))

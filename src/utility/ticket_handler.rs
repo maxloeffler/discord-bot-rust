@@ -264,22 +264,46 @@ impl Ticket {
             let builder = GetMessages::new().around(last_message).limit(255);
             let messages = channel.messages(&resolver, builder).await;
 
-            if let Ok(messages) = messages {
+            if let Ok(messages) = &messages {
+
+                let bot_id = Arc::new(ConfigDB::get_instance().lock().await
+                    .get("bot_id").await.unwrap().to_string());
+                let regex = Arc::new(RegexManager::get_id_regex());
 
                 // get all present staff and members in the ticket
                 let present_staff = Arc::new(Mutex::new(HashSet::new()));
                 let present_members = Arc::new(Mutex::new(HashSet::new()));
-                let message_iter = futures::stream::iter(messages.clone())
-                    .for_each_concurrent(None, |message: Message| {
+                let message_iter = futures::stream::iter(messages.iter().rev())
+                    .for_each_concurrent(None, |message: &Message| {
                         let present_staff = Arc::clone(&present_staff);
                         let present_members = Arc::clone(&present_members);
+                        let bot_id = Arc::clone(&bot_id);
+                        let regex = Arc::clone(&regex);
                         async move {
-                            let author = message.author;
+                            let author = &message.author;
                             if !author.bot {
-                                match resolver.is_trial(&author).await {
-                                    true => present_staff.lock().await.insert(author.id),
-                                    false => present_members.lock().await.insert(author.id),
+                                match resolver.is_trial(author).await {
+                                    true => present_members.lock().await.insert(author.id),
+                                    false => present_staff.lock().await.insert(author.id),
                                 };
+                            } else {
+                                if author.id.to_string() == *bot_id {
+                                    if message.embeds.len() > 0 {
+                                        if let Some(description) = &message.embeds[0].description {
+                                            let splits = &description.split_whitespace().collect::<Vec<&str>>();
+                                            let user_id = regex.find(splits[1])
+                                                .map(|hit| UserId::from(hit.as_str().parse::<u64>().unwrap()))
+                                                .unwrap_or(UserId::from(1));
+                                            match splits[0] {
+                                                "Added" => present_members.lock().await.insert(user_id),
+                                                "Removed" => present_members.lock().await.remove(&user_id),
+                                                "Claimed" => present_staff.lock().await.insert(user_id),
+                                                "Unclaimed" => present_staff.lock().await.remove(&user_id),
+                                                _ => { false }
+                                            };
+                                        }
+                                    }
+                                }
                             }
                         }});
                 message_iter.await;
@@ -358,7 +382,7 @@ impl Ticket {
         // }
     }
 
-    pub async fn claim(&self, staff: &UserId) {
+    pub async fn add_staff(&self, staff: &UserId) {
         let handler = self.get_permissions();
         for role in self.allowed_roles.iter() {
             handler.deny_role(&Permissions::SEND_MESSAGES, role).await;
@@ -367,7 +391,7 @@ impl Ticket {
         self.allow_participants().await;
     }
 
-    pub async fn unclaim(&self, staff: &UserId) {
+    pub async fn remove_staff(&self, staff: &UserId) {
         self.present_staff.lock().await.remove(staff);
         let handler = self.get_permissions();
         handler.deny_member(&Ticket::ACCESS_PERM, staff).await;
