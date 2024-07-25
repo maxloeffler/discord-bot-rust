@@ -41,7 +41,7 @@ pub trait Command: Send + Sync {
                 }
                 for name in names.iter() {
                     let threshold = name.len() / 3;
-                    if string_distance(&trigger, &name) < threshold {
+                    if string_distance(&trigger, &name) <= threshold {
                         return MatchType::Fuzzy(name.to_string());
                     }
                 }

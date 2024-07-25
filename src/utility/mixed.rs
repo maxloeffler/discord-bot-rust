@@ -8,8 +8,28 @@ use std::future::Future;
 pub type BoxedFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 pub type Result<T> = std::result::Result<T, String>;
 
+// Implement Levenshtein distance
+// https://www.wikiwand.com/en/Levenshtein_distance
 pub fn string_distance(a: &str, b: &str) -> usize {
-    a.chars().zip(b.chars()).filter(|(a, b)| a != b).count()
+
+    if a.is_empty() {
+        return b.len();
+    }
+
+    if b.is_empty() {
+        return a.len();
+    }
+
+    if a.chars().next().unwrap() == b.chars().next().unwrap() {
+        return string_distance(&a[1..], &b[1..]);
+    }
+
+    1 + [
+        string_distance(&a[1..], b),
+        string_distance(a, &b[1..]),
+        string_distance(&a[1..], &b[1..]),
+    ].iter().min().unwrap().clone()
+
 }
 
 pub struct RegexManager {}
