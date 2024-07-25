@@ -350,9 +350,11 @@ impl Ticket {
         for user_id in self.present_staff.lock().await.iter() {
             handler.deny_member(&Ticket::ACCESS_PERM, user_id).await;
         }
-        for role_id in self.allowed_roles.iter() {
-            handler.deny_role(&Ticket::ACCESS_PERM, role_id).await;
-        }
+        #[cfg(feature = "debug")]
+        Logger::warn("Denying roles when closing a Ticket is currently disabled");
+        // for role_id in self.allowed_roles.iter() {
+        //     handler.deny_role(&Ticket::ACCESS_PERM, role_id).await;
+        // }
     }
 
     pub async fn claim(&self, staff: &UserId) {
