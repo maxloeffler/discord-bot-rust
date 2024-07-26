@@ -56,10 +56,10 @@ impl EventHandler for Handler {
         let message = Arc::new(MessageManager::new(resolver, msg).await);
 
         // if message pings the bot
-        let bot_id = ConfigDB::get_instance().lock().await
+        let bot_id = &ConfigDB::get_instance().lock().await
             .get("bot_id").await.unwrap().to_string();
-        let bot_pings = vec![format!("<@!{}>", &bot_id),
-                             format!("<@{}>",  &bot_id)];
+        let bot_pings = vec![format!("<@!{}>", bot_id),
+                             format!("<@{}>",  bot_id)];
         if bot_pings.contains(&message.payload(None, None)) {
             let _ = message.reply("Hello!").await;
             return;
@@ -126,9 +126,15 @@ impl EventHandler for Handler {
                     author,
                     chat_filter.context);
                 let _ = message.reply(warn_message.to_message()).await;
-                let database_reason = format!("Automatically warned ('{}')", chat_filter.context);
+
+                // log to database
+                let log = ModLog {
+                    member_id: author,
+                    staff_id: bot_id.to_string(),
+                    reason: format!("Automatically warned ('{}')", chat_filter.context),
+                };
                 WarningsDB::get_instance().lock().await
-                    .append(&message.get_author().id.to_string(), &database_reason).await;
+                    .append(&message.get_author().id.to_string(), &log.into()).await;
 
             }
         }

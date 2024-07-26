@@ -154,7 +154,7 @@ impl Database {
 
             connection.execute(
                 &format!("INSERT INTO {} (key, value, timestamp) VALUES (?, ?, ?)", self.identifier.to_string()),
-                params![key, value, chrono::Utc::now().timestamp_millis()],
+                params![key, value, chrono::Utc::now().timestamp()],
             ).expect("Failed to set value");
 
         }
@@ -164,7 +164,7 @@ impl Database {
         let connection = self.connection.lock().await;
         connection.execute(
             &format!("INSERT INTO {} (key, value, timestamp) VALUES (?, ?, ?)", self.identifier.to_string()),
-            params![key, value, chrono::Utc::now().timestamp_millis()],
+            params![key, value, chrono::Utc::now().timestamp()],
         ).expect("Failed to append value");
     }
 

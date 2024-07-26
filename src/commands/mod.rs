@@ -22,6 +22,7 @@ pub use casual::poll::PollCommand;
 pub mod moderation;
 
 pub use moderation::warn::WarnCommand;
+pub use moderation::warnings::WarningsCommand;
 
 // ---- src/commands/tickets/ ---- //
 

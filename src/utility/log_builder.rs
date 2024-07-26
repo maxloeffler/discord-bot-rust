@@ -3,6 +3,7 @@ use serenity::builder::{CreateEmbed, CreateEmbedAuthor};
 use serenity::model::user::User;
 
 use crate::utility::*;
+use crate::databases::*;
 
 
 #[derive(Clone)]
@@ -131,6 +132,19 @@ impl<'a> LogBuilder<'a> {
 
     pub fn target(mut self, target: &'a User) -> Self {
         self.target = Some(target);
+        self
+    }
+
+    pub fn mod_log(mut self, entry: &DBEntry) -> Self {
+        let timestamp = LogBuilder::format_timestamp(entry.timestamp);
+        let id = format!("**Database ID**: {}", entry.id);
+
+        // extract mod log specific fields
+        let log: ModLog = entry.into();
+        let staff_time = format!("**Staff**: <@{}> `>` {}", log.staff_id, timestamp);
+        let reason = format!("**Reason**: {}", log.reason);
+
+        self.fields.push((id, format!("{}\n{}", staff_time, reason), false));
         self
     }
 

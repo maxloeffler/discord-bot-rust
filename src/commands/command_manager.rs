@@ -26,6 +26,7 @@ impl CommandManager {
             Box::new( PollCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
+            Box::new( UserDecorator{ command: Box::new(WarningsCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
