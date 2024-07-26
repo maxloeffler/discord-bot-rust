@@ -34,7 +34,7 @@ impl fmt::Display for DB {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DBEntry {
     pub id: i64,
     pub key: String,
