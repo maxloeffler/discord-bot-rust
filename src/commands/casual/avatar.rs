@@ -25,7 +25,7 @@ impl Command for AvatarCommand {
                     .target(&target)
                     .no_thumbnail()
                     .build().await;
-                message.reply(embed).await
+                let _ = message.reply(embed).await;
             }
         )
     }

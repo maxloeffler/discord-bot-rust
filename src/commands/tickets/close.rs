@@ -37,7 +37,7 @@ impl Command for CloseTicketCommand {
                             embed
                                 .description(format!("Closed by <@{}>", staff))
                             }).await;
-                        message.reply(embed).await;
+                        let _ = message.reply(embed).await;
 
                         // remove ticket from handler
                         TicketHandler::get_instance().lock().await

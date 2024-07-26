@@ -15,6 +15,7 @@ pub use casual::verify::VerifyCommand;
 pub use casual::about::AboutCommand;
 pub use casual::server_info::ServerInfoCommand;
 pub use casual::afk::AfkCommand;
+pub use casual::poll::PollCommand;
 
 // ---- src/commands/moderation/ ---- //
 

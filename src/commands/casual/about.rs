@@ -42,7 +42,7 @@ impl Command for AboutCommand {
                     .arbitrary("Executed Commands", format!("`{}`", query[3].to_string()))
                     .build().await;
 
-                message.reply(embed).await;
+                let _ = message.reply(embed).await;
             }
         )
     }

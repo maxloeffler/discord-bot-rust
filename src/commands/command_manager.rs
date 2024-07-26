@@ -23,6 +23,7 @@ impl CommandManager {
             Box::new( AboutCommand{} ),
             Box::new( ServerInfoCommand{} ),
             Box::new( AfkCommand{} ),
+            Box::new( PollCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
         ];

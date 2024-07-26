@@ -42,7 +42,7 @@ impl Command for RemoveMemberFromTicketCommand {
                             embed
                                 .description(format!("Removed <@{}>", member))
                             }).await;
-                        message.reply(embed).await;
+                        let _ = message.reply(embed).await;
                     },
                     None => message.reply_failure("This channel is not a ticket!").await
                 }

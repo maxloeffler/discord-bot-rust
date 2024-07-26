@@ -44,7 +44,7 @@ impl Command for InfoCommand {
                     };
                 }
 
-                message.reply(embed.build().await).await;
+                let _ = message.reply(embed.build().await).await;
             }
         )
     }

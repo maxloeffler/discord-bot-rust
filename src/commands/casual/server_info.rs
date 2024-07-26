@@ -54,7 +54,7 @@ impl Command for ServerInfoCommand {
                                 emojis_animated, emojis_regular, emojis.len()))
                         .build().await;
 
-                    message.reply(embed).await;
+                    let _ = message.reply(embed).await;
                 }
             }
         )

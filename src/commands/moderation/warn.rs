@@ -61,8 +61,8 @@ impl Command for WarnCommand {
                         .description(&format!("You have been warned for `>` {}", reason))
                         .color(0xff0000)
                 ).await;
-                message.reply(format!("<@{}>", target.id)).await;
-                message.reply(embed).await;
+                let _ = message.reply(format!("<@{}>", target.id)).await;
+                let _ = message.reply(embed).await;
 
                 // log to mod logs
                 let channel_modlogs_id = ConfigDB::get_instance().lock().await

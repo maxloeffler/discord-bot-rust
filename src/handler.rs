@@ -61,7 +61,7 @@ impl EventHandler for Handler {
         let bot_pings = vec![format!("<@!{}>", &bot_id),
                              format!("<@{}>",  &bot_id)];
         if bot_pings.contains(&message.payload(None, None)) {
-            message.reply("Hello!").await;
+            let _ = message.reply("Hello!").await;
             return;
         }
 
@@ -79,7 +79,7 @@ impl EventHandler for Handler {
             let embed = MessageManager::create_embed(|embed| {
                 embed.description("Removed your afk.")
             }).await;
-            message.reply(embed).await;
+            let _ = message.reply(embed).await;
             AfkDB::get_instance().lock().await.delete(&author).await;
         }
 
@@ -97,7 +97,7 @@ impl EventHandler for Handler {
                                     mention.to_string(),
                                     afk.to_string()))
                         }).await;
-                        message.reply(embed).await;
+                        let _ = message.reply(embed).await;
                     }
                 }}).await;
 
@@ -125,7 +125,7 @@ impl EventHandler for Handler {
                 let warn_message = format!("<@{}>, you have been **automatically warned** `>` {}",
                     author,
                     chat_filter.context);
-                message.reply(warn_message.to_message()).await;
+                let _ = message.reply(warn_message.to_message()).await;
                 let database_reason = format!("Automatically warned ('{}')", chat_filter.context);
                 WarningsDB::get_instance().lock().await
                     .append(&message.get_author().id.to_string(), &database_reason).await;

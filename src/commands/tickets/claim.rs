@@ -42,7 +42,7 @@ impl Command for ClaimTicketCommand {
                             embed
                                 .description(format!("Claimed by <@{}>", staff))
                             }).await;
-                        message.reply(embed).await;
+                        let _ = message.reply(embed).await;
                     },
                     None => message.reply_failure("This channel is not a ticket!").await
                 }

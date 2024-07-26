@@ -60,7 +60,7 @@ impl Command for NicknameCommand {
                     member.edit(&message, edit).await.unwrap();
                 }
 
-                message.reply_success().await;
+                let _ = message.reply_success().await;
             }
         )
     }

@@ -85,23 +85,29 @@ impl MessageManager {
             }
         }
 
-        // Obtain keys
-        let keys = self.words.iter()
-            .filter(|word| word.starts_with("-"))
-            .map(|word| word.to_string())
-            .collect::<Vec<String>>();
+        // Only parse parameters if message is a command
+        if self.is_command() {
 
-        // Iterate over keys
-        if keys.len() > 0 {
-            let split_regex = Regex::new(keys.join("|").as_str());
+            // Obtain keys
+            let keys = self.words.iter()
+                .filter(|word| word.starts_with("-"))
+                .map(|word| word.to_string())
+                .collect::<Vec<String>>();
 
-            if let Ok(regex) = split_regex {
-                let splits = regex.split(&self.raw_message.content);
-                splits
-                    .enumerate()
-                    .for_each(|(i, split)| {
-                        self.parameters.insert(keys[i].to_string(), split.trim().to_string());
-                    });
+            // Iterate over keys
+            if keys.len() > 0 {
+                let split_regex = Regex::new(keys.join("|").as_str());
+
+                if let Ok(regex) = split_regex {
+                    let payload = self.words[1..].join(" ");
+                    let splits = regex.split(&payload).collect::<Vec<&str>>();
+                    splits[1..].into_iter()
+                        .enumerate()
+                        .for_each(|(i, split)| {
+                            let key = keys[i].strip_prefix("-").unwrap().to_string();
+                            self.parameters.insert(key, split.trim().to_string());
+                        });
+                }
             }
         }
     }
@@ -166,9 +172,9 @@ impl MessageManager {
         let _ = self.raw_message.delete(&self.resolver).await;
     }
 
-    pub async fn reply(&self, message: impl ToMessage) {
+    pub async fn reply(&self, message: impl ToMessage) -> Result<Message> {
         let channel = self.get_channel();
-        let _ = channel.send_message(&self.resolver, message.to_message()).await;
+        channel.send_message(&self.resolver, message.to_message()).await.map_err(|_| "Failed to send message".to_string())
     }
 
     pub async fn reply_success(&self) {
