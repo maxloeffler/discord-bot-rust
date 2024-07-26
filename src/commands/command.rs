@@ -84,7 +84,7 @@ impl UserDecorator {
                 }).await;
 
                 // prepare dropdown options
-                let last_messages = message.get_last_messages(20).await;
+                let last_messages = message.last_messages(20).await;
                 let mut set = HashSet::new();
                 last_messages.iter().for_each(|message| {
                     set.insert(&message.author);

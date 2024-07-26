@@ -48,74 +48,129 @@ impl Resolver {
     }
 
     pub async fn resolve_guild(&self, guild_id: Option<GuildId>) -> Option<Guild> {
+
         let guild_id = match guild_id {
-            Some(guild_id) => guild_id,
-            None => self.guild_id.unwrap()
+            None => self.guild_id,
+            guild @ _ => guild
         };
-        let guild = self.ctx.cache.guild(guild_id);
-        match guild {
-            Some(guild) => Some(guild.clone()),
-            None => None
+
+        if let Some(guild_id) = guild_id {
+
+            // attempt to get guild from cache
+            if let Some(guild) = guild_id.to_guild_cached(&self.ctx.cache) {
+                return Some(guild.clone());
+            }
+
         }
+        None
     }
 
     pub async fn resolve_user(&self, user_id: UserId) -> Option<User> {
-        let user = self.ctx.http.get_user(user_id).await;
-        match user {
-            Ok(user) => Some(user),
-            Err(_) => None
+
+        // first, attempt to get user from cache
+        if let Some(user) = user_id.to_user_cached(&self.ctx.cache) {
+            return Some(user.clone());
         }
+
+        // if cache fails, attempt to get user over discord api
+        if let Ok(user) = self.ctx.http.get_user(user_id).await {
+            return Some(user);
+        }
+
+        None
     }
 
     pub async fn resolve_member(&self, user: &User) -> Option<Member> {
-        if let Some(guild) = self.guild_id {
-            let member = guild.member(&self.ctx.http, user.id).await;
-            return match member {
-                Ok(member) => Some(member),
-                Err(_) => None
-            };
+
+        if let Some(guild_id) = self.guild_id {
+
+            // first, attempt to get member from cache
+            if let Some(guild) = self.ctx.cache.guild(guild_id) {
+                let member = guild.members.get(&user.id);
+                if let Some(member) = member {
+                    return Some(member.clone());
+                }
+            }
+
+            // if cache fails, attempt to get member over discord api
+            if let Ok(member) = guild_id.member(&self.ctx.http, user.id).await {
+                return Some(member);
+            }
+
         }
         None
     }
 
     pub async fn resolve_role(&self, role_name: impl ToList<&str>) -> Option<Vec<Role>> {
-        if let Some(guild_id) = self.guild_id {
-            let guild_roles = guild_id.roles(&self.ctx.http).await.unwrap();
-            let values: Vec<_> = role_name.to_list()
-                .into_iter()
-                .flat_map(|name| {
-                    guild_roles.values().find(|role| role.name == name)
-                })
-                .cloned()
-                .collect();
-            if values.len() == role_name.to_list().len() {
-                return Some(values);
-            }
-        }
-        None
-    }
 
-    pub async fn resolve_channel(&self, channel_name: impl ToList<ChannelId>) -> Option<ChannelId> {
         if let Some(guild_id) = self.guild_id {
-            let guild_channels = guild_id.channels(&self.http()).await.unwrap();
-            for channel in channel_name.to_list() {
-                for guild_channel in guild_channels.values() {
-                    if guild_channel.id == channel {
-                        return Some(channel);
-                    }
+
+            // first, attempt to get roles from cache
+            if let Some(guild) = self.ctx.cache.guild(guild_id) {
+                let values: Vec<_> = role_name.to_list()
+                    .into_iter()
+                    .flat_map(|name| {
+                        guild.roles.values().find(|role| role.name == name)
+                    })
+                    .cloned()
+                    .collect();
+                if values.len() == role_name.to_list().len() {
+                    return Some(values);
                 }
             }
+
+            // if cache fails, attempt to get roles over discord api
+            if let Ok(guild_roles) = guild_id.roles(&self.ctx.http).await {
+                let values: Vec<_> = role_name.to_list()
+                    .into_iter()
+                    .flat_map(|name| {
+                        guild_roles.values().find(|role| role.name == name)
+                    })
+                    .cloned()
+                    .collect();
+                if values.len() == role_name.to_list().len() {
+                    return Some(values);
+                }
+            }
+
         }
         None
     }
 
-    pub async fn resolve_guild_channels(&self) -> Option<Vec<GuildChannel>> {
+    pub async fn guild_channels(&self) -> Option<Vec<GuildChannel>> {
+
         if let Some(guild_id) = self.guild_id {
-            let guild_channels = guild_id.channels(&self.http()).await;
-            if let Ok(channels) = guild_channels {
-                let values: Vec<_> = channels.values().cloned().collect();
+
+            // first, attempt to get channels from cache
+            if let Some(guild) = self.ctx.cache.guild(guild_id) {
+                let channels = guild.channels
+                    .values()
+                    .cloned()
+                    .collect();
+                return Some(channels);
+            }
+
+            // if cache fails, attempt to get channels over discord api
+            let channels = guild_id.channels(&self.http()).await;
+            if let Ok(channels) = channels {
+                let values = channels
+                    .values()
+                    .cloned()
+                    .collect();
                 return Some(values);
             }
+
+        }
+        None
+    }
+
+    pub async fn resolve_guild_channel(&self, channel_id: ChannelId) -> Option<GuildChannel> {
+        let channels = self.guild_channels().await;
+        if let Some(channels) = channels {
+            let channel = channels
+                .into_iter()
+                .find(|channel| channel.id == channel_id);
+            return channel;
         }
         None
     }

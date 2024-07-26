@@ -152,13 +152,13 @@ impl EventHandler for Handler {
         // get member count channel
         let channel_id = ConfigDB::get_instance().lock().await
             .get("channel_member_count").await.unwrap().to_string();
-        let channel = resolver.resolve_channel(channel_id).await;
+        let channel = ChannelId::from_str(&channel_id).unwrap();
 
         // update channel name
-        if guild.is_some() && channel.is_some() {
+        if guild.is_some() {
             let edit = EditChannel::new()
                 .name(&format!("Kalopsians: {}", guild.unwrap().member_count));
-            let _ = channel.unwrap().edit(&resolver, edit).await;
+            let _ = channel.edit(&resolver, edit).await;
         }
     }
 
@@ -247,9 +247,7 @@ impl EventHandler for Handler {
             }
  
             // send log message
-            let channel_id = channel_protected_log[0].clone();
-            let channel = message.get_resolver()
-                .resolve_channel(channel_id).await.unwrap();
+            let channel = channel_protected_log[0].clone();
             let _ = channel.send_message(message, log_message.to_message()).await;
         }
 
@@ -277,8 +275,7 @@ impl EventHandler for Handler {
 
         // obtain Message object
         let resolver = Resolver::new(ctx, guild_id);
-        let channel_messagelogs_id = channel_protected_log[0].clone();
-        let channel_messagelogs = resolver.resolve_channel(channel_messagelogs_id).await.unwrap();
+        let channel_messagelogs = channel_protected_log[0].clone();
         let message = resolver.resolve_message(channel_id, deleted_message_id).await;
 
         // cannot continue if message cannot be resolved

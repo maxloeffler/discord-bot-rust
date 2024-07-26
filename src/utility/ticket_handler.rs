@@ -98,7 +98,7 @@ impl TicketHandler {
         Logger::info_long("Start", "Initilizing ticket handler");
 
         // get all ticket channels
-        let channels = resolver.resolve_guild_channels().await;
+        let channels = resolver.guild_channels().await;
 
         if let Some(channels) = channels {
 

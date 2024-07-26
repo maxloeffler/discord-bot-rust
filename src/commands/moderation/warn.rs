@@ -1,5 +1,8 @@
 
+use serenity::all::ChannelId;
 use nonempty::{NonEmpty, nonempty};
+
+use std::str::FromStr;
 
 use crate::commands::command::{Command, CommandParams};
 use crate::utility::*;
@@ -67,7 +70,7 @@ impl Command for WarnCommand {
                 // log to mod logs
                 let channel_modlogs_id = ConfigDB::get_instance().lock().await
                     .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = resolver.resolve_channel(channel_modlogs_id).await.unwrap();
+                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let log_message = message.get_log_builder()
                     .title("[WARNING]")
                     .description(&format!("<@{}> has been warned", target.id))

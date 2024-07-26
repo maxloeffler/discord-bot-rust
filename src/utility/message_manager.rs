@@ -225,7 +225,7 @@ impl MessageManager {
         styled_embed
     }
 
-    pub async fn get_last_messages(&self, limit: u8) -> Vec<Message> {
+    pub async fn last_messages(&self, limit: u8) -> Vec<Message> {
         let channel = self.get_channel();
         let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
         let messages = channel.messages(&self.resolver, builder).await;
@@ -447,6 +447,10 @@ impl MessageManager {
 
     pub async fn resolve_member(&self) -> Option<Member> {
         self.resolver.resolve_member(self.get_author()).await
+    }
+
+    pub async fn resolve_guild_channel(&self) -> Option<GuildChannel> {
+        self.resolver.resolve_guild_channel(self.get_channel()).await
     }
 
     pub fn resolve_name(&self) -> String {

@@ -50,7 +50,7 @@ impl Command for CloseTicketCommand {
                             _ => ConfigDB::get_instance().lock()
                                 .await.get("channel_transcripts").await.unwrap().to_string()
                         };
-                        let dump_channel = message.get_resolver().resolve_channel(&dump_channel).await.unwrap();
+                        let dump_channel = ChannelId::from_str(dump_channel);
 
                         // produce transcript
                         ticket.transcribe().await;

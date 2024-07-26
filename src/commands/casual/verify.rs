@@ -1,6 +1,9 @@
 
+use serenity::all::ChannelId;
 use rand::seq::SliceRandom;
 use nonempty::{NonEmpty, nonempty};
+
+use std::str::FromStr;
 
 use crate::commands::command::{Command, CommandParams};
 use crate::utility::*;
@@ -66,7 +69,7 @@ impl Command for VerifyCommand {
                         // send welcome message
                         let channel_welcome = ConfigDB::get_instance().lock().await
                             .get("channel_welcome").await.unwrap().to_string();
-                        let channel = message.get_resolver().resolve_channel(&channel_welcome).await.unwrap();
+                        let channel = ChannelId::from_str(&channel_welcome).unwrap();
                         let welcome_message = VerifyCommand::random_welcome_message();
                         let _ = channel.send_message(message,
                             format!(
