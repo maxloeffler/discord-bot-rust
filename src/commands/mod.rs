@@ -26,6 +26,7 @@ pub use moderation::warnings::WarningsCommand;
 pub use moderation::purge::PurgeCommand;
 pub use moderation::slowmode::SlowmodeCommand;
 pub use moderation::mute::MuteCommand;
+pub use moderation::unmute::UnmuteCommand;
 
 // ---- src/commands/tickets/ ---- //
 
