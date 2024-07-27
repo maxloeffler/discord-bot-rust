@@ -1,5 +1,8 @@
 
+use serenity::all::ChannelId;
 use nonempty::{NonEmpty, nonempty};
+
+use std::str::FromStr;
 
 use crate::commands::command::{Command, CommandParams};
 use crate::utility::*;
@@ -52,7 +55,7 @@ impl Command for CloseTicketCommand {
                             _ => ConfigDB::get_instance().lock()
                                 .await.get("channel_transcripts").await.unwrap().to_string()
                         };
-                        let dump_channel = ChannelId::from_str(dump_channel);
+                        let dump_channel = ChannelId::from_str(&dump_channel).unwrap();
 
                         // produce transcript
                         ticket.transcribe().await;

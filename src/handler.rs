@@ -248,6 +248,7 @@ impl EventHandler for Handler {
  
             // send log message
             let channel = channel_protected_log[0].clone();
+            let channel = ChannelId::from_str(&channel).unwrap();
             let _ = channel.send_message(message, log_message.to_message()).await;
         }
 
@@ -276,6 +277,7 @@ impl EventHandler for Handler {
         // obtain Message object
         let resolver = Resolver::new(ctx, guild_id);
         let channel_messagelogs = channel_protected_log[0].clone();
+        let channel_messagelogs = ChannelId::from_str(&channel_messagelogs).unwrap();
         let message = resolver.resolve_message(channel_id, deleted_message_id).await;
 
         // cannot continue if message cannot be resolved

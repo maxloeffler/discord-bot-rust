@@ -1,5 +1,8 @@
 
+use serenity::all::ChannelId;
 use serenity::model::user::User;
+
+use std::str::FromStr;
 
 use crate::utility::*;
 use crate::databases::*;
@@ -84,7 +87,7 @@ impl AutoModerator {
                 // get muted channel
                 let channel_muted = ConfigDB::get_instance().lock().await
                     .get("channel_muted").await.unwrap().to_string();
-                let channel = ChannelId::form_str(&channel_muted);
+                let channel = ChannelId::from_str(&channel_muted).unwrap();
 
                 // send 'automute message'
                 let _ = channel.send_message(resolver, responsibility.to_message()).await;
@@ -131,7 +134,7 @@ impl AutoModerator {
                 // get muted channel
                 let channel_muted = ConfigDB::get_instance().lock().await
                     .get("channel_muted").await.unwrap().to_string();
-                let channel = ChannelId::form_str(&channel_muted);
+                let channel = ChannelId::from_str(&channel_muted).unwrap();
 
                 // send 'automute message'
                 let _ = channel.send_message(resolver, responsibility.to_message()).await;
@@ -175,7 +178,7 @@ impl AutoModerator {
                     // get modlogs channel
                     let channel_id = ConfigDB::get_instance().lock().await
                         .get("channel_modlogs").await.unwrap().to_string();
-                    let channel = ChannelId::from_str(&channel_id);
+                    let channel = ChannelId::from_str(&channel_id).unwrap();
 
                     // send 'automute message'
                     let _ = channel.send_message(resolver, embed.to_message()).await;
