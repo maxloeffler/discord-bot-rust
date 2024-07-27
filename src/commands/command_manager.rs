@@ -29,6 +29,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(WarningsCommand{}) }),
             Box::new( PurgeCommand{} ),
             Box::new( SlowmodeCommand{} ),
+            Box::new( MuteCommand{} ),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
