@@ -9,8 +9,12 @@ pub struct InfoCommand;
 
 impl Command for InfoCommand {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["info".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "info".to_string(),
+        ])
+            .add_required("user")
+            .example("avatar @Poggy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

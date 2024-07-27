@@ -14,23 +14,29 @@ pub struct PollCommand;
 
 impl Command for PollCommand {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["poll".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "poll".to_string(),
+        ])
+            .add_required("-title")
+            .add_required("-opts")
+            .add_constant("+option1 +option2 ... +option9")
+            .example("poll -title What is the best color? -opts +Reddish Blue +Blue +Green")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
 
-                let message = params.message;
+                let message = &params.message;
 
                 if !message.has_parameter("title") {
-                    let _ = message.reply_failure("Please provide a title (`-title`)!").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 
                 if !message.has_parameter("opts") {
-                    let _ = message.reply_failure("Please provide options (`-opts`)!").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 
@@ -46,12 +52,12 @@ impl Command for PollCommand {
                 println!("{:?}", options);
 
                 if options.len() <= 2 {
-                    let _ = message.reply_failure("Please provide at least 2 options!").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 
                 if options.len() >= 10 {
-                    let _ = message.reply_failure("Please provide at most 9 options!").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 

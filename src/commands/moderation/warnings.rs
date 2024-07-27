@@ -20,8 +20,12 @@ impl Command for WarningsCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["warnings".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "warnings".to_string(),
+        ])
+            .add_required("user")
+            .example("warnings @BadBoy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

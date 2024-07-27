@@ -16,8 +16,12 @@ impl Command for AddMemberToTicketCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["add".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "add-user".to_string(),
+            "add".to_string(),
+        ])
+            .add_required("user")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

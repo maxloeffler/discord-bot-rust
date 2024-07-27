@@ -19,20 +19,25 @@ impl Command for WarnCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["warn".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "warn".to_string(),
+        ])
+            .add_required("user")
+            .add_optional("reason")
+            .example("warn @BadBoy being bad")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
 
-                let message = params.message;
+                let message = &params.message;
                 let mentions = message.get_mentions().await;
 
                 // check if a user is mentioned
                 if mentions.len() == 0 {
-                    message.reply_failure("You need to mention someone to warn them.").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 

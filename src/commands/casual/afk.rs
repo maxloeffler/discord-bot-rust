@@ -10,8 +10,12 @@ pub struct AfkCommand;
 
 impl Command for AfkCommand {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["afk".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "afk".to_string()
+        ])
+            .add_optional("message (>= 154 characters)")
+            .example("afk I am going afk now :)")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -22,7 +26,7 @@ impl Command for AfkCommand {
                 let content = &message.payload(None, None);
 
                 if content.len() >= 154 {
-                    message.reply_failure("Your afk message is too long (>154)!").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 

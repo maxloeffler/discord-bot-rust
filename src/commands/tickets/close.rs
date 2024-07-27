@@ -16,8 +16,10 @@ impl Command for CloseTicketCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["close".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "close".to_string(),
+        ])
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

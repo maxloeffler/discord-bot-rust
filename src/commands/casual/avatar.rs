@@ -9,8 +9,13 @@ pub struct AvatarCommand;
 
 impl Command for AvatarCommand {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["avatar".to_string(), "av".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "avatar".to_string(),
+            "av".to_string()
+        ])
+            .add_required("user")
+            .example("avatar @Poggy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

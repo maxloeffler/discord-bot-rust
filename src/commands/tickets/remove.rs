@@ -16,8 +16,12 @@ impl Command for RemoveMemberFromTicketCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["remove".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "remove-user".to_string(),
+            "remove".to_string(),
+        ])
+            .add_required("user")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

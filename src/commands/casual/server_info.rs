@@ -11,8 +11,11 @@ pub struct ServerInfoCommand;
 
 impl Command for ServerInfoCommand {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["server-info".to_string(), "serverinfo".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "server-info".to_string(),
+            "serverinfo".to_string(),
+        ])
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

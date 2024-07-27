@@ -16,8 +16,10 @@ impl Command for ClaimTicketCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["claim".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "claim".to_string(),
+        ])
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

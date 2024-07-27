@@ -1,4 +1,5 @@
 
+use serenity::builder::CreateEmbedFooter;
 use serenity::model::user::User;
 use nonempty::NonEmpty;
 
@@ -34,15 +35,15 @@ pub trait Command: Send + Sync {
     fn is_triggered_by(&self, message: &MessageManager) -> MatchType {
         match message.get_command() {
             Some(word) => {
-                let trigger = word.to_lowercase();
-                let names = &self.get_names();
-                if names.contains(&trigger) {
+                let compare = word.to_lowercase();
+                let triggers = &self.get_triggers();
+                if triggers.contains(&compare) {
                     return MatchType::Exact;
                 }
-                for name in names.iter() {
-                    let threshold = name.len() / 3;
-                    if string_distance(&trigger, &name) <= threshold {
-                        return MatchType::Fuzzy(name.to_string());
+                for trigger in triggers.into_iter() {
+                    let threshold = trigger.len() / 3;
+                    if string_distance(&trigger, &compare) <= threshold {
+                        return MatchType::Fuzzy(compare.to_string());
                     }
                 }
                 MatchType::None
@@ -57,10 +58,28 @@ pub trait Command: Send + Sync {
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()>;
 
-    fn get_names(&self) -> NonEmpty<String>;
+    fn define_usage(&self) -> UsageBuilder;
 
-    fn get_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(self.get_names().into())
+    fn invalid_usage(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+        Box::pin(
+            async move {
+                let message = &params.message;
+                let usage = self.define_usage().build(&message.get_prefix().unwrap());
+                let embed = MessageManager::create_embed(|embed| {
+                    embed
+                        .title("Invalid Usage!")
+                        .description(&usage)
+                        .footer(CreateEmbedFooter::new(
+                            format!("Syntax Legend: <> = required, [] = optional"),
+                        ))
+                }).await;
+                let _ = message.reply(embed.to_message()).await;
+            }
+        )
+    }
+
+    fn get_triggers(&self) -> NonEmpty<String> {
+        self.define_usage().triggers
     }
 
 }
@@ -120,8 +139,8 @@ impl UserDecorator {
 
 impl Command for UserDecorator {
 
-    fn get_names(&self) -> NonEmpty<String> {
-        self.command.get_names()
+    fn define_usage(&self) -> UsageBuilder {
+        self.command.define_usage()
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

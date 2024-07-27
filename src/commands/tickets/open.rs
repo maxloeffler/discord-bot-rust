@@ -16,8 +16,16 @@ impl Command for OpenTicketCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["open".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "open".to_string(),
+        ])
+            .add_required("user")
+            .add_required("m")
+            .new_usage()
+            .add_required("user")
+            .add_required("d")
+            .example("open @ModAnnoyer m")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

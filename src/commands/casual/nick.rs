@@ -17,8 +17,14 @@ impl Command for NicknameCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["nick".to_string(), "nickname".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "nick".to_string(),
+            "nickname".to_string(),
+        ])
+            .add_required("user")
+            .add_required("nickname")
+            .example("nick @Poggy Poggor")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

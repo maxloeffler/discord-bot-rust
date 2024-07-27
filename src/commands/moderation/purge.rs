@@ -22,8 +22,13 @@ impl Command for PurgeCommand {
         })
     }
 
-    fn get_names(&self) -> NonEmpty<String> {
-        nonempty!["purge".to_string()]
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "purge".to_string(),
+        ])
+            .add_required("amount (between 1 and 100)")
+            .add_optional("user")
+            .example("purge 15 @EvilCorp")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -34,14 +39,14 @@ impl Command for PurgeCommand {
 
                 let purge_size = message.payload_without_mentions(None, None).await.parse::<u8>();
                 if purge_size.is_err() {
-                    message.reply_failure("Please specify the amount of messages to purge.").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 
                 // check if the amount is within the limits
                 let purge_size = purge_size.unwrap();
                 if purge_size < 1 || purge_size > 100 {
-                    message.reply_failure("The amount of messages to purge must be between 1 and 100.").await;
+                    self.invalid_usage(params).await;
                     return;
                 }
 
