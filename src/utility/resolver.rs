@@ -2,6 +2,8 @@
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::all::{CacheHttp, Cache, Http};
+use cached::proc_macro::cached;
+use cached::SizedCache;
 
 use std::sync::Arc;
 
@@ -227,3 +229,14 @@ impl Resolver {
     }
 
 }
+
+
+#[cached(
+    ty = "SizedCache<UserId, bool>",
+    create = "{ SizedCache::with_size(100) }",
+    convert = r#"{ user.id }"#
+)]
+pub async fn is_trial(resolver: &Resolver, user: &User) -> bool {
+    resolver.is_trial(user).await
+}
+

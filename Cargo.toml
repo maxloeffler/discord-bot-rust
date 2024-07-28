@@ -51,3 +51,4 @@ serde_json = "1.0.120"
 difference = "2.0.0"
 futures = "0.3.30"
 rand = "0.8.5"
+cached = { version = "0.53.1", features = ["async"] }

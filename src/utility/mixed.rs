@@ -1,6 +1,7 @@
 
 use regex::Regex;
 
+use std::collections::HashMap;
 use std::pin::Pin;
 use std::future::Future;
 

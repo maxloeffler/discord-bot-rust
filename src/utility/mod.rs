@@ -23,7 +23,7 @@ pub mod mixed;
 pub use mixed::{BoxedFuture, Result, RegexManager, string_distance};
 
 pub mod resolver;
-pub use resolver::Resolver;
+pub use resolver::{Resolver, is_trial};
 
 pub mod logger;
 pub use logger::Logger;

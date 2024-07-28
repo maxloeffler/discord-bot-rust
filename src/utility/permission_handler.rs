@@ -29,47 +29,81 @@ impl<'a> PermissionHandler<'_> {
             }).await;
     }
 
-    pub async fn allow_role(&self, permission: &Permissions, ids: impl ToList<RoleId>) {
-        let overwrites: Vec<_> = ids.to_list().iter().map(|id| {
+    pub async fn allow_role(&self, allows: impl ToList<Permissions>, roles: &impl ToList<RoleId>) {
+        self.role(allows, Permissions::empty(), roles).await;
+    }
+
+    pub async fn deny_role(&self, denies: impl ToList<Permissions>, roles: &impl ToList<RoleId>) {
+        self.role(Permissions::empty(), denies, roles).await;
+    }
+
+    pub async fn role(&self, allows: impl ToList<Permissions>, denies: impl ToList<Permissions>, roles: &impl ToList<RoleId>) {
+
+        // create singluar allow permission
+        let mut allow = Permissions::empty();
+        allows.to_list()
+            .into_iter()
+            .for_each(|perm| {
+                allow = allow.union(perm);
+            });
+
+        // create singular deny permission
+        let mut deny = Permissions::empty();
+        denies.to_list()
+            .into_iter()
+            .for_each(|perm| {
+                deny = deny.union(perm);
+            });
+
+        // create overwrites
+        let overwrites: Vec<_> = roles.to_list().iter().map(|id| {
             PermissionOverwrite {
-                allow: *permission,
-                deny: Permissions::empty(),
+                allow: allow,
+                deny:  deny,
                 kind: PermissionOverwriteType::Role(id.into())
             }
         }).collect();
+
+        // set permissions
         self.update_permissions(overwrites).await;
     }
 
-    pub async fn deny_role(&self, permission: &Permissions, ids: impl ToList<RoleId>) {
-        let overwrites: Vec<_> = ids.to_list().iter().map(|id| {
-            PermissionOverwrite {
-                allow: Permissions::empty(),
-                deny: *permission,
-                kind: PermissionOverwriteType::Role(id.into())
-            }
-        }).collect();
-        self.update_permissions(overwrites).await;
+    pub async fn allow_member(&self, allows: impl ToList<Permissions>, members: &impl ToList<UserId>) {
+        self.member(allows, Permissions::empty(), members).await;
     }
 
-    pub async fn allow_member(&self, permission: &Permissions, ids: impl ToList<UserId>) {
-        let overwrites: Vec<_> = ids.to_list().iter().map(|id| {
+    pub async fn deny_member(&self, denies: impl ToList<Permissions>, members: &impl ToList<UserId>) {
+        self.member(Permissions::empty(), denies, members).await;
+    }
+
+    pub async fn member(&self, allows: impl ToList<Permissions>, denies: impl ToList<Permissions>, members: &impl ToList<UserId>) {
+
+        // create singluar allow permission
+        let mut allow = Permissions::empty();
+        allows.to_list()
+            .into_iter()
+            .for_each(|perm| {
+                allow = allow.union(perm);
+            });
+
+        // create singular deny permission
+        let mut deny = Permissions::empty();
+        denies.to_list()
+            .into_iter()
+            .for_each(|perm| {
+                deny = deny.union(perm);
+            });
+
+        // create overwrites
+        let overwrites: Vec<_> = members.to_list().iter().map(|id| {
             PermissionOverwrite {
-                allow: *permission,
-                deny: Permissions::empty(),
+                allow: allow,
+                deny:  deny,
                 kind: PermissionOverwriteType::Member(id.into())
             }
         }).collect();
-        self.update_permissions(overwrites).await;
-    }
 
-    pub async fn deny_member(&self, permission: &Permissions, ids: impl ToList<UserId>) {
-        let overwrites: Vec<_> = ids.to_list().iter().map(|id| {
-            PermissionOverwrite {
-                allow: Permissions::empty(),
-                deny: *permission,
-                kind: PermissionOverwriteType::Member(id.into())
-            }
-        }).collect();
+        // set permissions
         self.update_permissions(overwrites).await;
     }
 

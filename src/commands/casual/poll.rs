@@ -48,9 +48,6 @@ impl Command for PollCommand {
                     .filter(|option| !option.is_empty())
                     .collect::<Vec<_>>();
 
-                println!("{}", payload);
-                println!("{:?}", options);
-
                 if options.len() <= 2 {
                     self.invalid_usage(params).await;
                     return;
@@ -71,7 +68,6 @@ impl Command for PollCommand {
                     .map(|(i, option)| format!("{} - {}", emojis[i], option))
                     .collect::<Vec<_>>()
                     .join("\n");
-                println!("{}", description);
 
                 let embed = message.get_log_builder()
                     .no_thumbnail()

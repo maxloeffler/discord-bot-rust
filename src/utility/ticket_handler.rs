@@ -162,19 +162,15 @@ impl TicketHandler {
 
             if let Ok(channel) = channel {
 
-                // figure out allowed and disallowed roles
+                // figure out allowed roles
                 let mut allowed_roles = vec!["Administrator", "Head Moderator", "Moderator", "Trial Moderator"];
-                let mut disallowed_roles = vec![];
                 match ticket_type {
                     TicketType::StaffReport => {
-                        let trial = allowed_roles.pop().unwrap();
-                        disallowed_roles.push(trial);
+                        let _ = allowed_roles.pop().unwrap();
                     },
                     TicketType::UserReport => {
-                        let trial = allowed_roles.pop().unwrap();
-                        let moderator = allowed_roles.pop().unwrap();
-                        disallowed_roles.push(moderator);
-                        disallowed_roles.push(trial);
+                        let _ = allowed_roles.pop().unwrap();
+                        let _ = allowed_roles.pop().unwrap();
                     },
                     _ => {},
                 };
@@ -182,13 +178,6 @@ impl TicketHandler {
                 let allowed_roles = resolver.resolve_role(allowed_roles).await.unwrap().iter()
                     .map(|role| role.id)
                     .collect::<Vec<RoleId>>();
-                let disallowed_roles = resolver.resolve_role(disallowed_roles).await.unwrap().iter()
-                    .map(|role| role.id)
-                    .collect::<Vec<RoleId>>();
-
-                // remove explicitly disallowed roles
-                let handler = PermissionHandler::new(resolver, &channel);
-                handler.deny_role(&Permissions::VIEW_CHANNEL, disallowed_roles).await;
 
                 let present_members = Arc::new(Mutex::new(HashSet::new()));
                 present_members.lock().await.insert(target.id);
@@ -252,10 +241,15 @@ impl TicketHandler {
 #[cfg(feature = "tickets")]
 impl Ticket {
 
-    const ACCESS_PERM: Permissions = Permissions::SEND_MESSAGES.union(Permissions::VIEW_CHANNEL);
-
     pub fn get_permissions<'a>(&'a self) -> PermissionHandler<'a> {
         PermissionHandler::new(&self.resolver, &self.channel)
+    }
+
+    async fn append_user(resolver: &Resolver, user: &User, members: &mut HashSet<UserId>, staff: &mut HashSet<UserId>) {
+        match is_trial(resolver, user).await {
+            true  => staff.insert(user.id),
+            false => members.insert(user.id),
+        };
     }
 
     pub async fn parse_ticket(resolver: &Resolver, channel: &GuildChannel) -> Result<Ticket> {
@@ -269,55 +263,67 @@ impl Ticket {
         if let Some(last_message) = last_message {
 
             // get all messages in the channel
-            let builder = GetMessages::new().around(last_message).limit(255);
+            let builder = GetMessages::new().before(last_message).limit(255);
             let messages = channel.messages(&resolver, builder).await;
 
             if let Ok(messages) = &messages {
 
-                let bot_id = Arc::new(ConfigDB::get_instance().lock().await
-                    .get("bot_id").await.unwrap().to_string());
+                let bot_id = &ConfigDB::get_instance().lock().await
+                    .get("bot_id").await.unwrap().to_string();
                 let regex = Arc::new(RegexManager::get_id_regex());
 
                 // get all present staff and members in the ticket
-                let present_staff = Arc::new(Mutex::new(HashSet::new()));
-                let present_members = Arc::new(Mutex::new(HashSet::new()));
-                let message_iter = futures::stream::iter(messages.iter().rev())
-                    .for_each_concurrent(None, |message: &Message| {
-                        let present_staff = Arc::clone(&present_staff);
-                        let present_members = Arc::clone(&present_members);
-                        let bot_id = Arc::clone(&bot_id);
-                        let regex = Arc::clone(&regex);
-                        async move {
-                            let author = &message.author;
-                            if !author.bot {
-                                present_members.lock().await.insert(author.id);
-                            } else {
-                                if author.id.to_string() == *bot_id {
-                                    if message.embeds.len() > 0 {
-                                        if let Some(description) = &message.embeds[0].description {
-                                            let splits = &description.split_whitespace().collect::<Vec<&str>>();
-                                            let user_id = regex.find(splits.last().unwrap())
-                                                .map(|hit| UserId::from(hit.as_str().parse::<u64>().unwrap()))
-                                                .unwrap_or(UserId::from(1));
-                                            match splits[0] {
-                                                "Added" => present_members.lock().await.insert(user_id),
-                                                "Removed" => present_members.lock().await.remove(&user_id),
-                                                "Claimed" => present_staff.lock().await.insert(user_id),
-                                                "Unclaimed" => present_staff.lock().await.remove(&user_id),
-                                                _ => { false }
-                                            };
-                                        }
-                                    }
-                                }
-                            }
-                        }});
-                message_iter.await;
+                let mut present_staff = HashSet::new();
+                let mut present_members = HashSet::new();
+
+                // parse all messages
+                for message in messages.into_iter().rev() {
+                    let author = &message.author;
+
+                    // parse messages
+                    if !author.bot {
+
+                        Ticket::append_user(resolver, author, &mut present_members, &mut present_staff).await;
+
+                    } else {
+
+                        // only parse embeds from Kalopsian
+                        if author.id.to_string() != *bot_id {
+                            continue;
+                        }
+
+                        // only parse messages with embeds
+                        if message.embeds.len() == 0 {
+                            continue;
+                        }
+
+                        // parse embeds
+                        if let Some(description) = &message.embeds[0].description {
+                            let splits = &description.split_whitespace().collect::<Vec<&str>>();
+                            let user_id = regex.find(splits.last().unwrap())
+                                .map(|hit| UserId::from(hit.as_str().parse::<u64>().unwrap()))
+                                .unwrap_or(UserId::from(1));
+                            let user = &resolver.resolve_user(user_id).await;
+                            if let Some(user) = user {
+                                match splits[0] {
+                                    "Added" | "Removed" | "Claimed" | "Unclaimed" =>
+                                        Ticket::append_user(resolver, user, &mut present_members, &mut present_staff).await,
+                                    _ => {}
+                                };
+                            };
+                        }
+                    }
+                }
 
                 // target should always be present in the ticket
                 let first_message = messages.last().unwrap();
                 let first_message = &MessageManager::new(resolver.clone(), first_message.clone()).await;
                 let mentions = first_message.get_mentions().await;
-                present_members.lock().await.insert(mentions[0]);
+
+                // when the ticket is long, the first message is not fetched
+                if mentions.len() > 0 {
+                    present_members.insert(mentions[0]);
+                }
 
                 // get all allowed staff roles for the ticket
                 let mut allowed_roles = resolver.resolve_role(
@@ -343,14 +349,12 @@ impl Ticket {
                     uuid: Uuid::new_v4(),
 
                     pinged_staff: false,
-                    present_members: present_members,
-                    present_staff: present_staff,
+                    present_members: Arc::new(Mutex::new(present_members)),
+                    present_staff:   Arc::new(Mutex::new(present_staff)),
                     allowed_roles: allowed_roles.clone(),
                 };
 
                 // setup permissions
-                let handler = ticket.get_permissions();
-                handler.deny_role(&Permissions::SEND_MESSAGES, allowed_roles).await;
                 ticket.allow_participants().await;
 
                 #[cfg(feature = "debug")]
@@ -364,24 +368,35 @@ impl Ticket {
 
     pub async fn allow_participants(&self) {
         let handler = self.get_permissions();
-        for user_id in self.present_members.lock().await.iter() {
-            handler.allow_member(&Ticket::ACCESS_PERM, user_id).await;
-        }
-        for user_id in self.present_staff.lock().await.iter() {
-            handler.allow_member(&Ticket::ACCESS_PERM, user_id).await;
-        }
-        for role_id in self.allowed_roles.iter() {
-            handler.allow_role(&Ticket::ACCESS_PERM, role_id).await;
-        }
+
+        // allow members
+        handler.allow_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            &self.present_members.lock().await.iter().collect::<Vec<_>>()
+        ).await;
+
+        // allow staff
+        handler.allow_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            &self.present_staff.lock().await.iter().collect::<Vec<_>>()
+        ).await;
+
+        // setup roles
+        match self.present_staff.lock().await.len() > 0 {
+            true  => handler.role(Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES, &self.allowed_roles).await,
+            false => handler.allow_role(
+                vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+                &self.allowed_roles).await
+        };
     }
 
     pub async fn deny_all(&self) {
         let handler = self.get_permissions();
         for user_id in self.present_members.lock().await.iter() {
-            handler.deny_member(&Ticket::ACCESS_PERM, user_id).await;
+            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
         }
         for user_id in self.present_staff.lock().await.iter() {
-            handler.deny_member(&Ticket::ACCESS_PERM, user_id).await;
+            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
         }
         #[cfg(feature = "debug")]
         Logger::warn("Denying roles when closing a Ticket is currently disabled");
@@ -392,29 +407,45 @@ impl Ticket {
 
     pub async fn add_staff(&self, staff: &UserId) {
         let handler = self.get_permissions();
-        for role in self.allowed_roles.iter() {
-            handler.deny_role(&Permissions::SEND_MESSAGES, role).await;
+        let staff_lock = self.present_staff.lock().await;
+
+        // deny all staff to send, when the ticket is freshly claimed
+        if staff_lock.len() == 1 {
+            handler.allow_role(Permissions::SEND_MESSAGES, &self.allowed_roles).await;
         }
-        self.present_staff.lock().await.insert(*staff);
-        self.allow_participants().await;
+
+        // grant newly added staff access
+        handler.allow_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            staff
+        ).await;
     }
 
     pub async fn remove_staff(&self, staff: &UserId) {
         self.present_staff.lock().await.remove(staff);
         let handler = self.get_permissions();
-        handler.deny_member(&Ticket::ACCESS_PERM, staff).await;
+        handler.deny_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            staff
+        ).await;
     }
 
     pub async fn add_member(&self, member: &UserId) {
         self.present_members.lock().await.insert(*member);
         let handler = self.get_permissions();
-        handler.allow_member(&Ticket::ACCESS_PERM, member).await;
+        handler.allow_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            member
+        ).await;
     }
 
     pub async fn remove_member(&self, member: &UserId) {
         self.present_members.lock().await.remove(member);
         let handler = self.get_permissions();
-        handler.deny_member(&Ticket::ACCESS_PERM, member).await;
+        handler.deny_member(
+            vec![Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES],
+            member
+        ).await;
     }
 
     pub async fn transcribe(&self) {
