@@ -30,6 +30,7 @@ pub use moderation::unmute::UnmuteCommand;
 pub use moderation::remove_afk::RemoveAfkCommand;
 pub use moderation::role::RoleCommand;
 pub use moderation::lock::LockCommand;
+pub use moderation::unlock::UnlockCommand;
 
 // ---- src/commands/tickets/ ---- //
 
