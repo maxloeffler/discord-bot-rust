@@ -27,6 +27,7 @@ pub use moderation::purge::PurgeCommand;
 pub use moderation::slowmode::SlowmodeCommand;
 pub use moderation::mute::MuteCommand;
 pub use moderation::unmute::UnmuteCommand;
+pub use moderation::remove_afk::RemoveAfkCommand;
 
 // ---- src/commands/tickets/ ---- //
 

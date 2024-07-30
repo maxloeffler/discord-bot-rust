@@ -97,7 +97,7 @@ impl EventHandler for Handler {
                                     mention.to_string(),
                                     afk.to_string()))
                         }).await;
-                        let _ = message.reply(embed).await;
+                        message.reply_temporary(embed).await;
                     }
                 }}).await;
 

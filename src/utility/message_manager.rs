@@ -177,44 +177,30 @@ impl MessageManager {
         channel.send_message(&self.resolver, message.to_message()).await.map_err(|_| "Failed to send message".to_string())
     }
 
-    pub async fn reply_success(&self) {
+    pub async fn reply_temporary(&self, message: impl ToMessage) {
+        let sent_message = self.reply(message).await;
+        if let Ok(message) = sent_message {
+            let _ = tokio::time::sleep(Duration::from_secs(2)).await;
+            let _ = message.delete(&self.resolver).await;
+        }
+    }
 
-        // prepare message
+    pub async fn reply_success(&self) {
         let embed = MessageManager::create_embed(|embed| {
             embed
                 .title("✅")
                 .description("Success!")
         }).await;
-
-        // send message
-        let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.resolver, embed.to_message()).await;
-
-        // delete message
-        if let Ok(message) = sent_message {
-            let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.resolver).await;
-        }
+        self.reply_temporary(embed).await;
     }
 
     pub async fn reply_failure(&self, context: &str) {
-
-        // prepare message
         let embed = MessageManager::create_embed(|embed| {
             embed
                 .title("❌")
                 .description(context)
         }).await;
-
-        // send message
-        let channel = self.get_channel();
-        let sent_message = channel.send_message(&self.resolver, embed.to_message()).await;
-
-        // delete message
-        if let Ok(message) = sent_message {
-            let _ = tokio::time::sleep(Duration::from_secs(3)).await;
-            let _ = message.delete(&self.resolver).await;
-        }
+        self.reply_temporary(embed).await;
     }
 
     pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> CreateEmbed {
