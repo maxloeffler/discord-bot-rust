@@ -28,6 +28,7 @@ pub use moderation::slowmode::SlowmodeCommand;
 pub use moderation::mute::MuteCommand;
 pub use moderation::unmute::UnmuteCommand;
 pub use moderation::remove_afk::RemoveAfkCommand;
+pub use moderation::role::RoleCommand;
 
 // ---- src/commands/tickets/ ---- //
 

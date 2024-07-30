@@ -32,6 +32,7 @@ impl CommandManager {
             Box::new( MuteCommand{} ),
             Box::new( UserDecorator{ command: Box::new(UnmuteCommand{}) }),
             Box::new( UserDecorator{ command: Box::new(RemoveAfkCommand{}) }),
+            Box::new( UserDecorator{ command: Box::new(RoleCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
