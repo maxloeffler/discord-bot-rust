@@ -7,3 +7,4 @@ pub mod mute;
 pub mod unmute;
 pub mod remove_afk;
 pub mod role;
+pub mod lock;
