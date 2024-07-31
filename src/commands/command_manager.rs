@@ -1,4 +1,9 @@
 
+use serenity::all::UserId;
+
+use std::sync::Arc;
+use std::str::FromStr;
+
 use crate::commands::command::{CommandParams, MatchType};
 use crate::utility::*;
 use crate::commands::*;
@@ -71,18 +76,19 @@ impl CommandManager {
         }
     }
 
-    // note: only execute this method, when message.is_command() is true
-    pub async fn execute(&self, message: &MessageManager) {
+    async fn match_command<'a>(&'a self,
+            message: &'a MessageManager,
+            match_callback: impl Fn(&'a Box<dyn Command>) -> BoxedFuture<'a, ()>
+    ) {
 
         // initialize search
         let mut fuzzy_matches = Vec::new();
         let mut exact_match = false;
 
-        // search for command
         for command in self.commands.iter() {
             match command.is_triggered_by(message) {
                 MatchType::Exact => {
-                    self.run_command(command, message).await;
+                    match_callback(command).await;
                     exact_match = true;
                     break;
                 },
@@ -107,10 +113,85 @@ impl CommandManager {
                 // create choice interaction
                 message.create_choice_interaction(
                     embed,
-                        Box::pin( async move { self.run_command(command, message).await } ),
-                        Box::pin( async move {} )
+                    match_callback(command),
+                    Box::pin( async move {} )
                 ).await;
             }
+        }
+    }
+
+    // note: only execute this method, when message.is_command() is true
+    pub async fn execute(&self, message: &MessageManager) {
+
+        // special case: help (needs more permissions)
+        if message.get_command().unwrap() == "help" {
+            self.display_help(message).await;
+            return;
+        }
+
+        self.match_command(message, |command: &Box<dyn Command>| {
+            Box::pin(async move {
+                self.run_command(command, message).await
+            })}).await;
+    }
+
+    async fn display_help(&self, message: &MessageManager) {
+
+        // delete message
+        message.delete().await;
+
+        // resolve bot user
+        let bot_id = ConfigDB::get_instance().lock().await
+            .get("bot_id").await.unwrap().to_string();
+        let bot = message.get_resolver()
+            .resolve_user(UserId::from_str(bot_id.as_str()).unwrap()).await.unwrap();
+
+        // display all available commands
+        let payload = message.payload(None, None);
+        if payload.is_empty() {
+
+            // filter commands
+            let mut allowed_commands = Vec::new();
+            for command in self.commands.iter() {
+                if command.permission(message).await {
+                    allowed_commands.push(command);
+                }
+            }
+
+            // collect commands
+            let prefix = message.get_prefix().unwrap();
+            let description = allowed_commands.into_iter()
+                .map(|command| {
+                    format!("`{}{}`", prefix, command.define_usage().triggers[0].clone())
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            // create embed
+            let embed = message.get_log_builder()
+                .target(&bot)
+                .no_thumbnail()
+                .title("Available Commands")
+                .description(&description)
+                .build().await;
+            let _ = message.reply(embed.to_message()).await;
+        }
+
+        // display help for a specific command
+        else {
+
+
+            // find command
+            let trigger = payload.split_whitespace().next().unwrap();
+            let message = &message.spoof(
+                format!("{}{}", message.get_prefix().unwrap(), trigger)).await;
+
+            self.match_command(message, |command: &Box<dyn Command>| {
+                Box::pin(async move {
+                    let params = CommandParams::new(message.clone(), None);
+                    command.display_usage(params, "Command Description".to_string()).await;
+                })}).await;
+
         }
     }
 

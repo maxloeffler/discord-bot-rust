@@ -107,12 +107,12 @@ impl UsageBuilder {
 
     pub fn build(&self, prefix: &String) -> String {
 
-        let mut usage_string = String::new();
+        let mut usage_strings = Vec::new();
 
         self.triggers.iter()
             .for_each(|trigger| {
-                usage_string.push_str(
-                    &format!("`{}`",
+                usage_strings.push(
+                    format!("`{}`",
                         match self.usage.is_empty() {
                             true  => self.build_usage(None, prefix, &trigger),
                             false => self.usage.iter()
@@ -123,13 +123,13 @@ impl UsageBuilder {
             });
 
         if let Some(example) = &self.example {
-            usage_string.push_str(&format!(
-                    "\n\nExample Usage:\n`{}{}`",
+            usage_strings.push(format!(
+                    "\nExample Usage:\n`{}{}`",
                     prefix,
                     example));
         }
 
-        usage_string
+        usage_strings.join("\n")
     }
 
 }

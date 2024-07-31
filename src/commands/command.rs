@@ -60,14 +60,14 @@ pub trait Command: Send + Sync {
 
     fn define_usage(&self) -> UsageBuilder;
 
-    fn invalid_usage(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+    fn display_usage(&self, params: CommandParams, title: String) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
                 let message = &params.message;
                 let usage = self.define_usage().build(&message.get_prefix().unwrap());
                 let embed = MessageManager::create_embed(|embed| {
                     embed
-                        .title("Invalid Usage!")
+                        .title(title)
                         .description(&usage)
                         .footer(CreateEmbedFooter::new(
                             format!("Syntax Legend: <> = required, [] = optional"),
@@ -75,6 +75,12 @@ pub trait Command: Send + Sync {
                 }).await;
                 let _ = message.reply(embed.to_message()).await;
             }
+        )
+    }
+
+    fn invalid_usage(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+        Box::pin(
+            async move { self.display_usage(params, "Invalid Usage!".to_string()).await }
         )
     }
 

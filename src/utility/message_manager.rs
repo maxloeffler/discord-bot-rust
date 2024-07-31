@@ -63,6 +63,12 @@ impl MessageManager {
         manager
     }
 
+    pub async fn spoof(&self, content: String) -> MessageManager {
+        let mut spoofed_message = self.raw_message.clone();
+        spoofed_message.content = content;
+        MessageManager::new(self.resolver.clone(), spoofed_message).await
+    }
+
     fn first_word_index(&self) -> usize {
         if self.is_command() { 1 } else { 0 }
     }
