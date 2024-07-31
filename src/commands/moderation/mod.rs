@@ -9,3 +9,4 @@ pub mod remove_afk;
 pub mod role;
 pub mod lock;
 pub mod unlock;
+pub mod flag;

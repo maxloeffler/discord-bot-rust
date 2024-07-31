@@ -31,6 +31,7 @@ pub use moderation::remove_afk::RemoveAfkCommand;
 pub use moderation::role::RoleCommand;
 pub use moderation::lock::LockCommand;
 pub use moderation::unlock::UnlockCommand;
+pub use moderation::flag::FlagCommand;
 
 // ---- src/commands/tickets/ ---- //
 
