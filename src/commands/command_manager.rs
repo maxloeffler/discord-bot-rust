@@ -1,7 +1,10 @@
 
+use serenity::builder::CreateButton;
+use serenity::all::ButtonStyle;
 use serenity::all::UserId;
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::str::FromStr;
 
 use crate::commands::command::{CommandParams, MatchType};
@@ -80,7 +83,7 @@ impl CommandManager {
 
     async fn match_command<'a>(&'a self,
             message: &'a MessageManager,
-            match_callback: impl Fn(&'a Box<dyn Command>) -> BoxedFuture<'a, ()>
+            match_callback: impl Fn(&'a Box<dyn Command>) -> BoxedFuture<'a, ()> + Send + Copy
     ) {
 
         // initialize search
@@ -99,25 +102,39 @@ impl CommandManager {
             };
         }
         if !exact_match {
-            for (command, closest_match) in fuzzy_matches {
 
-                // create correction message
-                let correction = format!("{}{} {}",
-                    message.get_prefix().unwrap(),
-                    closest_match,
-                    message.payload(None, None));
+            // create buttons
+            let buttons = fuzzy_matches.iter().enumerate()
+                .map(|(i, (_, closest_match))| {
+                    CreateButton::new(i.to_string())
+                        .label(closest_match)
+                        .style(ButtonStyle::Secondary)
+                }).collect::<Vec<_>>();
 
-                // create embed
-                let embed = MessageManager::create_embed(|embed| {
-                    embed.title("Did you mean ...").description(&correction)
-                }).await;
+            // create embed
+            let cmd = message.get_command().unwrap();
+            let embed = MessageManager::create_embed(|embed| {
+                embed
+                    .title("Did you mean ...")
+                    .description(&format!("`{}{}` {}\n`{}`",
+                            message.get_prefix().unwrap(),
+                            cmd,
+                            message.payload(None, None),
+                            "^".repeat(1 + cmd.len())))
+            }).await;
 
-                // create choice interaction
-                message.create_choice_interaction(
-                    embed,
-                    match_callback(command),
-                    Box::pin( async move {} )
-                ).await;
+            // create interaction
+            let interaction_helper = message.get_interaction_helper();
+            let pressed = interaction_helper.create_buttons(
+                embed,
+                buttons
+            ).await;
+
+            // execute callback
+            if let Some(pressed) = pressed {
+                let index = pressed.parse::<usize>().unwrap();
+                let (command, _) = fuzzy_matches.get(index).unwrap();
+                match_callback(command).await;
             }
         }
     }

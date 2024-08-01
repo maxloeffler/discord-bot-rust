@@ -42,8 +42,9 @@ pub trait Command: Send + Sync {
                 }
                 for trigger in triggers.into_iter() {
                     let threshold = trigger.len() / 3;
-                    if string_distance(&trigger, &compare) <= threshold {
-                        return MatchType::Fuzzy(compare.to_string());
+                    if string_distance(&trigger, &compare) <= threshold
+                        || trigger.contains(&compare) {
+                        return MatchType::Fuzzy(trigger.to_string());
                     }
                 }
                 MatchType::None
@@ -119,7 +120,7 @@ impl UserDecorator {
 
                 // create dropdown interaction
                 let selected_user = Arc::new(Mutex::new(None));
-                let _ = message.create_user_dropdown_interaction(
+                let _ = message.get_interaction_helper().create_user_dropdown_interaction(
                     embed,
                     users,
                     |value: User| {

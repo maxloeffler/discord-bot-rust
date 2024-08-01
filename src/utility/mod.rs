@@ -35,3 +35,6 @@ pub use log_builder::LogBuilder;
 pub mod auto_moder;
 #[cfg(feature = "auto_moderation")]
 pub use auto_moder::AutoModerator;
+
+pub mod interaction_helper;
+pub use interaction_helper::InteractionHelper;
