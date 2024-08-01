@@ -176,6 +176,14 @@ impl Database {
         ).expect("Failed to delete value");
     }
 
+    pub async fn delete_by_id(&self, id: i64) {
+        let connection = self.connection.lock().await;
+        connection.execute(
+            &format!("DELETE FROM {} WHERE id = ?", self.identifier.to_string()),
+            params![id],
+        ).expect("Failed to delete value");
+    }
+
 }
 
 

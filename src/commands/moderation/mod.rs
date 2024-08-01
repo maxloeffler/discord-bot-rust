@@ -10,3 +10,4 @@ pub mod role;
 pub mod lock;
 pub mod unlock;
 pub mod flag;
+pub mod unflag;

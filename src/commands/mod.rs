@@ -32,6 +32,7 @@ pub use moderation::role::RoleCommand;
 pub use moderation::lock::LockCommand;
 pub use moderation::unlock::UnlockCommand;
 pub use moderation::flag::FlagCommand;
+pub use moderation::unflag::UnflagCommand;
 
 // ---- src/commands/tickets/ ---- //
 

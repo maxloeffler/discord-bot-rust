@@ -132,6 +132,14 @@ pub trait DatabaseWrapper: Send + Sync {
             self.get_database().delete(key).await
         })
     }
+
+    fn delete_by_id<'a>(&'a self, id: i64) -> BoxedFuture<'a, ()>
+        where Self: Sync
+    {
+        Box::pin(async move {
+            self.get_database().delete_by_id(id).await
+        })
+    }
 }
 
 pub struct ConfigDB { database: Database }
