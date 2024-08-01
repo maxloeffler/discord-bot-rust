@@ -12,3 +12,4 @@ pub mod unlock;
 pub mod flag;
 pub mod unflag;
 pub mod flags;
+pub mod ban;

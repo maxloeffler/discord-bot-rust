@@ -1,0 +1,107 @@
+
+use serenity::all::ChannelId;
+use nonempty::{NonEmpty, nonempty};
+
+use std::str::FromStr;
+
+use crate::commands::command::{Command, CommandParams};
+use crate::utility::*;
+use crate::databases::*;
+
+
+pub struct BanCommand;
+
+impl Command for BanCommand {
+
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+        Box::pin(async move {
+            message.is_mod().await
+        })
+    }
+
+    fn define_usage(&self) -> UsageBuilder {
+        UsageBuilder::new(nonempty![
+            "ban".to_string(),
+        ])
+            .add_required("user")
+            .add_optional("reason")
+            .example("ban @JuicyJuggler we could not handle you anymore")
+    }
+
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+        Box::pin(
+            async move {
+
+                let message = &params.message;
+                let target = &params.target.unwrap();
+
+                // obtain the reason
+                let mut reason = message.payload_without_mentions(None, None).await;
+                if reason.is_empty() {
+                    reason = "No reason provided.".to_string();
+                }
+
+                let resolver = message.get_resolver();
+                if resolver.is_trial(&target).await {
+                    message.reply_failure("You can't ban a moderator.").await;
+                    return;
+                }
+
+                let member = resolver.resolve_member(&target).await;
+                if let Some(member) = member {
+
+                    // ban the user
+                    let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
+                    let _ = member.remove_role(&resolver, role_muted.id).await;
+                    let _ = member.ban_with_reason(&resolver, 0, &reason).await;
+
+                    // log mute to database
+                    let log = ModLog {
+                        member_id: target.id.to_string(),
+                        staff_id: message.get_author().id.to_string(),
+                        reason: reason.clone()
+                    };
+                    BansDB::get_instance().lock().await
+                        .append(&target.id.to_string(), &log.into()).await;
+
+                    // log mute to mod logs
+                    let channel_modlogs_id = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().to_string();
+                    let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
+                    let log_message = message.get_log_builder()
+                        .title("[BAN]")
+                        .description(&format!("<@{}> has been banned", target.id))
+                        .color(0xff8200)
+                        .staff()
+                        .user(&target)
+                        .arbitrary("Reason", &reason)
+                        .timestamp()
+                        .build().await;
+                    let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
+
+                    // inform member of the ban and how to appeal
+                    let guild = resolver.resolve_guild(None).await.unwrap();
+                    let notify_message = message.get_log_builder()
+                        .title("You've been banned!")
+                        .description(&format!("You have been banned from {} for \"{}\"\nYou can appeal your ban [here](https://dyno.gg/form/76afa59d) if you believe we made a mistake!",
+                            guild.name,
+                            reason))
+                        .target(&target)
+                        .no_thumbnail()
+                        .color(0xff0000)
+                        .build().await;
+                    let sent = target.direct_message(resolver, notify_message.to_message()).await;
+
+                    match sent {
+                        Ok(_)  => message.reply_success().await,
+                        Err(_) => {
+                            let _ = message.reply("Notice: I couldn't send a DM to the user.").await;
+                        }
+                    };
+                }
+            }
+        )
+    }
+
+}
+
