@@ -10,9 +10,9 @@ use crate::utility::*;
 use crate::databases::*;
 
 
-pub struct WarningsCommand;
+pub struct FlagsCommand;
 
-impl Command for WarningsCommand {
+impl Command for FlagsCommand {
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move {
@@ -22,11 +22,11 @@ impl Command for WarningsCommand {
 
     fn define_usage(&self) -> UsageBuilder {
         UsageBuilder::new(nonempty![
-            "warnings".to_string(),
+            "flags".to_string(),
         ])
             .add_required("user")
-            .add_optional("more")
-            .example("warnings @BadBoy")
+            .add_optional("-more")
+            .example("flags @BadBoy -more")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -36,39 +36,39 @@ impl Command for WarningsCommand {
                 let message = &params.message;
                 let target = &params.target.unwrap();
 
-                let warnings = WarningsDB::get_instance().lock().await
+                let flags = FlagsDB::get_instance().lock().await
                     .get_all(&target.id.to_string()).await;
 
-                if let Ok(mut warnings) = warnings {
+                if let Ok(mut flags) = flags {
 
-                    // get number of total warnings
-                    let total_warnings = warnings.len();
+                    // get number of total flags
+                    let total_flags = flags.len();
 
-                    // get amount of warnings to display
-                    let limit = min(total_warnings,
+                    // get amount of flags to display
+                    let limit = min(total_flags,
                         match message.has_parameter("more") {
                             true => 24,
                             false => 5
                         });
-                    let warnings = warnings.split_off(total_warnings - limit);
+                    let flags = flags.split_off(total_flags - limit);
 
                     // create embed
                     let name = message.get_resolver().resolve_name(target);
                     let mut builder = message.get_log_builder()
                         .target(target)
-                        .title(format!("{}'s Warnings", name))
+                        .title(format!("{}'s Flags", name))
                         .no_thumbnail();
 
-                    // add warnings to embed
-                    let embed = match warnings.len() {
-                        0 => builder.description("No registered warnings.").build().await,
+                    // add flags to embed
+                    let embed = match flags.len() {
+                        0 => builder.description("No registered flags.").build().await,
                         len @ _ => {
-                            for warning in warnings.into_iter() {
-                                builder = builder.mod_log(&warning);
+                            for flag in flags.into_iter() {
+                                builder = builder.mod_log(&flag);
                             }
                             builder.build().await
                                 .footer(CreateEmbedFooter::new(
-                                    format!("Displaying {} of {} Warnings", len, total_warnings)
+                                    format!("Displaying {} of {} Flags", len, total_flags)
                                 ))
                         }
                     };

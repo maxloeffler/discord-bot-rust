@@ -11,3 +11,4 @@ pub mod lock;
 pub mod unlock;
 pub mod flag;
 pub mod unflag;
+pub mod flags;

@@ -33,6 +33,7 @@ pub use moderation::lock::LockCommand;
 pub use moderation::unlock::UnlockCommand;
 pub use moderation::flag::FlagCommand;
 pub use moderation::unflag::UnflagCommand;
+pub use moderation::flags::FlagsCommand;
 
 // ---- src/commands/tickets/ ---- //
 

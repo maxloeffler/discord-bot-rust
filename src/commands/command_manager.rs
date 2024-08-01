@@ -45,6 +45,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(UnlockCommand{}) }),
             Box::new( UserDecorator{ command: Box::new(FlagCommand{}) }),
             Box::new( UserDecorator{ command: Box::new(UnflagCommand{}) }),
+            Box::new( UserDecorator{ command: Box::new(FlagsCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
