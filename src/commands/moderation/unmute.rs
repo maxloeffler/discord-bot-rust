@@ -105,6 +105,8 @@ impl Command for UnmuteCommand {
                     });
 
                 }
+
+                message.reply_success().await;
                 let log = builder.build().await.to_message();
                 let _ = channel_modlogs.send_message(resolver, log).await;
 

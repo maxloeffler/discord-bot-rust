@@ -87,6 +87,8 @@ impl Command for MuteCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
+
+                message.reply_success().await;
                 let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
 
                 // check for active flags

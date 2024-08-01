@@ -58,6 +58,8 @@ impl Command for UnflagCommand {
                         .staff()
                         .user(&target)
                         .build().await;
+
+                    message.reply_success().await;
                     let _ = channel_modlogs.send_message(message, embed.to_message()).await;
                 }
             }

@@ -71,8 +71,9 @@ impl Command for FlagCommand {
                         false => timestamp_now + (7  * 24 * 60 * 60)
                     })
                     .build().await;
-                let _ = channel_modlogs.send_message(message, embed.to_message()).await;
 
+                message.reply_success().await;
+                let _ = channel_modlogs.send_message(message, embed.to_message()).await;
             }
         )
     }
