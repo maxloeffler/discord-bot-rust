@@ -4,7 +4,9 @@ use strum::IntoEnumIterator;
 use tokio::runtime::Runtime;
 use serenity::cache::Settings;
 use serenity::prelude::{Client, GatewayIntents};
+use tokio::sync::Mutex;
 
+use std::sync::Arc;
 use std::thread;
 
 use commands::command_manager::CommandManager;
@@ -58,25 +60,40 @@ async fn setup() -> String {
     config.get("token").await.unwrap().to_string()
 }
 
+fn get_db(db: &DB) -> Arc<&'static Mutex<dyn DatabaseWrapper>> {
+    match db {
+        DB::Config => Arc::new(ConfigDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Mutes => Arc::new(MutesDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Warnings => Arc::new(WarningsDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Flags => Arc::new(FlagsDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Bans => Arc::new(BansDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Afk => Arc::new(AfkDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+    }
+}
+
 #[cfg(feature = "db_interface")]
 async fn spawn_database_thread() {
-    let database = ConfigDB::get_instance();
+    let mut db = DB::Config;
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
-        Logger::info_long("Connected to database", "config");
+        Logger::info_long("Connected to database", db.to_string().as_str());
         runtime.block_on(async {
             loop {
+                let database = get_db(&db);
                 let input = Logger::input("Enter a command");
                 let words = input.split_whitespace().collect::<Vec<&str>>();
 
                 match words[0] {
+                    "ls" => {
+                        let mut keys = database.lock().await.get_keys().await;
+                        keys.sort();
+                        Logger::info_long("Keys", &keys.join(", "));
+                    }
                     "get" => {
                         match words.len() {
                             1 => {
-                                let mut keys = database.lock().await.get_keys().await;
-                                keys.sort();
-                                Logger::info_long("Keys", &keys.join(", "));
-                            }
+                                Logger::warn("Too few parameters");
+                            },
                             2 => {
                                 let key = words[1];
                                 let value = database.lock().await.get(key).await;
@@ -159,19 +176,18 @@ async fn spawn_database_thread() {
                             }
                         }
                     }
-                    "checkout" => {
-                        Logger::warn("Currently not implemented!");
-                        continue;
+                    "cd" => {
                         match words.len() {
                             2 => {
                                 let mut switch = false;
                                 for db_type in DB::iter() {
                                     if db_type.to_string() == words[1] {
                                         switch = true;
+                                        db = db_type;
                                     }
                                 }
                                 match switch {
-                                    true => Logger::info_long("Switched to database", "config"),
+                                    true => Logger::info_long("Switched to database", db.to_string().as_str()),
                                     _    => Logger::warn("Invalid database")
                                 }
                             }

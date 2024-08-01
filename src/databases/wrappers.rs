@@ -56,7 +56,7 @@ impl From<&DBEntry> for FlagLog {
     }
 }
 
-pub trait DatabaseWrapper {
+pub trait DatabaseWrapper: Send + Sync {
 
     fn get_database(&self) -> &Database;
 
