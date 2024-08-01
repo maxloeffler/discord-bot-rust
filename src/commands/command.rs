@@ -24,34 +24,7 @@ impl CommandParams {
     }
 }
 
-pub enum MatchType {
-    Exact,
-    Fuzzy(String),
-    None
-}
-
 pub trait Command: Send + Sync {
-
-    fn is_triggered_by(&self, message: &MessageManager) -> MatchType {
-        match message.get_command() {
-            Some(word) => {
-                let compare = word.to_lowercase();
-                let triggers = &self.get_triggers();
-                if triggers.contains(&compare) {
-                    return MatchType::Exact;
-                }
-                for trigger in triggers.into_iter() {
-                    let threshold = trigger.len() / 3;
-                    if string_distance(&trigger, &compare) <= threshold
-                        || trigger.contains(&compare) {
-                        return MatchType::Fuzzy(trigger.to_string());
-                    }
-                }
-                MatchType::None
-            },
-            None => MatchType::None,
-        }
-    }
 
     fn permission<'a>(&'a self, _message: &'a MessageManager) -> BoxedFuture<'_, bool> {
         Box::pin(async move { true })
@@ -84,6 +57,10 @@ pub trait Command: Send + Sync {
             async move { self.display_usage(params, "Invalid Usage!".to_string()).await }
         )
     }
+
+}
+
+impl Triggerable for dyn Command {
 
     fn get_triggers(&self) -> NonEmpty<String> {
         self.define_usage().triggers

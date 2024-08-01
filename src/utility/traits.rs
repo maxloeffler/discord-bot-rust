@@ -1,9 +1,9 @@
 
-
 use serenity::model::prelude::*;
 use serenity::builder::{CreateEmbed, CreateMessage};
 use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
+use nonempty::NonEmpty;
 
 use std::sync::Arc;
 use std::str::FromStr;
@@ -12,6 +12,8 @@ use std::str::FromStr;
 use crate::utility::auto_moder::AutoModerator;
 #[cfg(feature = "tickets")]
 use crate::utility::ticket_handler::TicketHandler;
+use crate::utility::message_manager::MessageManager;
+use crate::utility::mixed::string_distance;
 use crate::databases::*;
 
 
@@ -205,5 +207,41 @@ impl ToMessage for &String {
     fn to_message(&self) -> CreateMessage {
         CreateMessage::default().content(self.to_string())
     }
+}
+
+
+pub enum MatchType {
+    Exact,
+    Fuzzy(String),
+    None
+}
+
+pub trait Triggerable {
+
+    fn get_triggers(&self) -> NonEmpty<String>;
+
+    fn is_triggered_by(&self, compare: &String) -> MatchType {
+
+        let compare = compare.to_lowercase();
+        let triggers = &self.get_triggers();
+
+        // check for exact match
+        if triggers.contains(&compare) {
+            return MatchType::Exact;
+        }
+
+        // check for fuzzy
+        for trigger in triggers.into_iter() {
+            let threshold = trigger.len() / 3;
+            if string_distance(&trigger, &compare) <= threshold
+                || trigger.contains(&compare) {
+                return MatchType::Fuzzy(trigger.to_string());
+            }
+        }
+
+        // no match
+        MatchType::None
+    }
+
 }
 

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::str::FromStr;
 
-use crate::commands::command::{CommandParams, MatchType};
+use crate::commands::command::CommandParams;
 use crate::utility::*;
 use crate::commands::*;
 use crate::databases::*;
@@ -92,8 +92,9 @@ impl CommandManager {
         let mut fuzzy_matches = Vec::new();
         let mut exact_match = false;
 
+        let cmd = &message.get_command().unwrap();
         for command in self.commands.iter() {
-            match command.is_triggered_by(message) {
+            match command.is_triggered_by(cmd) {
                 MatchType::Exact => {
                     match_callback(command).await;
                     exact_match = true;
