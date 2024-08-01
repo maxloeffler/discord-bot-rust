@@ -35,6 +35,7 @@ pub use moderation::flag::FlagCommand;
 pub use moderation::unflag::UnflagCommand;
 pub use moderation::flags::FlagsCommand;
 pub use moderation::ban::BanCommand;
+pub use moderation::check_ban::CheckBanCommand;
 
 // ---- src/commands/tickets/ ---- //
 

@@ -26,7 +26,7 @@ impl Command for InfoCommand {
 
                 let mut embed = message.get_log_builder()
                     .target(target)
-                    .title(&format!("{}' a Information", message.resolve_name()))
+                    .title(&format!("{}'s Information", message.resolve_name()))
                     .arbitrary("Handle", &format!("<@{}>", target.id.to_string()))
                     .labeled_timestamp("Created At", target.created_at().unix_timestamp());
 
