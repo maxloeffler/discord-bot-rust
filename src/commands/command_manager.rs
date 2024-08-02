@@ -48,6 +48,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(FlagsCommand{}) }),
             Box::new( UserDecorator{ command: Box::new(BanCommand{}) }),
             Box::new( CheckBanCommand{} ),
+            Box::new( UnbanCommand{} ),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![

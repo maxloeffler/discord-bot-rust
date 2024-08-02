@@ -55,7 +55,7 @@ impl Command for BanCommand {
                     let _ = member.remove_role(&resolver, role_muted.id).await;
                     let _ = member.ban_with_reason(&resolver, 0, &reason).await;
 
-                    // log mute to database
+                    // log ban to database
                     let log = ModLog {
                         member_id: target.id.to_string(),
                         staff_id: message.get_author().id.to_string(),
@@ -64,7 +64,7 @@ impl Command for BanCommand {
                     BansDB::get_instance().lock().await
                         .append(&target.id.to_string(), &log.into()).await;
 
-                    // log mute to mod logs
+                    // log ban to mod logs
                     let channel_modlogs_id = ConfigDB::get_instance().lock().await
                         .get("channel_modlogs").await.unwrap().to_string();
                     let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();

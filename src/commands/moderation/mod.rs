@@ -14,3 +14,4 @@ pub mod unflag;
 pub mod flags;
 pub mod ban;
 pub mod check_ban;
+pub mod unban;
