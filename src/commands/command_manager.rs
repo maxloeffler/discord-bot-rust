@@ -32,6 +32,7 @@ impl CommandManager {
             Box::new( ServerInfoCommand{} ),
             Box::new( AfkCommand{} ),
             Box::new( PollCommand{} ),
+            Box::new( AddEmojiCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
             Box::new( UserDecorator{ command: Box::new(WarningsCommand{}) }),

@@ -145,7 +145,10 @@ impl MessageManager {
             Some(excludes) => {
 
                 // filter words
-                let pattern = excludes.join("|");
+                let pattern = excludes.into_iter()
+                    .map(|exclude| RegexManager::escape(exclude.as_str()))
+                    .collect::<Vec<_>>()
+                    .join("|");
                 let regex = Regex::new(&pattern).unwrap();
                 words.iter()
                     .filter(|word| !regex.is_match(word))

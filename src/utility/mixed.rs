@@ -1,5 +1,5 @@
 
-use regex::Regex;
+use regex::{Regex, escape};
 
 use std::collections::HashMap;
 use std::pin::Pin;
@@ -55,6 +55,10 @@ impl RegexManager {
 
     pub fn get_url_regex() -> Regex {
         Regex::new(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)").unwrap()
+    }
+
+    pub fn escape(text: &str) -> String {
+        escape(text)
     }
 }
 
