@@ -34,7 +34,6 @@ impl Handler {
 #[async_trait]
 impl EventHandler for Handler {
 
-    #[cfg(feature = "tickets")]
     async fn ready(&self, ctx: Context, _ready: Ready) {
 
         #[cfg(feature = "debug")]
@@ -45,8 +44,11 @@ impl EventHandler for Handler {
         let guild_id = GuildId::from_str(&main_guild).unwrap();
         let resolver = Resolver::new(ctx, Some(guild_id));
 
+        #[cfg(feature = "tickets")]
         TicketHandler::get_instance().lock().await
             .init(&resolver).await;
+
+        spawn(periodic_checks(resolver.clone())).await;
     }
 
     async fn message(&self, ctx: Context, msg: Message) {

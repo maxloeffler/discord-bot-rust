@@ -8,3 +8,4 @@ pub mod server_info;
 pub mod afk;
 pub mod poll;
 pub mod add_emoji;
+pub mod schedule;

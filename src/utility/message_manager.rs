@@ -23,7 +23,7 @@ pub struct MessageManager {
     prefix: Option<String>,
     command: Option<String>,
     parameters: HashMap<String, String>,
-    words: Vec<String>
+    pub words: Vec<String>
 }
 
 impl CacheHttp for MessageManager {

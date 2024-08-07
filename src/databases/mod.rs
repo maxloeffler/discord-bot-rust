@@ -9,6 +9,8 @@ pub mod wrappers;
 pub use wrappers::DatabaseWrapper;
 pub use wrappers::ModLog;
 pub use wrappers::FlagLog;
+pub use wrappers::ScheduleLog;
+
 pub use wrappers::ConfigDB;
 pub use wrappers::WarningsDB;
 pub use wrappers::MutesDB;

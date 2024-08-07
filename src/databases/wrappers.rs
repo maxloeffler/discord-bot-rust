@@ -12,6 +12,23 @@ use crate::utility::*;
 use crate::impl_singleton;
 
 
+macro_rules! as_db_entry {
+    ($name:ident) => {
+
+        impl $name {
+            pub fn into(self) -> String {
+                serde_json::to_string(&self).unwrap()
+            }
+        }
+
+        impl From<&DBEntry> for $name {
+            fn from(entry: &DBEntry) -> $name {
+                serde_json::from_str(&entry.value).unwrap()
+            }
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ModLog {
     pub staff_id: String,
@@ -19,17 +36,7 @@ pub struct ModLog {
     pub reason: String,
 }
 
-impl ModLog {
-    pub fn into(self) -> String {
-        serde_json::to_string(&self).unwrap()
-    }
-}
-
-impl From<&DBEntry> for ModLog {
-    fn from(entry: &DBEntry) -> Self {
-        serde_json::from_str(&entry.value).unwrap()
-    }
-}
+as_db_entry!(ModLog);
 
 #[derive(Serialize, Deserialize)]
 pub struct FlagLog {
@@ -39,10 +46,9 @@ pub struct FlagLog {
     pub monthly: bool,
 }
 
+as_db_entry!(FlagLog);
+
 impl FlagLog {
-    pub fn into(self) -> String {
-        serde_json::to_string(&self).unwrap()
-    }
     pub fn is_active(&self, issuance_date: i64) -> bool {
         let duration = match self.monthly {
             true  => 30 * 24 * 60 * 60,
@@ -54,11 +60,20 @@ impl FlagLog {
     }
 }
 
-impl From<&DBEntry> for FlagLog {
-    fn from(entry: &DBEntry) -> Self {
-        serde_json::from_str(&entry.value).unwrap()
+#[derive(Serialize, Deserialize)]
+pub struct ScheduleLog {
+    pub expiration_date: i64,
+    pub message: String,
+    pub channel_id: String,
+}
+
+impl ScheduleLog {
+    pub fn is_expired(&self, now: i64) -> bool {
+        self.expiration_date < now
     }
 }
+
+as_db_entry!(ScheduleLog);
 
 pub trait DatabaseWrapper: Send + Sync {
 
