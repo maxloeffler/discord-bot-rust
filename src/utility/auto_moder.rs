@@ -114,8 +114,8 @@ impl AutoModerator {
             // get all active flags
             let active_flags: Vec<FlagLog> = all_flags
                 .into_iter()
-                .filter(|flag| FlagLog::from(*flag).is_active(flag.timestamp))
-                .map(|flag| FlagLog::from(flag))
+                .filter(|flag| FlagLog::from(flag).is_active(flag.timestamp))
+                .map(|flag| FlagLog::from(&flag))
                 .collect();
 
             // if there are active flags
