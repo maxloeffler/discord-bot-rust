@@ -1,4 +1,7 @@
 
+use cached::proc_macro::cached;
+use cached::SizedCache;
+
 use regex::{Regex, escape};
 
 use std::collections::HashMap;
@@ -11,6 +14,11 @@ pub type Result<T> = std::result::Result<T, String>;
 
 // Implement Levenshtein distance
 // https://www.wikiwand.com/en/Levenshtein_distance
+#[cached(
+    ty = "SizedCache<(String, String), usize>",
+    create = "{ SizedCache::with_size(200) }",
+    convert = r#"{ (a.to_string(), b.to_string()) }"#
+)]
 pub fn string_distance(a: &str, b: &str) -> usize {
 
     if a.is_empty() {
