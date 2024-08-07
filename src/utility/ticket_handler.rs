@@ -7,6 +7,8 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use futures::stream::StreamExt;
 use uuid::Uuid;
+use tokio::sync::Mutex;
+use once_cell::sync::Lazy;
 
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
@@ -15,6 +17,7 @@ use std::process::Command;
 
 use crate::utility::*;
 use crate::databases::*;
+use crate::impl_singleton;
 
 
 #[cfg(feature = "tickets")]
@@ -82,6 +85,9 @@ impl Debug for Ticket {
 pub struct TicketHandler {
     tickets: Arc<Mutex<HashMap<String, Arc<Ticket>>>>,
 }
+
+#[cfg(feature = "tickets")]
+impl_singleton!(TicketHandler);
 
 #[cfg(feature = "tickets")]
 impl TicketHandler {

@@ -1,15 +1,22 @@
 
 use serenity::all::ChannelId;
 use serenity::model::user::User;
+use tokio::sync::Mutex;
+use once_cell::sync::Lazy;
 
+use std::sync::Arc;
 use std::str::FromStr;
 
 use crate::utility::*;
 use crate::databases::*;
+use crate::impl_singleton;
 
 
 #[cfg(feature = "auto_moderation")]
 pub struct AutoModerator {}
+
+#[cfg(feature = "auto_moderation")]
+impl_singleton!(AutoModerator);
 
 #[cfg(feature = "auto_moderation")]
 impl AutoModerator {

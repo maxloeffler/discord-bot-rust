@@ -1,11 +1,15 @@
 
 use serde::{Serialize, Deserialize};
+use tokio::sync::Mutex;
+use once_cell::sync::Lazy;
+
+use std::sync::Arc;
 
 use crate::databases::database::Database;
 use crate::databases::database::DBEntry;
 use crate::databases::database::DB;
 use crate::utility::*;
-
+use crate::impl_singleton;
 
 
 #[derive(Serialize, Deserialize)]
@@ -84,7 +88,6 @@ pub trait DatabaseWrapper: Send + Sync {
         })
     }
 
-
     fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<DBEntry>>>
         where Self: Sync
     {
@@ -142,86 +145,32 @@ pub trait DatabaseWrapper: Send + Sync {
     }
 }
 
-pub struct ConfigDB { database: Database }
+macro_rules! impl_database_wrapper {
+    ($name:ident, $db_type:expr) => {
+        pub struct $name {
+            database: Database
+        }
 
-impl ConfigDB {
-    pub fn new() -> Self {
-        ConfigDB { database: Database::new(DB::Config) }
-    }
+        impl $name {
+            pub fn new() -> Self {
+                $name { database: Database::new($db_type) }
+            }
+        }
+
+        impl DatabaseWrapper for $name {
+            fn get_database(&self) -> &Database {
+                &self.database
+            }
+        }
+
+        impl_singleton!($name);
+    };
 }
 
-impl DatabaseWrapper for ConfigDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
-
-pub struct WarningsDB { database: Database }
-
-impl WarningsDB {
-    pub fn new() -> Self {
-        WarningsDB { database: Database::new(DB::Warnings) }
-    }
-}
-
-impl DatabaseWrapper for WarningsDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
-
-pub struct MutesDB { database: Database }
-
-impl MutesDB {
-    pub fn new() -> Self {
-        MutesDB { database: Database::new(DB::Mutes) }
-    }
-}
-
-impl DatabaseWrapper for MutesDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
-
-pub struct FlagsDB { database: Database }
-
-impl FlagsDB {
-    pub fn new() -> Self {
-        FlagsDB { database: Database::new(DB::Flags) }
-    }
-}
-
-impl DatabaseWrapper for FlagsDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
-
-pub struct BansDB { database: Database }
-
-impl BansDB {
-    pub fn new() -> Self {
-        BansDB { database: Database::new(DB::Bans) }
-    }
-}
-
-impl DatabaseWrapper for BansDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
-
-pub struct AfkDB { database: Database }
-
-impl AfkDB {
-    pub fn new() -> Self {
-        AfkDB { database: Database::new(DB::Afk) }
-    }
-}
-
-impl DatabaseWrapper for AfkDB {
-    fn get_database(&self) -> &Database {
-        &self.database
-    }
-}
+impl_database_wrapper!(ConfigDB, DB::Config);
+impl_database_wrapper!(WarningsDB, DB::Warnings);
+impl_database_wrapper!(MutesDB, DB::Mutes);
+impl_database_wrapper!(BansDB, DB::Bans);
+impl_database_wrapper!(FlagsDB, DB::Flags);
+impl_database_wrapper!(AfkDB, DB::Afk);
+impl_database_wrapper!(ScheduleDB, DB::Schedule);

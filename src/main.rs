@@ -68,6 +68,7 @@ fn get_db(db: &DB) -> Arc<&'static Mutex<dyn DatabaseWrapper>> {
         DB::Flags => Arc::new(FlagsDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
         DB::Bans => Arc::new(BansDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
         DB::Afk => Arc::new(AfkDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Schedule => Arc::new(ScheduleDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
     }
 }
 
