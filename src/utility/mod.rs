@@ -43,3 +43,5 @@ pub mod threads;
 pub use threads::{periodic_checks, spawn};
 #[cfg(feature = "db_interface")]
 pub use threads::database_interface;
+#[cfg(feature = "tickets")]
+pub use threads::hook_ticket_selector;

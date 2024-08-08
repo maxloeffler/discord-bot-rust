@@ -49,22 +49,6 @@ impl Command for OpenTicketCommand {
                     message.reply_failure("Failed to create ticket.").await;
                     return;
                 }
-
-                // create embed
-                let description = format!("{}\n{}", match ticket_type.as_str() {
-                    "m" => "A staff member created this **muted ticket** with you to discuss your warnings.",
-                    "d" => "A staff member created this **discussion ticket** with you to discuss a situation you were involved in.",
-                    _ => unreachable!(),
-                }, "If you **do not** respond within **2 hours**, this ticket will be closed and **appropriate action** will be taken.");
-                let embed = MessageManager::create_embed(|embed| {
-                    embed
-                        .title("Ticket Created")
-                        .description(description)
-                }).await;
-
-                // send message
-                let embed = embed.to_message().content(format!("<@{}>", target.id));
-                let _ = ticket.unwrap().channel.send_message(message, embed).await;
             }
         )
     }

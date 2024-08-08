@@ -136,6 +136,30 @@ impl TicketHandler {
         }
 
         #[cfg(feature = "debug")]
+        Logger::info("Hooking ticket selector");
+
+        let channel_id: ChannelId = ConfigDB::get_instance().lock().await
+            .get("channel_tickets").await.unwrap().into();
+        let channel = resolver.resolve_guild_channel(channel_id).await;
+
+        if let Some(channel) = channel {
+            if let Some(last_message_id) = channel.last_message_id {
+
+                // fetch last message
+                let message = resolver.resolve_message(channel.id, last_message_id).await;
+                if let Some(message) = message {
+
+                    // hook selector
+                    if message.author.bot {
+                        spawn(hook_ticket_selector(resolver.clone(), message)).await;
+                    }
+                }
+            }
+        }
+
+
+
+        #[cfg(feature = "debug")]
         Logger::info_long("End", "Initilizing ticket handler");
 
     }
@@ -173,9 +197,9 @@ impl TicketHandler {
                 match ticket_type {
                     TicketType::StaffReport => {
                         let _ = allowed_roles.pop().unwrap();
+                        let _ = allowed_roles.pop().unwrap();
                     },
                     TicketType::UserReport => {
-                        let _ = allowed_roles.pop().unwrap();
                         let _ = allowed_roles.pop().unwrap();
                     },
                     _ => {},
@@ -185,6 +209,30 @@ impl TicketHandler {
                     .map(|role| role.id)
                     .collect::<Vec<RoleId>>();
 
+                let pings = format!("<@{}>", target.id);
+                let pings = format!("{pings} {}",
+                    match ticket_type {
+                        TicketType::Muted | TicketType::Discussion => "".to_string(),
+                        _ => allowed_roles.iter().map(|role| format!("<@&{}>", role)).collect::<Vec<String>>().join(" "),
+                    });
+
+                let support_response = "Support will be with you shortly. It should not take longer than 10 minutes.";
+                let discuss_response = "If you **do not** respond within **2 hours**, this ticket will be closed and **appropriate action** will be taken.";
+
+                let introduction_message = match ticket_type {
+                    TicketType::Muted       => format!("A staff member created this **muted ticket** with you to discuss your warnings. {}", discuss_response),
+                    TicketType::Discussion  => format!("A staff member created this **discussion ticket** with you to discuss a situation you were involved in. {}", discuss_response),
+                    TicketType::StaffReport => format!("{} Please provide the ID of the staff member you are reporting as well as any photo evidence or channel links relevant to this report.", support_response),
+                    TicketType::UserReport  => format!("{} Please provide the ID of the user you are reporting as well as any photo evidence or channel links relevant to this report.", support_response),
+                    TicketType::BugReport   => format!("{} Please provide photo evidence or channel links of the bug you are reporting.", support_response),
+                    TicketType::Question    => format!("{} Ask any server-related questions and a staff member will be able to help you out.", support_response),
+                };
+                let embed = MessageManager::create_embed(|embed| {
+                    embed.description(introduction_message)
+                }).await;
+
+                let _ = channel.send_message(resolver, pings.to_message()).await;
+                let _ = channel.send_message(resolver, embed.to_message()).await;
                 let present_members = Arc::new(Mutex::new(HashSet::new()));
                 present_members.lock().await.insert(target.id);
 

@@ -1,4 +1,5 @@
 
+use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::all::*;
 use serenity::builder::{CreateWebhook, CreateAttachment, ExecuteWebhook, CreateAllowedMentions};
 use tokio::runtime::Runtime;
@@ -225,6 +226,27 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                         }
                     }
                 }).await;
+        }
+    })
+}
+
+#[cfg(feature = "tickets")]
+pub fn hook_ticket_selector<'a>(resolver: Resolver, selector: Message) -> BoxedFuture<'a, ()> {
+    Box::pin(async move {
+        let resolver = &resolver;
+        let mut interactions = selector
+            .await_component_interactions(&resolver.ctx().shard)
+            .stream();
+
+        while let Some(interaction) = interactions.next().await {
+            match interaction.data.kind {
+                StringSelect{values} => {
+                    let ticket_type = TicketType::from(values[0].clone());
+                    let _ = TicketHandler::get_instance().lock().await
+                        .new_ticket(resolver, &interaction.user, ticket_type).await;
+                }
+                _ => {}
+            }
         }
     })
 }

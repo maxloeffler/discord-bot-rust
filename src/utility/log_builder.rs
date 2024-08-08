@@ -120,6 +120,11 @@ impl<'a> LogBuilder<'a> {
         self
     }
 
+    pub fn arbitrary_block(mut self, label: impl Into<String>, content: impl Into<String>) -> Self {
+        self.fields.push((label.into(), content.into(), false));
+        self
+    }
+
     pub fn image(mut self, url: impl Into<String>) -> Self {
         self.image = Some(url.into());
         self

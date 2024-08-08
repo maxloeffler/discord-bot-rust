@@ -215,7 +215,7 @@ impl MessageManager {
 
     pub async fn last_messages(&self, limit: u8) -> Vec<Message> {
         let channel = self.get_channel();
-        let builder = GetMessages::new().around(self.raw_message.id).limit(limit);
+        let builder = GetMessages::new().before(self.raw_message.id).limit(limit);
         let messages = channel.messages(&self.resolver, builder).await;
         match messages {
             Ok(messages) => messages,

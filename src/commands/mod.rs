@@ -59,3 +59,5 @@ pub use tickets::unclaim::UnclaimTicketCommand;
 pub use tickets::add::AddMemberToTicketCommand;
 #[cfg(feature = "tickets")]
 pub use tickets::remove::RemoveMemberFromTicketCommand;
+#[cfg(feature = "tickets")]
+pub use tickets::ticket_selector::TicketSelectorCommand;
