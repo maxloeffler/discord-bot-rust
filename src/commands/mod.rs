@@ -73,3 +73,5 @@ pub use tickets::ticket_selector::TicketSelectorCommand;
 pub use tickets::ticket_reviews::TicketReviewsCommand;
 #[cfg(feature = "tickets")]
 pub use tickets::ticket_stats::TicketStatsCommand;
+#[cfg(feature = "tickets")]
+pub use tickets::reset_tickets::ResetTicketsCommand;

@@ -70,6 +70,7 @@ impl CommandManager {
             Box::new( TicketSelectorCommand{} ),
             Box::new( UserDecorator{ command: Box::new(TicketReviewsCommand{}) }),
             Box::new( TicketStatsCommand{} ),
+            Box::new( ResetTicketsCommand{} ),
         ];
         #[cfg(feature = "tickets")]
         commands.extend(ticket_commands);
