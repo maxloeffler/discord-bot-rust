@@ -36,14 +36,8 @@ impl Command for PurgeCommand {
             async move {
 
                 let message = &params.message;
-                let purge_size = &params.number;
+                let purge_size = params.number.unwrap() as u8;
 
-                if purge_size.is_none() {
-                    self.invalid_usage(params).await;
-                    return;
-                }
-
-                let purge_size = purge_size.unwrap() as u8;
                 if purge_size < 1 || purge_size > 100 {
                     self.invalid_usage(params).await;
                     return;

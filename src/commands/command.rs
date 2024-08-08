@@ -161,21 +161,15 @@ impl NumberDecorator {
         let embed = MessageManager::create_embed(|embed| {
             embed
                 .title("Please provide a number!")
-                .description("The command you intend to use requires you to provide a number.\nJust respond in the chat.")
+                .description(&format!(
+                        "The `{}{}` command requires you to provide a number.\nJust respond in the chat.",
+                        message.get_prefix().unwrap(),
+                        message.get_command().unwrap()))
         }).await;
 
-        // attempt 3 times to get a number out of the commander
         let helper = message.get_interaction_helper();
         let author = message.get_author();
-        let mut attempts = 0;
-        let mut reply = helper.await_reply(author, embed.clone()).await;
-
-        while (reply.is_none() || reply.clone().unwrap().1.content.parse::<i64>().is_err())
-            && attempts < 3
-        {
-            reply = helper.await_reply(author, embed.clone()).await;
-            attempts += 1;
-        }
+        let reply = helper.await_reply(author, embed.clone()).await;
 
         // commander never provided a number
         if reply.is_none() {
@@ -184,9 +178,16 @@ impl NumberDecorator {
 
         // commander provided
         let reply = reply.unwrap();
-        let _ = reply.0.delete(message).await;
-        let _ = reply.1.delete(message).await;
-        Some(reply.1.content.parse::<i64>().unwrap())
+        let number = reply.content.parse::<i64>();
+
+        match number {
+            Ok(number) => Some(number),
+            Err(_) => {
+                let _ = reply.delete(message).await;
+                self.invalid_usage(CommandParams::new(message.clone())).await;
+                None
+            }
+        }
     }
 
 }
@@ -201,8 +202,10 @@ impl Command for NumberDecorator {
         Box::pin(
             async move {
                 let number = self.get_number(&params.message).await;
-                let augmented_params = params.set_number(number);
-                self.command.run(augmented_params.into()).await;
+                if number.is_some() {
+                    let augmented_params = params.set_number(number);
+                    self.command.run(augmented_params.into()).await;
+                }
             }
         )
     }

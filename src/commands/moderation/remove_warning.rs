@@ -33,13 +33,7 @@ impl Command for RemoveWarningCommand {
             async move {
 
                 let message = &params.message;
-                let warn_id = params.number;
-
-                if warn_id.is_none() {
-                    self.invalid_usage(params).await;
-                    return;
-                }
-                let warn_id = &warn_id.unwrap();
+                let warn_id = params.number.unwrap();
 
                 let warn = WarningsDB::get_instance().lock().await
                     .query("", &format!("OR id = {}", warn_id)).await;
@@ -50,7 +44,7 @@ impl Command for RemoveWarningCommand {
                 let warn = &warn.unwrap()[0];
 
                 // remove warning
-                WarningsDB::get_instance().lock().await.delete_by_id(*warn_id).await;
+                WarningsDB::get_instance().lock().await.delete_by_id(warn_id).await;
 
                 // resolve target
                 let log = ModLog::from(warn);

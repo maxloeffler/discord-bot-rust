@@ -182,7 +182,7 @@ impl<'a> InteractionHelper<'_> {
         }
     }
 
-    pub async fn await_reply(&self, user: &User, message: impl ToMessage) -> Option<(Message, Message)> {
+    pub async fn await_reply(&self, user: &User, message: impl ToMessage) -> Option<Message> {
 
         let user_id = user.id.to_string();
 
@@ -196,9 +196,11 @@ impl<'a> InteractionHelper<'_> {
             .filter(move |reply| reply.author.id.to_string() == user_id)
             .timeout(Duration::from_secs(60)).await;
 
+        let _ = sent_message.delete(&self.resolver).await;
+
         // execute callback
         if let Some(interaction) = interaction {
-            return Some((sent_message, interaction));
+            return Some(interaction);
         }
         None
     }

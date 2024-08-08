@@ -25,14 +25,8 @@ impl Command for ScheduleCommand {
             async move {
 
                 let message = &params.message;
-                let time = params.number;
+                let time = params.number.unwrap();
 
-                if time.is_none() {
-                    self.invalid_usage(params).await;
-                    return;
-                }
-
-                let time = time.unwrap();
                 if time < 0 || time > 86400 {
                     self.invalid_usage(params).await;
                     return;
