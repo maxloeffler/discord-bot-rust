@@ -60,10 +60,9 @@ impl Command for CheckBanCommand {
                     if bans.is_empty() {
 
                         // resolve bot
-                        let bot_id = ConfigDB::get_instance().lock().await
-                            .get("bot_id").await.unwrap().to_string();
-                        let bot = message.get_resolver()
-                            .resolve_user(UserId::from_str(&bot_id).unwrap()).await.unwrap();
+                        let bot_id: UserId = ConfigDB::get_instance().lock().await
+                            .get("bot_id").await.unwrap().into();
+                        let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
                         // create embed
                         let embed = message.get_log_builder()

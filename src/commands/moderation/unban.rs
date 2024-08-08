@@ -88,9 +88,9 @@ impl Command for UnbanCommand {
                     let target = match target {
                         Some(ref target) => target,
                         None => {
-                            let bot_id = ConfigDB::get_instance().lock().await
-                                .get("bot_id").await.unwrap().to_string();
-                            &resolver.resolve_user(UserId::from_str(&bot_id).unwrap()).await.unwrap()
+                            let bot_id: UserId = ConfigDB::get_instance().lock().await
+                                .get("bot_id").await.unwrap().into();
+                            &resolver.resolve_user(bot_id).await.unwrap()
                         }
                     };
                     let embed = message.get_log_builder()

@@ -1,5 +1,5 @@
 
-use serenity::all::ChannelId;
+use serenity::all::{ChannelId, UserId};
 use serenity::model::colour::Colour;
 use rusqlite::{params, Connection};
 use tokio::sync::Mutex;
@@ -68,6 +68,12 @@ impl From<DBEntry> for Colour {
 impl From<DBEntry> for ChannelId {
     fn from(entry: DBEntry) -> ChannelId {
         ChannelId::from_str(&entry.value).unwrap()
+    }
+}
+
+impl From<DBEntry> for UserId {
+    fn from(entry: DBEntry) -> UserId {
+        UserId::from_str(&entry.value).unwrap()
     }
 }
 

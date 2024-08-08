@@ -169,10 +169,9 @@ impl CommandManager {
         message.delete().await;
 
         // resolve bot user
-        let bot_id = ConfigDB::get_instance().lock().await
-            .get("bot_id").await.unwrap().to_string();
-        let bot = message.get_resolver()
-            .resolve_user(UserId::from_str(bot_id.as_str()).unwrap()).await.unwrap();
+        let bot_id: UserId = ConfigDB::get_instance().lock().await
+            .get("bot_id").await.unwrap().into();
+        let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
         // display all available commands
         let payload = message.payload(None, None);

@@ -35,9 +35,9 @@ impl Command for ServerInfoCommand {
                         .filter(|emoji| !emoji.animated).count();
 
                     // obtain the bot's user
-                    let bot_id = ConfigDB::get_instance().lock().await
-                        .get("bot_id").await.unwrap().to_string().parse::<u64>().unwrap();
-                    let bot = message.get_resolver().resolve_user(UserId::from(bot_id)).await.unwrap();
+                    let bot_id: UserId = ConfigDB::get_instance().lock().await
+                        .get("bot_id").await.unwrap().into();
+                    let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
                     // obtain the owner
                     let owner = message.get_resolver().resolve_user(guild.owner_id).await.unwrap();
