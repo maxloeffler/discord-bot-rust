@@ -121,16 +121,16 @@ impl Database {
     pub async fn query(&self, key: &str, query_string: &str) -> Result<Vec<DBEntry>> {
         let connection = self.connection.lock().await;
         let mut statement = connection.prepare(&format!(
-            "SELECT id, value, timestamp FROM {} WHERE key = ? {}",
+            "SELECT id, key, value, timestamp FROM {} WHERE key = ? {}",
             self.identifier.to_string(),
             query_string
         )).expect("Failed to prepare statement");
         let entry_iter = statement.query_map([key], |entry| {
             Ok(DBEntry {
                 id: entry.get(0)?,
-                key: key.to_string(),
-                value: entry.get(1)?,
-                timestamp: entry.get(2)?,
+                key: entry.get(1)?,
+                value: entry.get(2)?,
+                timestamp: entry.get(3)?,
             })
         }).expect("Failed to query map");
         Ok(entry_iter.map(|entry| entry.unwrap()).collect::<Vec<DBEntry>>())

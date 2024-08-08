@@ -17,3 +17,4 @@ pub mod check_ban;
 pub mod unban;
 pub mod remove_warning;
 pub mod review;
+pub mod remove_review;
