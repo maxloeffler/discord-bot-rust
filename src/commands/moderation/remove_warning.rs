@@ -52,9 +52,6 @@ impl Command for RemoveWarningCommand {
                 let target = message.get_resolver().resolve_user(user_id).await.unwrap();
 
                 // log to mod logs
-                let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                    .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let log_message = message.get_log_builder()
                     .title("[REMOVE WARNING]")
                     .description(&format!("Removed warning with **ID {}**", warn_id))
@@ -63,7 +60,9 @@ impl Command for RemoveWarningCommand {
                     .user(&target)
                     .timestamp()
                     .build().await;
-                let _ = channel_modlogs.send_message(message, log_message.to_message()).await;
+                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_modlogs").await.unwrap().into();
+                let _ = modlogs.send_message(message, log_message.to_message()).await;
 
                 message.reply_success().await;
             }

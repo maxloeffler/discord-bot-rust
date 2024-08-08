@@ -65,9 +65,6 @@ impl Command for BanCommand {
                         .append(&target.id.to_string(), &log.into()).await;
 
                     // log ban to mod logs
-                    let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                        .get("channel_modlogs").await.unwrap().to_string();
-                    let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                     let log_message = message.get_log_builder()
                         .title("[BAN]")
                         .description(&format!("<@{}> has been banned", target.id))
@@ -77,7 +74,9 @@ impl Command for BanCommand {
                         .arbitrary("Reason", &reason)
                         .timestamp()
                         .build().await;
-                    let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
+                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().into();
+                    let _ = modlogs.send_message(resolver, log_message.to_message()).await;
 
                     // inform member of the ban and how to appeal
                     let guild = resolver.resolve_guild(None).await.unwrap();

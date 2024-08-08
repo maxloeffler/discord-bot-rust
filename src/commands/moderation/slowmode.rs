@@ -76,9 +76,6 @@ impl Command for SlowmodeCommand {
                     let _ = message.get_channel().edit(message, edit).await;
 
                     // log to mod logs
-                    let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                        .get("channel_modlogs").await.unwrap().to_string();
-                    let channel_modlogs = ChannelId::from_str(channel_modlogs_id.as_str()).unwrap();
                     let delay_string = match time_delay {
                         0 => "off".to_string(),
                         _ => format!("{}s", time_delay)
@@ -91,9 +88,11 @@ impl Command for SlowmodeCommand {
                         .channel()
                         .timestamp()
                         .build().await;
+                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().into();
+                    let _ = modlogs.send_message(message, embed.to_message()).await;
 
                     message.reply_success().await;
-                    let _ = channel_modlogs.send_message(message, embed.to_message()).await;
                 }
             }
         )

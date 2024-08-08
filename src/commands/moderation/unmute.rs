@@ -55,11 +55,6 @@ impl Command for UnmuteCommand {
                 }
 
                 member.remove_role(&resolver, role_muted).await.unwrap();
-
-                // log unmute to mod logs
-                let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                    .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let mut builder = message.get_log_builder()
                     .title("[UNMUTE]")
                     .description(&format!("<@{}> has been unmuted", target.id))
@@ -106,9 +101,13 @@ impl Command for UnmuteCommand {
 
                 }
 
-                message.reply_success().await;
+                // log to mod logs
                 let log = builder.build().await.to_message();
-                let _ = channel_modlogs.send_message(resolver, log).await;
+                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_modlogs").await.unwrap().into();
+                let _ = modlogs.send_message(message, log).await;
+
+                message.reply_success().await;
 
                 // check for active flags
                 #[cfg(feature = "auto_moderation")]

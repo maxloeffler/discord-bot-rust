@@ -32,7 +32,7 @@ impl Command for ScheduleCommand {
                     return;
                 }
 
-                let content = message.payload_without_mentions(None, Some(vec![time.to_string()]));
+                let content = message.payload(None, Some(vec![time.to_string()]));
                 if content.is_empty() {
                     self.invalid_usage(params).await;
                     return;

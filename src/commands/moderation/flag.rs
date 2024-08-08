@@ -56,9 +56,6 @@ impl Command for FlagCommand {
                     .append(&target.id.to_string(), &log.into()).await;
 
                 // log to mod logs
-                let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                    .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let timestamp_now = chrono::Utc::now().timestamp();
                 let embed = message.get_log_builder()
                     .title("[FLAG]")
@@ -71,9 +68,11 @@ impl Command for FlagCommand {
                         false => timestamp_now + (7  * 24 * 60 * 60)
                     })
                     .build().await;
+                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_modlogs").await.unwrap().into();
+                let _ = modlogs.send_message(message, embed.to_message()).await;
 
                 message.reply_success().await;
-                let _ = channel_modlogs.send_message(message, embed.to_message()).await;
             }
         )
     }

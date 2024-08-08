@@ -53,9 +53,6 @@ impl Command for UnlockCommand {
                     .await;
 
                     // log user lock to modlogs
-                    let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                        .get("channel_modlogs").await.unwrap().to_string();
-                    let channel_modlogs = ChannelId::from_str(channel_modlogs_id.as_str()).unwrap();
                     let embed = message.get_log_builder()
                         .title("[UNLOCK]")
                         .target(target)
@@ -63,9 +60,11 @@ impl Command for UnlockCommand {
                         .channel()
                         .timestamp()
                         .build().await;
+                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().into();
+                    let _ = modlogs.send_message(message, embed.to_message()).await;
 
                     message.reply_success().await;
-                    let _ = channel_modlogs.send_message(message, embed.to_message()).await;
                 }
             }
         )

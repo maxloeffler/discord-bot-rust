@@ -92,9 +92,8 @@ impl AutoModerator {
                 };
 
                 // get muted channel
-                let channel_muted = ConfigDB::get_instance().lock().await
-                    .get("channel_muted").await.unwrap().to_string();
-                let channel = ChannelId::from_str(&channel_muted).unwrap();
+                let channel: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_muted").await.unwrap().into();
 
                 // send 'automute message'
                 let _ = channel.send_message(resolver, responsibility.to_message()).await;
@@ -140,9 +139,8 @@ impl AutoModerator {
                 let responsibility = format!("<@&{}> <@&{}>", role_ids[0].id, role_ids[1].id);
 
                 // get muted channel
-                let channel_muted = ConfigDB::get_instance().lock().await
-                    .get("channel_muted").await.unwrap().to_string();
-                let channel = ChannelId::from_str(&channel_muted).unwrap();
+                let channel: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_muted").await.unwrap().into();
 
                 // send 'automute message'
                 let _ = channel.send_message(resolver, responsibility.to_message()).await;
@@ -184,9 +182,8 @@ impl AutoModerator {
                     }).await;
 
                     // get modlogs channel
-                    let channel_id = ConfigDB::get_instance().lock().await
-                        .get("channel_modlogs").await.unwrap().to_string();
-                    let channel = ChannelId::from_str(&channel_id).unwrap();
+                    let channel: ChannelId = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().into();
 
                     // send 'automute message'
                     let _ = channel.send_message(resolver, embed.to_message()).await;

@@ -75,9 +75,6 @@ impl Command for WarnCommand {
                 let _ = message.reply(embed).await;
 
                 // log to mod logs
-                let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                    .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let log_message = message.get_log_builder()
                     .title("[WARNING]")
                     .description(&format!("<@{}> has been warned", target.id))
@@ -87,7 +84,9 @@ impl Command for WarnCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
-                let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
+                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_modlogs").await.unwrap().into();
+                let _ = modlogs.send_message(message, log_message.to_message()).await;
 
                 // check if the user has been warned too many times
                 #[cfg(feature = "auto_moderation")]

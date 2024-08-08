@@ -1,9 +1,11 @@
 
+use serenity::all::ChannelId;
 use serenity::model::colour::Colour;
 use rusqlite::{params, Connection};
 use tokio::sync::Mutex;
 use strum_macros::EnumIter;
 
+use std::str::FromStr;
 use std::sync::Arc;
 use std::collections::HashSet;
 use std::fmt;
@@ -60,6 +62,12 @@ impl From<DBEntry> for Colour {
     fn from(entry: DBEntry) -> Colour {
         let value = entry.value.trim_start_matches("#");
         u64::from_str_radix(value, 16).unwrap().into()
+    }
+}
+
+impl From<DBEntry> for ChannelId {
+    fn from(entry: DBEntry) -> ChannelId {
+        ChannelId::from_str(&entry.value).unwrap()
     }
 }
 

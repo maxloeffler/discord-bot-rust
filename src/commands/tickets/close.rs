@@ -49,13 +49,12 @@ impl Command for CloseTicketCommand {
                             .close_ticket(&ticket.channel.id).await;
 
                         // obtain channel to dump log
-                        let dump_channel = match ticket.ticket_type {
+                        let dump_channel: ChannelId = match ticket.ticket_type {
                             TicketType::StaffReport => ConfigDB::get_instance().lock()
-                                .await.get("channel_admin").await.unwrap().to_string(),
+                                .await.get("channel_admin").await.unwrap().into(),
                             _ => ConfigDB::get_instance().lock()
-                                .await.get("channel_transcripts").await.unwrap().to_string()
+                                .await.get("channel_transcripts").await.unwrap().into()
                         };
-                        let dump_channel = ChannelId::from_str(&dump_channel).unwrap();
 
                         // produce transcript
                         ticket.transcribe().await;

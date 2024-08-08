@@ -48,9 +48,6 @@ impl Command for UnflagCommand {
                         .delete_by_id(last_flag[0].id).await;
 
                     // log to mod logs
-                    let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                        .get("channel_modlogs").await.unwrap().to_string();
-                    let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                     let embed = message.get_log_builder()
                         .title("[UNFLAG]")
                         .description(&format!("<@{}> has been unflagged", target.id))
@@ -58,9 +55,11 @@ impl Command for UnflagCommand {
                         .staff()
                         .user(&target)
                         .build().await;
+                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                        .get("channel_modlogs").await.unwrap().into();
+                    let _ = modlogs.send_message(message, embed.to_message()).await;
 
                     message.reply_success().await;
-                    let _ = channel_modlogs.send_message(message, embed.to_message()).await;
                 }
             }
         )

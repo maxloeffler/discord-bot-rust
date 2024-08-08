@@ -152,9 +152,8 @@ impl EventHandler for Handler {
         let guild = resolver.resolve_guild(None).await;
 
         // get member count channel
-        let channel_id = ConfigDB::get_instance().lock().await
-            .get("channel_member_count").await.unwrap().to_string();
-        let channel = ChannelId::from_str(&channel_id).unwrap();
+        let channel: ChannelId = ConfigDB::get_instance().lock().await
+            .get("channel_member_count").await.unwrap().into();
 
         // update channel name
         if guild.is_some() {

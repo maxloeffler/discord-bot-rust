@@ -75,9 +75,6 @@ impl Command for MuteCommand {
                     .append(&target.id.to_string(), &log.into()).await;
 
                 // log mute to mod logs
-                let channel_modlogs_id = ConfigDB::get_instance().lock().await
-                    .get("channel_modlogs").await.unwrap().to_string();
-                let channel_modlogs = ChannelId::from_str(&channel_modlogs_id).unwrap();
                 let log_message = message.get_log_builder()
                     .title("[MUTE]")
                     .description(&format!("<@{}> has been muted", target.id))
@@ -87,9 +84,11 @@ impl Command for MuteCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
+                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    .get("channel_modlogs").await.unwrap().into();
+                let _ = modlogs.send_message(resolver, log_message.to_message()).await;
 
                 message.reply_success().await;
-                let _ = channel_modlogs.send_message(resolver, log_message.to_message()).await;
 
                 // check for active flags
                 #[cfg(feature = "auto_moderation")]
