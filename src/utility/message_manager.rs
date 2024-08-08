@@ -170,6 +170,14 @@ impl MessageManager {
         self.payload(starting_from, Some(total_excludes))
     }
 
+    pub fn get_referenced(&self) -> Box<Message> {
+        self.raw_message.referenced_message.clone().unwrap()
+    }
+
+    pub fn is_referencing(&self) -> bool {
+        self.raw_message.referenced_message.is_some()
+    }
+
     pub async fn delete(&self) {
         let _ = self.raw_message.delete(&self.resolver).await;
     }

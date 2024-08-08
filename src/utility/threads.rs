@@ -15,15 +15,22 @@ use crate::databases::*;
 use crate::utility::*;
 
 
+macro_rules! get_database_impl {
+    ($db:ident) => {
+        Arc::new($db::get_instance() as &Mutex<dyn DatabaseWrapper>)
+    };
+}
+
 fn get_db(db: &DB) -> Arc<&'static Mutex<dyn DatabaseWrapper>> {
     match db {
-        DB::Config => Arc::new(ConfigDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Mutes => Arc::new(MutesDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Warnings => Arc::new(WarningsDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Flags => Arc::new(FlagsDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Bans => Arc::new(BansDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Afk => Arc::new(AfkDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
-        DB::Schedule => Arc::new(ScheduleDB::get_instance() as &Mutex<dyn DatabaseWrapper>),
+        DB::Config        => get_database_impl!(ConfigDB),
+        DB::Warnings      => get_database_impl!(WarningsDB),
+        DB::Mutes         => get_database_impl!(MutesDB),
+        DB::Flags         => get_database_impl!(FlagsDB),
+        DB::Bans          => get_database_impl!(BansDB),
+        DB::Afk           => get_database_impl!(AfkDB),
+        DB::Schedule      => get_database_impl!(ScheduleDB),
+        DB::TicketReviews => get_database_impl!(TicketReviewsDB),
     }
 }
 

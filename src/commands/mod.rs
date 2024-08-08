@@ -47,6 +47,7 @@ pub use moderation::ban::BanCommand;
 pub use moderation::check_ban::CheckBanCommand;
 pub use moderation::unban::UnbanCommand;
 pub use moderation::remove_warning::RemoveWarningCommand;
+pub use moderation::review::ReviewCommand;
 
 // ---- src/commands/tickets/ ---- //
 

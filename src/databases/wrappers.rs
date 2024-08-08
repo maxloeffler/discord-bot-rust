@@ -75,6 +75,15 @@ impl ScheduleLog {
 
 as_db_entry!(ScheduleLog);
 
+#[derive(Serialize, Deserialize)]
+pub struct TicketReviewLog {
+    pub reviewer_id: String,
+    pub approved: bool,
+    pub notes: String,
+}
+
+as_db_entry!(TicketReviewLog);
+
 pub trait DatabaseWrapper: Send + Sync {
 
     fn get_database(&self) -> &Database;
@@ -189,3 +198,4 @@ impl_database_wrapper!(BansDB, DB::Bans);
 impl_database_wrapper!(FlagsDB, DB::Flags);
 impl_database_wrapper!(AfkDB, DB::Afk);
 impl_database_wrapper!(ScheduleDB, DB::Schedule);
+impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews);
