@@ -39,7 +39,7 @@ impl Command for RoleCommand {
                 let target = &params.target.clone().unwrap();
 
                 // get roles
-                let payload = message.payload_without_mentions(None, None).await;
+                let payload = message.payload_without_mentions(None, None);
                 let rolenames = payload
                     .split_whitespace()
                     .collect::<Vec<_>>();

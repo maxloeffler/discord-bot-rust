@@ -25,14 +25,7 @@ impl Command for ScheduleCommand {
             async move {
 
                 let message = &params.message;
-
-                // parse time
-                let mut time = None;
-                message.words.iter().for_each(|word| {
-                    if let Ok(seconds) = word.parse::<i64>() {
-                        time = Some(seconds);
-                    }
-                });
+                let time = params.number;
 
                 if time.is_none() {
                     self.invalid_usage(params).await;
@@ -45,7 +38,7 @@ impl Command for ScheduleCommand {
                     return;
                 }
 
-                let content = message.payload_without_mentions(None, Some(vec![time.to_string()])).await;
+                let content = message.payload_without_mentions(None, Some(vec![time.to_string()]));
                 if content.is_empty() {
                     self.invalid_usage(params).await;
                     return;

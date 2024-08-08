@@ -33,9 +33,9 @@ impl Command for RemoveWarningCommand {
             async move {
 
                 let message = &params.message;
+                let warn_id = params.number;
 
-                let warn_id = message.payload(None, None).parse::<i64>();
-                if warn_id.is_err() {
+                if warn_id.is_none() {
                     self.invalid_usage(params).await;
                     return;
                 }

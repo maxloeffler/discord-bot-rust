@@ -74,7 +74,7 @@ impl Command for UnmuteCommand {
                         .get_last(&target.id.to_string(), 1).await.unwrap();
 
                     // obtain the reason
-                    let mut reason = message.payload_without_mentions(None, None).await;
+                    let mut reason = message.payload_without_mentions(None, None);
                     if reason.is_empty() {
                         match last_mute.len() > 0 {
                             true => {

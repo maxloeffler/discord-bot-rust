@@ -182,4 +182,25 @@ impl<'a> InteractionHelper<'_> {
         }
     }
 
+    pub async fn await_reply(&self, user: &User, message: impl ToMessage) -> Option<(Message, Message)> {
+
+        let user_id = user.id.to_string();
+
+        // send message
+        let sent_message = self.channel
+            .send_message(&self.resolver, message.to_message()).await.unwrap();
+
+        // await interaction
+        let interaction = self.channel
+            .await_reply(&self.resolver.ctx().shard)
+            .filter(move |reply| reply.author.id.to_string() == user_id)
+            .timeout(Duration::from_secs(60)).await;
+
+        // execute callback
+        if let Some(interaction) = interaction {
+            return Some((sent_message, interaction));
+        }
+        None
+    }
+
 }

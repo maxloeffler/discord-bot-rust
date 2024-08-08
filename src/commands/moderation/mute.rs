@@ -60,7 +60,7 @@ impl Command for MuteCommand {
                 member.add_role(&resolver, role_muted).await.unwrap();
 
                 // obtain the reason
-                let mut reason = message.payload_without_mentions(None, None).await;
+                let mut reason = message.payload_without_mentions(None, None);
                 if reason.is_empty() {
                     reason = "No reason provided.".to_string();
                 }

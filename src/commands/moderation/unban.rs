@@ -50,7 +50,7 @@ impl Command for UnbanCommand {
                 };
 
                 // obtain the reason
-                let mut reason = message.payload_without_mentions(None, Some(vec![target_id.to_string()])).await;
+                let mut reason = message.payload_without_mentions(None, Some(vec![target_id.to_string()]));
                 if reason.is_empty() {
                     reason = "No reason provided.".to_string();
                 }

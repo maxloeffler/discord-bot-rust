@@ -39,7 +39,7 @@ impl Command for FlagCommand {
                 let target = &params.target.unwrap();
 
                 // obtain parameters
-                let mut reason = message.payload_without_mentions(None, Some(vec!["-monthly".to_string()])).await;
+                let mut reason = message.payload_without_mentions(None, Some(vec!["-monthly".to_string()]));
                 if reason.is_empty() {
                     reason = "No reason provided.".to_string();
                 }

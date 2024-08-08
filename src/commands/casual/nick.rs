@@ -51,7 +51,7 @@ impl Command for NicknameCommand {
 
                 }
 
-                let nickname = message.payload_without_mentions(None, None).await;
+                let nickname = message.payload_without_mentions(None, None);
 
                 // cannot change nickname to empty
                 if nickname.is_empty() {

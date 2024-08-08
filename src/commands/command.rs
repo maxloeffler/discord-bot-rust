@@ -12,15 +12,21 @@ use crate::utility::*;
 
 pub struct CommandParams {
     pub message: MessageManager,
-    pub target: Option<User>
+    pub target: Option<User>,
+    pub number: Option<i64>,
 }
 
 impl CommandParams {
-    pub fn new(message: MessageManager, target: Option<User>) -> Self {
-        Self { message, target }
+    pub fn new(message: MessageManager) -> Self {
+        Self { message, target: None, number: None }
     }
-    pub fn set_target(&self, target: Option<User>) -> Self {
-        Self { message: self.message.clone(), target }
+    pub fn set_target(mut self, target: Option<User>) -> Self {
+        self.target = target;
+        self
+    }
+    pub fn set_number(mut self, number: Option<i64>) -> Self {
+        self.number = number;
+        self
     }
 }
 
@@ -132,6 +138,70 @@ impl Command for UserDecorator {
             async move {
                 let target = self.get_target(&params.message).await;
                 let augmented_params = params.set_target(target);
+                self.command.run(augmented_params.into()).await;
+            }
+        )
+    }
+
+}
+
+pub struct NumberDecorator {
+    pub command: Box<dyn Command>,
+}
+
+impl NumberDecorator {
+
+    async fn get_number(&self, message: &MessageManager) -> Option<i64> {
+        for word in message.words.iter() {
+            if let Ok(number) = word.parse::<i64>() {
+                return Some(number);
+            }
+        }
+
+        let embed = MessageManager::create_embed(|embed| {
+            embed
+                .title("Please provide a number!")
+                .description("The command you intend to use requires you to provide a number.\nJust respond in the chat.")
+        }).await;
+
+        // attempt 3 times to get a number out of the commander
+        let helper = message.get_interaction_helper();
+        let author = message.get_author();
+        let mut attempts = 0;
+        let mut reply = helper.await_reply(author, embed.clone()).await;
+
+        while (reply.is_none() || reply.clone().unwrap().1.content.parse::<i64>().is_err())
+            && attempts < 3
+        {
+            reply = helper.await_reply(author, embed.clone()).await;
+            attempts += 1;
+        }
+
+        // commander never provided a number
+        if reply.is_none() {
+            return None;
+        }
+
+        // commander provided
+        let reply = reply.unwrap();
+        let _ = reply.0.delete(message).await;
+        let _ = reply.1.delete(message).await;
+        Some(reply.1.content.parse::<i64>().unwrap())
+    }
+
+}
+
+impl Command for NumberDecorator {
+
+    fn define_usage(&self) -> UsageBuilder {
+        self.command.define_usage()
+    }
+
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+        Box::pin(
+            async move {
+                let number = self.get_number(&params.message).await;
+                let augmented_params = params.set_number(number);
                 self.command.run(augmented_params.into()).await;
             }
         )

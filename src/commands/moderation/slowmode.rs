@@ -38,7 +38,7 @@ impl Command for SlowmodeCommand {
             async move {
 
                 let message = &params.message;
-                let payload = message.payload_without_mentions(None, None).await;
+                let payload = message.payload_without_mentions(None, None);
 
                 let mut time_delay = 0;
                 match payload.parse::<u16>() {

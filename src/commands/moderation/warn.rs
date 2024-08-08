@@ -50,7 +50,9 @@ impl Command for WarnCommand {
                 }
 
                 // obtain the reason
-                let mut reason = message.payload_without_mentions(None, None).await;
+                let mut reason = message.payload_without_mentions(None, None);
+                println!("{}", reason);
+                return;
                 if reason.is_empty() {
                     reason = "No reason provided.".to_string();
                 }

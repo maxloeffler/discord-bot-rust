@@ -36,7 +36,7 @@ impl Command for OpenTicketCommand {
                 let target  = &params.target.unwrap();
 
                 // reject if incorrect type
-                let ticket_type = message.payload_without_mentions(None, None).await.to_lowercase();
+                let ticket_type = message.payload_without_mentions(None, None).to_lowercase();
                 if ticket_type != "m" && ticket_type != "d" {
                     message.reply_failure("The type of a Ticket can be either `m` (Muted) or `d` (Discussion).").await;
                     return;

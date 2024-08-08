@@ -33,11 +33,11 @@ impl CommandManager {
             Box::new( AfkCommand{} ),
             Box::new( PollCommand{} ),
             Box::new( AddEmojiCommand{} ),
-            Box::new( ScheduleCommand{} ),
+            Box::new( NumberDecorator{ command: Box::new(ScheduleCommand{}) }),
             // moderation commands
             Box::new( WarnCommand{} ),
             Box::new( UserDecorator{ command: Box::new(WarningsCommand{}) }),
-            Box::new( PurgeCommand{} ),
+            Box::new( NumberDecorator{ command: Box::new(PurgeCommand{}) }),
             Box::new( SlowmodeCommand{} ),
             Box::new( MuteCommand{} ),
             Box::new( UserDecorator{ command: Box::new(UnmuteCommand{}) }),
@@ -51,7 +51,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(BanCommand{}) }),
             Box::new( CheckBanCommand{} ),
             Box::new( UnbanCommand{} ),
-            Box::new( RemoveWarningCommand{} ),
+            Box::new( NumberDecorator{ command: Box::new(RemoveWarningCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
@@ -75,7 +75,7 @@ impl CommandManager {
 
             // execute command
             message.delete().await;
-            command.run(CommandParams::new(message.clone(), None)).await;
+            command.run(CommandParams::new(message.clone())).await;
 
             // increment executed commands
             let executed_commands = ConfigDB::get_instance().lock().await.
@@ -215,7 +215,7 @@ impl CommandManager {
 
             self.match_command(message, |command: &Box<dyn Command>| {
                 Box::pin(async move {
-                    let params = CommandParams::new(message.clone(), None);
+                    let params = CommandParams::new(message.clone());
                     command.display_usage(params, "Command Description".to_string()).await;
                 })}).await;
 

@@ -163,7 +163,7 @@ impl MessageManager {
         payload.trim().to_string()
     }
 
-    pub async fn payload_without_mentions(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
+    pub fn payload_without_mentions(&self, starting_from: Option<usize>, excludes: Option<Vec<String>>) -> String {
         let mut total_excludes = excludes.unwrap_or(Vec::new());
         let regex_id = RegexManager::get_id_regex();
         total_excludes.push(regex_id.as_str().to_string());

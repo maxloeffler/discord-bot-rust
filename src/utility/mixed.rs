@@ -66,6 +66,9 @@ impl RegexManager {
     }
 
     pub fn escape(text: &str) -> String {
+        if Regex::new(text).is_ok() {
+            return text.to_string();
+        }
         escape(text)
     }
 }
