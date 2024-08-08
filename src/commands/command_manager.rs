@@ -34,6 +34,7 @@ impl CommandManager {
             Box::new( PollCommand{} ),
             Box::new( AddEmojiCommand{} ),
             Box::new( NumberDecorator{ command: Box::new(ScheduleCommand{}) }),
+            Box::new( SuggestCommand{} ),
             // moderation commands
             Box::new( WarnCommand{} ),
             Box::new( UserDecorator{ command: Box::new(WarningsCommand{}) }),

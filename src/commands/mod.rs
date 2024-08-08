@@ -18,6 +18,7 @@ pub use casual::afk::AfkCommand;
 pub use casual::poll::PollCommand;
 pub use casual::add_emoji::AddEmojiCommand;
 pub use casual::schedule::ScheduleCommand;
+pub use casual::suggest::SuggestCommand;
 
 // ---- src/commands/moderation/ ---- //
 
