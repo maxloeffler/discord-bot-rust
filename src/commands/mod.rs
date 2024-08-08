@@ -68,3 +68,5 @@ pub use tickets::add::AddMemberToTicketCommand;
 pub use tickets::remove::RemoveMemberFromTicketCommand;
 #[cfg(feature = "tickets")]
 pub use tickets::ticket_selector::TicketSelectorCommand;
+#[cfg(feature = "tickets")]
+pub use tickets::ticket_reviews::TicketReviewsCommand;

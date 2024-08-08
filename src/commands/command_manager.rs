@@ -67,6 +67,7 @@ impl CommandManager {
             Box::new( UserDecorator{ command: Box::new(AddMemberToTicketCommand) }),
             Box::new( UserDecorator{ command: Box::new(RemoveMemberFromTicketCommand) }),
             Box::new( TicketSelectorCommand{} ),
+            Box::new( UserDecorator{ command: Box::new(TicketReviewsCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         commands.extend(ticket_commands);

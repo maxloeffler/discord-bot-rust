@@ -6,3 +6,4 @@ pub mod unclaim;
 pub mod add;
 pub mod remove;
 pub mod ticket_selector;
+pub mod ticket_reviews;
