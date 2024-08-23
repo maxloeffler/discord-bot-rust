@@ -66,14 +66,13 @@ impl Command for TicketReviewsCommand {
 
                                 // add fields for each review
                                 for entry in chunk.iter() {
-                                    let ticket_review: TicketReviewLog = entry.into();
 
                                     builder = builder.arbitrary_block(
                                         format!("**Databse ID**: {}", entry.id),
                                         format!("<@{}> `>` {}\n**Notes**: {}",
                                             target.id,
-                                            match ticket_review.approved { true => "Approved", false => "Denied" },
-                                            ticket_review.notes));
+                                            match entry.approved { true => "Approved", false => "Denied" },
+                                            entry.notes));
                                 }
                                 let embed = builder.build().await
                                     .footer(CreateEmbedFooter::new(

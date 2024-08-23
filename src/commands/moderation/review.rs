@@ -28,11 +28,11 @@ impl ReviewCommand {
 
             // log review into database
             let approved = message.has_parameter("approve");
-            let log = TicketReviewLog {
-                reviewer_id: reviewer.id.to_string(),
-                approved: approved,
-                notes: notes.clone(),
-            };
+            let log = TicketReviewLog::new(
+                reviewer.id.to_string(),
+                approved,
+                notes.clone(),
+            );
             TicketReviewsDB::get_instance().lock().await
                 .append(&reviewee.id.to_string(), &log.into()).await;
 

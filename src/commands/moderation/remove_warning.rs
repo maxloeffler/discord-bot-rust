@@ -41,13 +41,12 @@ impl Command for RemoveWarningCommand {
                     message.reply_failure("Warning not found.").await;
                     return;
                 }
-                let warn = &warn.unwrap()[0];
 
                 // remove warning
                 WarningsDB::get_instance().lock().await.delete_by_id(warn_id).await;
 
                 // resolve target
-                let log = ModLog::from(warn);
+                let log = &warn.unwrap()[0];
                 let user_id = UserId::from(log.member_id.parse::<u64>().unwrap());
                 let target = message.get_resolver().resolve_user(user_id).await.unwrap();
 

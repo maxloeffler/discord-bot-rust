@@ -39,11 +39,11 @@ impl Command for ScheduleCommand {
                 }
 
                 // create log
-                let log = ScheduleLog {
-                    expiration_date: chrono::Utc::now().timestamp() + time,
-                    message: content,
-                    channel_id: message.get_channel().to_string(),
-                };
+                let log = ScheduleLog::new(
+                    chrono::Utc::now().timestamp() + time,
+                    content,
+                    message.get_channel().to_string(),
+                );
 
                 // append log
                 ScheduleDB::get_instance().lock().await

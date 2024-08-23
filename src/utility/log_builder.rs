@@ -140,12 +140,11 @@ impl<'a> LogBuilder<'a> {
         self
     }
 
-    pub fn mod_log(mut self, entry: &DBEntry) -> Self {
-        let timestamp = LogBuilder::format_timestamp(entry.timestamp);
-        let id = format!("**Database ID**: {}", entry.id);
+    pub fn mod_log(mut self, log: &ModLog) -> Self {
+        let timestamp = LogBuilder::format_timestamp(log.timestamp);
+        let id = format!("**Database ID**: {}", log.id);
 
         // extract mod log specific fields
-        let log: ModLog = entry.into();
         let staff_time = format!("**Staff**: <@{}> `>` {}", log.staff_id, timestamp);
         let reason = format!("**Reason**: {}", log.reason);
 

@@ -75,10 +75,7 @@ impl Command for UnbanCommand {
                         Ok(bans) => {
                             match bans.is_empty() {
                                 true  => "No reason provided.".to_string(),
-                                false => {
-                                    let log: ModLog = (&bans[0]).into();
-                                    log.reason
-                                }
+                                false => bans[0].reason.clone()
                             }
                         },
                         Err(_) => "No reason provided.".to_string()

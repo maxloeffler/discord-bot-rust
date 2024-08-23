@@ -56,11 +56,11 @@ impl Command for WarnCommand {
                 }
 
                 // log to database
-                let log = ModLog {
-                    member_id: target.id.to_string(),
-                    staff_id: message.get_author().id.to_string(),
-                    reason: reason.clone(),
-                };
+                let log = ModLog::new(
+                    target.id.to_string(),
+                    message.get_author().id.to_string(),
+                    reason.clone(),
+                );
                 WarningsDB::get_instance().lock().await
                     .append(&target.id.to_string(), &log.into()).await;
                 let embed = MessageManager::create_embed(|embed|

@@ -4,6 +4,7 @@ use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
 
 use std::sync::Arc;
+use std::convert::From;
 
 use crate::databases::database::Database;
 use crate::databases::database::DBEntry;
@@ -13,40 +14,51 @@ use crate::impl_singleton;
 
 
 macro_rules! as_db_entry {
-    ($name:ident) => {
+    ($name:ident, $($field_name:ident: $field_type:ty),*) => {
+
+        #[derive(Serialize, Deserialize, Clone)]
+        pub struct $name {
+            pub id: i64,
+            pub key: String,
+            pub timestamp: i64,
+            $(pub $field_name: $field_type),*
+        }
 
         impl $name {
+            pub fn new($($field_name: $field_type),*) -> Self {
+                $name {
+                    id: 0,
+                    key: "".to_string(),
+                    timestamp: 0,
+                    $($field_name),*
+                }
+            }
             pub fn into(self) -> String {
-                serde_json::to_string(&self).unwrap()
+                let mut relevant_fields = Vec::<String>::new();
+                for field in vec![$(self.$field_name.to_string()),*] {
+                    relevant_fields.push(field);
+                }
+                serde_json::to_string(&relevant_fields).unwrap()
             }
         }
 
-        impl From<&DBEntry> for $name {
-            fn from(entry: &DBEntry) -> $name {
-                serde_json::from_str(&entry.value).unwrap()
+        impl From<DBEntry> for $name {
+            fn from(entry: DBEntry) -> $name {
+                let mut relevant: Vec<&str> = serde_json::from_str(&entry.value).unwrap();
+                $name {
+                    id: entry.id,
+                    key: entry.key,
+                    timestamp: entry.timestamp,
+                    $($field_name: relevant.pop().unwrap().parse().unwrap()),*
+                }
             }
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct ModLog {
-    pub staff_id: String,
-    pub member_id: String,
-    pub reason: String,
-}
-
-as_db_entry!(ModLog);
-
-#[derive(Serialize, Deserialize)]
-pub struct FlagLog {
-    pub staff_id: String,
-    pub member_id: String,
-    pub reason: String,
-    pub monthly: bool,
-}
-
-as_db_entry!(FlagLog);
+as_db_entry!(ModLog, staff_id: String, member_id: String, reason: String);
+as_db_entry!(FlagLog, staff_id: String, member_id: String, reason: String, monthly: bool);
+as_db_entry!(TicketReviewLog, reviewer_id: String, approved: bool, notes: String);
 
 impl FlagLog {
     pub fn is_active(&self, issuance_date: i64) -> bool {
@@ -59,13 +71,20 @@ impl FlagLog {
         expiration_date > now
     }
 }
-
-#[derive(Serialize, Deserialize)]
-pub struct ScheduleLog {
-    pub expiration_date: i64,
-    pub message: String,
-    pub channel_id: String,
+impl From<FlagLog> for ModLog {
+    fn from(flag_log: FlagLog) -> ModLog {
+        ModLog {
+            id: flag_log.id,
+            key: flag_log.key,
+            timestamp: flag_log.timestamp,
+            staff_id: flag_log.staff_id,
+            member_id: flag_log.member_id,
+            reason: flag_log.reason
+        }
+    }
 }
+
+as_db_entry!(ScheduleLog, expiration_date: i64, message: String, channel_id: String);
 
 impl ScheduleLog {
     pub fn is_expired(&self, now: i64) -> bool {
@@ -73,18 +92,7 @@ impl ScheduleLog {
     }
 }
 
-as_db_entry!(ScheduleLog);
-
-#[derive(Serialize, Deserialize)]
-pub struct TicketReviewLog {
-    pub reviewer_id: String,
-    pub approved: bool,
-    pub notes: String,
-}
-
-as_db_entry!(TicketReviewLog);
-
-pub trait DatabaseWrapper: Send + Sync {
+pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
 
     fn get_database(&self) -> &Database;
 
@@ -96,43 +104,63 @@ pub trait DatabaseWrapper: Send + Sync {
         })
     }
 
-    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<DBEntry>>
+    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<T>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().get(key).await
+            let entry = self.get_database().get(key).await;
+            match entry {
+                Ok(entry) => Ok(T::from(entry)),
+                Err(_)    => Err("Key not found".to_string())
+            }
         })
     }
 
-    fn query<'a>(&'a self, key: &'a str, query_string: &'a str) -> BoxedFuture<'a, Result<Vec<DBEntry>>>
+    fn query<'a>(&'a self, key: &'a str, query_string: &'a str) -> BoxedFuture<'a, Result<Vec<T>>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().query(key, query_string).await
+            let entries = self.get_database().query(key, query_string).await;
+            match entries {
+                Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
+                Err(_)      => Err("Query failed".to_string())
+            }
         })
     }
 
-    fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<DBEntry>>>
+    fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<T>>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().get_all(key).await
+            let entries = self.get_database().get_all(key).await;
+            match entries {
+                Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
+                Err(_)      => Err("Key not found".to_string())
+            }
         })
     }
 
-    fn get_last<'a>(&'a self, key: &'a str, limit: u8) -> BoxedFuture<'a, Result<Vec<DBEntry>>>
+    fn get_last<'a>(&'a self, key: &'a str, limit: u8) -> BoxedFuture<'a, Result<Vec<T>>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().get_last(key, limit).await
+            let entries = self.get_database().get_last(key, limit).await;
+            match entries {
+                Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
+                Err(_)      => Err("Key not found".to_string())
+            }
         })
     }
 
-    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<DBEntry>>>
+    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<T>>>
         where Self: Sync
     {
         Box::pin(async move {
-            self.get_database().get_multiple(keys).await
+            let entries = self.get_database().get_multiple(keys).await;
+            match entries {
+                Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
+                Err(_)      => Err("Key not found".to_string())
+            }
         })
     }
 
@@ -170,7 +198,33 @@ pub trait DatabaseWrapper: Send + Sync {
 }
 
 macro_rules! impl_database_wrapper {
-    ($name:ident, $db_type:expr) => {
+
+    ($name:ident, $db_type:expr, ModLog) => {
+        pub struct $name {
+            database: Database
+        }
+
+        impl DatabaseWrapper<ModLog> for $name {
+            fn get_database(&self) -> &Database {
+                &self.database
+            }
+        }
+
+        impl $name {
+            pub fn new() -> Self {
+                $name { database: Database::new($db_type) }
+            }
+            pub fn get_by_staff<'a>(&'a self, staff_id: &'a str) -> BoxedFuture<'_, Vec<ModLog>> {
+                Box::pin(async move {
+                    self.query("", &format!("AND value LIKE '%staff_id%{}%'", staff_id)).await.unwrap()
+                })
+            }
+        }
+
+        impl_singleton!($name);
+    };
+
+    ($name:ident, $db_type:expr, $log_type:ty) => {
         pub struct $name {
             database: Database
         }
@@ -181,7 +235,7 @@ macro_rules! impl_database_wrapper {
             }
         }
 
-        impl DatabaseWrapper for $name {
+        impl DatabaseWrapper<$log_type> for $name {
             fn get_database(&self) -> &Database {
                 &self.database
             }
@@ -189,13 +243,17 @@ macro_rules! impl_database_wrapper {
 
         impl_singleton!($name);
     };
+
+    ($name:ident, $db_type:expr) => {
+        impl_database_wrapper!($name, $db_type, DBEntry);
+    };
 }
 
 impl_database_wrapper!(ConfigDB, DB::Config);
-impl_database_wrapper!(WarningsDB, DB::Warnings);
-impl_database_wrapper!(MutesDB, DB::Mutes);
-impl_database_wrapper!(BansDB, DB::Bans);
-impl_database_wrapper!(FlagsDB, DB::Flags);
+impl_database_wrapper!(WarningsDB, DB::Warnings, ModLog);
+impl_database_wrapper!(MutesDB, DB::Mutes, ModLog);
+impl_database_wrapper!(BansDB, DB::Bans, ModLog);
+impl_database_wrapper!(FlagsDB, DB::Flags, FlagLog);
 impl_database_wrapper!(AfkDB, DB::Afk);
-impl_database_wrapper!(ScheduleDB, DB::Schedule);
-impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews);
+impl_database_wrapper!(ScheduleDB, DB::Schedule, ScheduleLog);
+impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews, TicketReviewLog);

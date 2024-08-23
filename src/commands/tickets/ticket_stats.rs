@@ -57,10 +57,7 @@ impl Command for TicketStatsCommand {
                     let name = message.get_resolver().resolve_name(&user);
 
                     let reviews = TicketReviewsDB::get_instance().lock().await
-                        .get_all(&target_id).await.unwrap()
-                        .into_iter()
-                        .map(|review| TicketReviewLog::from(&review))
-                        .collect::<Vec<_>>();
+                        .get_all(&target_id).await.unwrap();
 
                     if reviews.is_empty() {
                         builder = builder

@@ -64,7 +64,7 @@ impl Command for FlagsCommand {
                         0 => builder.description("No registered flags.").build().await,
                         len @ _ => {
                             for flag in flags.into_iter() {
-                                builder = builder.mod_log(&flag);
+                                builder = builder.mod_log(&ModLog::from(flag));
                             }
                             builder.build().await
                                 .footer(CreateEmbedFooter::new(

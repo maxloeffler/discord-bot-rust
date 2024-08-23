@@ -15,25 +15,6 @@ use crate::databases::*;
 use crate::utility::*;
 
 
-macro_rules! get_database_impl {
-    ($db:ident) => {
-        Arc::new($db::get_instance() as &Mutex<dyn DatabaseWrapper>)
-    };
-}
-
-fn get_db(db: &DB) -> Arc<&'static Mutex<dyn DatabaseWrapper>> {
-    match db {
-        DB::Config        => get_database_impl!(ConfigDB),
-        DB::Warnings      => get_database_impl!(WarningsDB),
-        DB::Mutes         => get_database_impl!(MutesDB),
-        DB::Flags         => get_database_impl!(FlagsDB),
-        DB::Bans          => get_database_impl!(BansDB),
-        DB::Afk           => get_database_impl!(AfkDB),
-        DB::Schedule      => get_database_impl!(ScheduleDB),
-        DB::TicketReviews => get_database_impl!(TicketReviewsDB),
-    }
-}
-
 pub async fn spawn(thread: BoxedFuture<'static, ()>) {
     thread::spawn(move || {
         let runtime = Runtime::new().unwrap();
@@ -47,7 +28,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
         let mut db = DB::Config;
         Logger::info_long("Connected to database", db.to_string().as_str());
         loop {
-            let database = get_db(&db);
+            let database = ConfigDB::get_instance();
             let input = Logger::input("Enter a command");
             let words = input.split_whitespace().collect::<Vec<&str>>();
 
@@ -209,15 +190,14 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                             for scheduled_message in scheduled_messages.into_iter() {
 
                                 // check if message is expired
-                                let log = ScheduleLog::from(&scheduled_message);
-                                if log.is_expired(now) {
+                                if scheduled_message.is_expired(now) {
 
-                                    // delete log
+                                    // delete scheduled message from database
                                     ScheduleDB::get_instance().lock().await
                                         .delete_by_id(scheduled_message.id).await;
 
                                     // create webhook
-                                    let channel_id = ChannelId::from(log.channel_id.parse::<u64>().unwrap());
+                                    let channel_id = ChannelId::from(scheduled_message.channel_id.parse::<u64>().unwrap());
                                     let hook = channel_id.create_webhook(resolver,
                                         CreateWebhook::new(resolver.resolve_name(&user))
                                             .avatar(&CreateAttachment::url(resolver, &user.face()).await.unwrap())
@@ -225,7 +205,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 
                                     // create embed
                                     let execute = ExecuteWebhook::new()
-                                        .content(log.message)
+                                        .content(scheduled_message.message)
                                         .allowed_mentions(allowed_mentions.clone());
                                     let _ = hook.execute(resolver, false, execute).await;
                                 }

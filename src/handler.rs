@@ -130,11 +130,11 @@ impl EventHandler for Handler {
                 let _ = message.reply(warn_message.to_message()).await;
 
                 // log to database
-                let log = ModLog {
-                    member_id: author,
-                    staff_id: bot_id.to_string(),
-                    reason: format!("Automatically warned ('{}')", chat_filter.context),
-                };
+                let log = ModLog::new(
+                    author,
+                    bot_id.to_string(),
+                    format!("Automatically warned ('{}')", chat_filter.context),
+                );
                 WarningsDB::get_instance().lock().await
                     .append(&message.get_author().id.to_string(), &log.into()).await;
 

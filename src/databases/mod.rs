@@ -20,4 +20,3 @@ pub use wrappers::BansDB;
 pub use wrappers::AfkDB;
 pub use wrappers::ScheduleDB;
 pub use wrappers::TicketReviewsDB;
-

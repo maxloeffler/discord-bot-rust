@@ -47,11 +47,6 @@ impl AutoModerator {
             // check if the user has reached 3 warnings
             if recent_warnings.len() == 3 {
 
-                // convert to logs
-                let warn_logs: Vec<ModLog> = recent_warnings.iter()
-                    .map(|log| log.into()).collect();
-
-
                 // mute user
                 let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
                 let member = resolver.resolve_member(&target).await.unwrap();
@@ -60,12 +55,12 @@ impl AutoModerator {
                 // log mute
                 let bot_id = ConfigDB::get_instance().lock().await
                     .get("bot_id").await.unwrap().to_string();
-                let log = ModLog {
-                    member_id: target.id.to_string(),
-                    staff_id: bot_id.clone(),
-                    reason: format!("Automatically muted (1: '{}', 2: '{}', 3: '{}')",
-                        warn_logs[0].reason, warn_logs[1].reason, warn_logs[2].reason),
-                };
+                let log = ModLog::new(
+                    target.id.to_string(),
+                    bot_id.clone(),
+                    format!("Automatically muted (1: '{}', 2: '{}', 3: '{}')",
+                        recent_warnings[0].reason, recent_warnings[1].reason, recent_warnings[2].reason),
+                );
                 MutesDB::get_instance().lock().await
                     .append(&target.id.to_string(), &log.into()).await;
 
@@ -84,7 +79,7 @@ impl AutoModerator {
                 }).await;
 
                 // find person responsible for the last warning (to ping them)
-                let last_warning = warn_logs.last().unwrap();
+                let last_warning = recent_warnings.last().unwrap();
                 let role_automute = &resolver.resolve_role("Auto Mute").await.unwrap()[0];
                 let responsibility = match last_warning.staff_id == bot_id {
                     true  => format!("<@&{}>", role_automute.id),
@@ -113,8 +108,7 @@ impl AutoModerator {
             // get all active flags
             let active_flags: Vec<FlagLog> = all_flags
                 .into_iter()
-                .filter(|flag| FlagLog::from(flag).is_active(flag.timestamp))
-                .map(|flag| FlagLog::from(&flag))
+                .filter(|flag| flag.is_active(flag.timestamp))
                 .collect();
 
             // if there are active flags
@@ -162,11 +156,11 @@ impl AutoModerator {
                     // log ban to database
                     let bot_id = ConfigDB::get_instance().lock().await
                         .get("bot_id").await.unwrap().to_string();
-                    let log = ModLog {
-                        member_id: target.id.to_string(),
-                        staff_id: bot_id.clone(),
-                        reason: format!("Automatically banned ('{}')", reason),
-                    };
+                    let log = ModLog::new(
+                        target.id.to_string(),
+                        bot_id.clone(),
+                        format!("Automatically banned ('{}')", reason),
+                    );
                     BansDB::get_instance().lock().await
                         .append(&target.id.to_string(), &log.into()).await;
 
