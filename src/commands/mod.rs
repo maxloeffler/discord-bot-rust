@@ -50,6 +50,7 @@ pub use moderation::remove_warning::RemoveWarningCommand;
 pub use moderation::review::ReviewCommand;
 pub use moderation::remove_review::RemoveReviewCommand;
 pub use moderation::mod_stats::ModStatsCommand;
+pub use moderation::lockdown::LockdownCommand;
 
 // ---- src/commands/tickets/ ---- //
 

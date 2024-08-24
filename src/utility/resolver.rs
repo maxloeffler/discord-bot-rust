@@ -177,6 +177,18 @@ impl Resolver {
         None
     }
 
+    pub async fn resolve_category_channels(&self, category_id: ChannelId) -> Option<Vec<GuildChannel>> {
+        let channels = self.guild_channels().await;
+        if let Some(channels) = channels {
+            let category_channels = channels
+                .into_iter()
+                .filter(|channel| channel.parent_id == Some(category_id))
+                .collect();
+            return Some(category_channels);
+        }
+        None
+    }
+
     pub async fn resolve_message(&self, channel_id: ChannelId, message_id: MessageId) -> Option<Message> {
         let message = self.http().get_message(channel_id, message_id).await;
         match message {
