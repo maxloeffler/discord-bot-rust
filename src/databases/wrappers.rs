@@ -96,17 +96,13 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
 
     fn get_database(&self) -> &Database;
 
-    fn get_keys<'a>(&'a self) -> BoxedFuture<'a, Vec<String>>
-        where Self: Sync
-    {
+    fn get_keys<'a>(&'a self) -> BoxedFuture<'a, Vec<String>> {
         Box::pin(async move {
             self.get_database().get_keys().await
         })
     }
 
-    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<T>>
-        where Self: Sync
-    {
+    fn get<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<T>> {
         Box::pin(async move {
             let entry = self.get_database().get(key).await;
             match entry {
@@ -116,9 +112,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
         })
     }
 
-    fn query<'a>(&'a self, key: &'a str, query_string: &'a str) -> BoxedFuture<'a, Result<Vec<T>>>
-        where Self: Sync
-    {
+    fn query<'a>(&'a self, key: &'a str, query_string: &'a str) -> BoxedFuture<'a, Result<Vec<T>>> {
         Box::pin(async move {
             let entries = self.get_database().query(key, query_string).await;
             match entries {
@@ -128,9 +122,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
         })
     }
 
-    fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<T>>>
-        where Self: Sync
-    {
+    fn get_all<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, Result<Vec<T>>> {
         Box::pin(async move {
             let entries = self.get_database().get_all(key).await;
             match entries {
@@ -140,9 +132,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
         })
     }
 
-    fn get_last<'a>(&'a self, key: &'a str, limit: u8) -> BoxedFuture<'a, Result<Vec<T>>>
-        where Self: Sync
-    {
+    fn get_last<'a>(&'a self, key: &'a str, limit: u8) -> BoxedFuture<'a, Result<Vec<T>>> {
         Box::pin(async move {
             let entries = self.get_database().get_last(key, limit).await;
             match entries {
@@ -152,9 +142,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
         })
     }
 
-    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<T>>>
-        where Self: Sync
-    {
+    fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<T>>> {
         Box::pin(async move {
             let entries = self.get_database().get_multiple(keys).await;
             match entries {
@@ -164,33 +152,25 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
         })
     }
 
-    fn set<'a>(&'a self, key: &'a str, value: &'a str) -> BoxedFuture<'a, ()>
-        where Self: Sync
-    {
+    fn set<'a>(&'a self, key: &'a str, value: &'a str) -> BoxedFuture<'a, ()> {
         Box::pin(async move {
             self.get_database().set(key, vec![value]).await
         })
     }
 
-    fn append<'a>(&'a self, key: &'a str, value: &'a str) -> BoxedFuture<'a, ()>
-        where Self: Sync
-    {
+    fn append<'a>(&'a self, key: &'a str, value: &'a str) -> BoxedFuture<'a, ()> {
         Box::pin(async move {
             self.get_database().append(key, value).await
         })
     }
 
-    fn delete<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, ()>
-        where Self: Sync
-    {
+    fn delete<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, ()> {
         Box::pin(async move {
             self.get_database().delete(key).await
         })
     }
 
-    fn delete_by_id<'a>(&'a self, id: i64) -> BoxedFuture<'a, ()>
-        where Self: Sync
-    {
+    fn delete_by_id<'a>(&'a self, id: i64) -> BoxedFuture<'a, ()> {
         Box::pin(async move {
             self.get_database().delete_by_id(id).await
         })
