@@ -46,6 +46,7 @@ macro_rules! as_db_entry {
         impl From<DBEntry> for $name {
             fn from(entry: DBEntry) -> $name {
                 let mut relevant: Vec<&str> = serde_json::from_str(&entry.value).unwrap();
+                relevant.reverse();
                 $name {
                     id: entry.id,
                     key: entry.key,
