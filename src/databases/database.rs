@@ -22,7 +22,8 @@ pub enum DB {
     Bans,
     Afk,
     Schedule,
-    TicketReviews
+    TicketReviews,
+    Notes
 }
 
 impl fmt::Display for DB {
@@ -36,6 +37,7 @@ impl fmt::Display for DB {
             DB::Afk => write!(f, "afk"),
             DB::Schedule => write!(f, "schedule"),
             DB::TicketReviews => write!(f, "ticket_reviews"),
+            DB::Notes => write!(f, "notes"),
         }
     }
 }

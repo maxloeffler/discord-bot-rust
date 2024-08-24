@@ -11,6 +11,7 @@ pub use wrappers::ModLog;
 pub use wrappers::FlagLog;
 pub use wrappers::ScheduleLog;
 pub use wrappers::TicketReviewLog;
+pub use wrappers::Note;
 
 pub use wrappers::ConfigDB;
 pub use wrappers::WarningsDB;
@@ -20,3 +21,4 @@ pub use wrappers::BansDB;
 pub use wrappers::AfkDB;
 pub use wrappers::ScheduleDB;
 pub use wrappers::TicketReviewsDB;
+pub use wrappers::NotesDB;

@@ -51,6 +51,9 @@ pub use moderation::review::ReviewCommand;
 pub use moderation::remove_review::RemoveReviewCommand;
 pub use moderation::mod_stats::ModStatsCommand;
 pub use moderation::lockdown::LockdownCommand;
+pub use moderation::notes::NotesCommand;
+pub use moderation::add_note::AddNoteCommand;
+pub use moderation::remove_note::RemoveNoteCommand;
 
 // ---- src/commands/tickets/ ---- //
 

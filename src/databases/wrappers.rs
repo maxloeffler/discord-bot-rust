@@ -2,6 +2,7 @@
 use serde::{Serialize, Deserialize};
 use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
+use nonempty::{NonEmpty, nonempty};
 
 use std::sync::Arc;
 use std::convert::From;
@@ -89,6 +90,23 @@ as_db_entry!(ScheduleLog, expiration_date: i64, message: String, channel_id: Str
 impl ScheduleLog {
     pub fn is_expired(&self, now: i64) -> bool {
         self.expiration_date < now
+    }
+}
+
+as_db_entry!(Note, content: String);
+
+impl Note {
+    pub fn escape(key: String) -> String {
+        key.replace(" ", "_")
+    }
+    pub fn deescape(key: String) -> String {
+        key.replace("_", " ")
+    }
+}
+
+impl Triggerable for Note {
+    fn get_triggers(&self) -> NonEmpty<String> {
+        nonempty![self.key.clone()]
     }
 }
 
@@ -237,3 +255,4 @@ impl_database_wrapper!(FlagsDB, DB::Flags, FlagLog);
 impl_database_wrapper!(AfkDB, DB::Afk);
 impl_database_wrapper!(ScheduleDB, DB::Schedule, ScheduleLog);
 impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews, TicketReviewLog);
+impl_database_wrapper!(NotesDB, DB::Notes, Note);

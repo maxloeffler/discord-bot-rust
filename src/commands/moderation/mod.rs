@@ -20,3 +20,6 @@ pub mod review;
 pub mod remove_review;
 pub mod mod_stats;
 pub mod lockdown;
+pub mod notes;
+pub mod add_note;
+pub mod remove_note;

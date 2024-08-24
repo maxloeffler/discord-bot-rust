@@ -59,6 +59,9 @@ impl CommandManager {
             Box::new( NumberDecorator{ command: Box::new(RemoveReviewCommand{}) }),
             Box::new( UserDecorator{ command: Box::new(ModStatsCommand{}) }),
             Box::new( LockdownCommand{} ),
+            Box::new( NotesCommand{} ),
+            Box::new( AddNoteCommand{} ),
+            Box::new( RemoveNoteCommand{} ),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![
@@ -99,64 +102,6 @@ impl CommandManager {
         }
     }
 
-    async fn match_command<'a>(&'a self,
-            message: &'a MessageManager,
-            match_callback: impl Fn(&'a Box<dyn Command>) -> BoxedFuture<'a, ()> + Send + Copy
-    ) {
-
-        // initialize search
-        let mut fuzzy_matches = Vec::new();
-        let mut exact_match = false;
-
-        let cmd = &message.get_command().unwrap();
-        for command in self.commands.iter() {
-            match command.is_triggered_by(cmd) {
-                MatchType::Exact => {
-                    match_callback(command).await;
-                    exact_match = true;
-                    break;
-                },
-                MatchType::Fuzzy(closest_match) => fuzzy_matches.push((command, closest_match)),
-                MatchType::None => continue,
-            };
-        }
-        if !exact_match {
-
-            // create buttons
-            let buttons = fuzzy_matches.iter().enumerate()
-                .map(|(i, (_, closest_match))| {
-                    CreateButton::new(i.to_string())
-                        .label(closest_match)
-                        .style(ButtonStyle::Secondary)
-                }).collect::<Vec<_>>();
-
-            // create embed
-            let cmd = message.get_command().unwrap();
-            let embed = MessageManager::create_embed(|embed| {
-                embed
-                    .title("Did you mean ...")
-                    .description(&format!("`{}{}` {}\n`{}`",
-                            message.get_prefix().unwrap(),
-                            cmd,
-                            message.payload(None, None),
-                            "^".repeat(1 + cmd.len())))
-            }).await;
-
-            // create interaction
-            let interaction_helper = message.get_interaction_helper();
-            let pressed = interaction_helper.create_buttons(
-                embed,
-                buttons
-            ).await;
-
-            // execute callback
-            if let Some(pressed) = pressed {
-                let index = pressed.parse::<usize>().unwrap();
-                let (command, _) = fuzzy_matches.get(index).unwrap();
-                match_callback(command).await;
-            }
-        }
-    }
 
     // note: only execute this method, when message.is_command() is true
     pub async fn execute(&self, message: &MessageManager) {
@@ -167,10 +112,17 @@ impl CommandManager {
             return;
         }
 
-        self.match_command(message, |command: &Box<dyn Command>| {
-            Box::pin(async move {
-                self.run_command(command, message).await
-            })}).await;
+        // match command
+        let triggerables = self.commands.iter()
+            .map(|command| command as &dyn Triggerable)
+            .collect::<Vec<_>>();
+        let index = match_triggerables(message, &message.get_command().unwrap(), triggerables).await;
+
+        // execute command if found
+        if let Ok(index) = index {
+            let command = &self.commands[index];
+            self.run_command(command, message).await;
+        }
     }
 
     async fn display_help(&self, message: &MessageManager) {
@@ -217,17 +169,24 @@ impl CommandManager {
         // display help for a specific command
         else {
 
-
             // find command
             let trigger = payload.split_whitespace().next().unwrap();
             let message = &message.spoof(
                 format!("{}{}", message.get_prefix().unwrap(), trigger)).await;
 
-            self.match_command(message, |command: &Box<dyn Command>| {
-                Box::pin(async move {
-                    let params = CommandParams::new(message.clone());
-                    command.display_usage(params, "Command Description".to_string()).await;
-                })}).await;
+            // match command
+            let triggerables = self.commands.iter()
+                .map(|command| command as &dyn Triggerable)
+                .collect::<Vec<_>>();
+            let index = match_triggerables(message, &message.get_command().unwrap(), triggerables).await;
+
+            // display usage
+            if let Ok(index) = index {
+                let command = &self.commands[index];
+                self.run_command(command, message).await;
+                let params = CommandParams::new(message.clone());
+                command.display_usage(params, "Command Description".to_string()).await;
+            }
 
         }
     }

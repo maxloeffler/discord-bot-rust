@@ -66,7 +66,7 @@ pub trait Command: Send + Sync {
 
 }
 
-impl Triggerable for dyn Command {
+impl Triggerable for Box<dyn Command> {
 
     fn get_triggers(&self) -> NonEmpty<String> {
         self.define_usage().triggers
