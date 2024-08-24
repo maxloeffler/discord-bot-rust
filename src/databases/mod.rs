@@ -22,3 +22,4 @@ pub use wrappers::AfkDB;
 pub use wrappers::ScheduleDB;
 pub use wrappers::TicketReviewsDB;
 pub use wrappers::NotesDB;
+pub use wrappers::RemindersDB;

@@ -144,11 +144,19 @@ impl<'a> LogBuilder<'a> {
         let timestamp = LogBuilder::format_timestamp(log.timestamp);
         let id = format!("**Database ID**: {}", log.id);
 
-        // extract mod log specific fields
         let staff_time = format!("**Staff**: <@{}> `>` {}", log.staff_id, timestamp);
         let reason = format!("**Reason**: {}", log.reason);
 
         self.fields.push((id, format!("{}\n{}", staff_time, reason), false));
+        self
+    }
+
+    pub fn schedule_log(mut self, log: &ScheduleLog) -> Self {
+        let timestamp = LogBuilder::format_timestamp(log.expiration_date);
+        let id = format!("**Database ID**: {}", log.id);
+
+        let content = format!("**Content**: {}", log.message);
+        self.fields.push((id, format!("{}\n{}", content, timestamp), false));
         self
     }
 

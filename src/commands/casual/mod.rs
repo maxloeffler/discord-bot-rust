@@ -10,3 +10,5 @@ pub mod poll;
 pub mod add_emoji;
 pub mod schedule;
 pub mod suggest;
+pub mod remind;
+pub mod remove_reminder;

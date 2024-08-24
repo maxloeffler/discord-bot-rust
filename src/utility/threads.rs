@@ -1,6 +1,7 @@
 
 use serenity::all::ComponentInteractionDataKind::StringSelect;
 use serenity::all::*;
+use serenity::model::id::ChannelId;
 use serenity::builder::{CreateWebhook, CreateAttachment, ExecuteWebhook, CreateAllowedMentions};
 use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
@@ -10,6 +11,7 @@ use futures::stream::StreamExt;
 
 use std::sync::Arc;
 use std::thread;
+use std::str::FromStr;
 
 use crate::databases::*;
 use crate::utility::*;
@@ -197,7 +199,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                         .delete_by_id(scheduled_message.id).await;
 
                                     // create webhook
-                                    let channel_id = ChannelId::from(scheduled_message.channel_id.parse::<u64>().unwrap());
+                                    let channel_id = ChannelId::from_str(&scheduled_message.channel_id).unwrap();
                                     let hook = channel_id.create_webhook(resolver,
                                         CreateWebhook::new(resolver.resolve_name(&user))
                                             .avatar(&CreateAttachment::url(resolver, &user.face()).await.unwrap())
@@ -208,6 +210,53 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                         .content(scheduled_message.message)
                                         .allowed_mentions(allowed_mentions.clone());
                                     let _ = hook.execute(resolver, false, execute).await;
+                                }
+                            }
+                        }
+                    }
+                }).await;
+
+
+            // check for reminders
+            let users = RemindersDB::get_instance().lock().await
+                .get_keys().await;
+            let now = chrono::Utc::now().timestamp();
+
+            // for all users that have scheduled messages
+            futures::stream::iter(users)
+                .map(|user| UserId::from(user.parse::<u64>().unwrap()))
+                .for_each_concurrent(None, |user| {
+                    async move {
+
+                        // get scheduled messages
+                        let reminders = RemindersDB::get_instance().lock().await
+                            .get_all(&user.to_string()).await;
+                        let user = resolver.resolve_user(user).await.unwrap();
+
+                        // for all reminders
+                        if let Ok(reminders) = reminders {
+                            for reminder in reminders.into_iter() {
+
+                                // check if message is expired
+                                if reminder.is_expired(now) {
+
+                                    // delete scheduled message from database
+                                    RemindersDB::get_instance().lock().await
+                                        .delete_by_id(reminder.id).await;
+
+                                    // create embed
+                                    let embed = MessageManager::create_embed(|embed| {
+                                        embed
+                                            .title("Reminder")
+                                            .description(reminder.message)
+                                            .color(0x00FF00)
+                                    }).await;
+                                    let embed = CreateMessage::new()
+                                        .content(format!("<@{}>", user.id.to_string()))
+                                        .embed(embed);
+
+                                    let channel = ChannelId::from_str(&reminder.channel_id).unwrap();
+                                    let _ = channel.send_message(resolver, embed).await;
                                 }
                             }
                         }

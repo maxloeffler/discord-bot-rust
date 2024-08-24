@@ -19,6 +19,8 @@ pub use casual::poll::PollCommand;
 pub use casual::add_emoji::AddEmojiCommand;
 pub use casual::schedule::ScheduleCommand;
 pub use casual::suggest::SuggestCommand;
+pub use casual::remind::RemindCommand;
+pub use casual::remove_reminder::RemoveReminderCommand;
 
 // ---- src/commands/games/ ---- //
 

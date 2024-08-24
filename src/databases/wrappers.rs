@@ -255,5 +255,6 @@ impl_database_wrapper!(BansDB, DB::Bans, ModLog);
 impl_database_wrapper!(FlagsDB, DB::Flags, FlagLog);
 impl_database_wrapper!(AfkDB, DB::Afk);
 impl_database_wrapper!(ScheduleDB, DB::Schedule, ScheduleLog);
+impl_database_wrapper!(RemindersDB, DB::Reminders, ScheduleLog);
 impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews, TicketReviewLog);
 impl_database_wrapper!(NotesDB, DB::Notes, Note);
