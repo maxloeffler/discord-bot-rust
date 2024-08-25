@@ -44,10 +44,6 @@ impl Command for CloseTicketCommand {
                             }).await;
                         let _ = message.reply(embed).await;
 
-                        // remove ticket from handler
-                        TicketHandler::get_instance().lock().await
-                            .close_ticket(&ticket.channel.id).await;
-
                         // obtain channel to dump log
                         let dump_channel: ChannelId = match ticket.ticket_type {
                             TicketType::StaffReport => ConfigDB::get_instance().lock()
@@ -58,6 +54,10 @@ impl Command for CloseTicketCommand {
 
                         // produce transcript
                         ticket.transcribe().await;
+
+                        // remove ticket from handler
+                        TicketHandler::get_instance().lock().await
+                            .close_ticket(&ticket.channel.id).await;
 
                         // obtain ticket information
                         let transcript_url = format!(
