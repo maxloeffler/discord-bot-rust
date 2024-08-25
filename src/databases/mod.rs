@@ -23,3 +23,5 @@ pub use wrappers::ScheduleDB;
 pub use wrappers::TicketReviewsDB;
 pub use wrappers::NotesDB;
 pub use wrappers::RemindersDB;
+pub use wrappers::TweetsDB;
+pub use wrappers::DeadchatDB;

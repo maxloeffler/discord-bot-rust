@@ -37,6 +37,8 @@ impl CommandManager {
             Box::new( SuggestCommand{} ),
             Box::new( RemindCommand{} ),
             Box::new( NumberDecorator{ command: Box::new(RemoveReminderCommand{}) }),
+            Box::new( TweetCommand{} ),
+            Box::new( DeadchatCommand{} ),
             // games commands
             Box::new( EightBallCommand{} ),
             // moderation commands

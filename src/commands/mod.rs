@@ -21,6 +21,8 @@ pub use casual::schedule::ScheduleCommand;
 pub use casual::suggest::SuggestCommand;
 pub use casual::remind::RemindCommand;
 pub use casual::remove_reminder::RemoveReminderCommand;
+pub use casual::tweet::TweetCommand;
+pub use casual::deadchat::DeadchatCommand;
 
 // ---- src/commands/games/ ---- //
 

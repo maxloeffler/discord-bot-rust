@@ -190,7 +190,7 @@ impl MessageManager {
     pub async fn reply_temporary(&self, message: impl ToMessage) {
         let sent_message = self.reply(message).await;
         if let Ok(message) = sent_message {
-            let _ = tokio::time::sleep(Duration::from_secs(2)).await;
+            let _ = tokio::time::sleep(Duration::from_secs(4)).await;
             let _ = message.delete(&self.resolver).await;
         }
     }

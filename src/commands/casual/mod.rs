@@ -12,3 +12,5 @@ pub mod schedule;
 pub mod suggest;
 pub mod remind;
 pub mod remove_reminder;
+pub mod tweet;
+pub mod deadchat;

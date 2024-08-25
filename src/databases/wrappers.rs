@@ -258,3 +258,5 @@ impl_database_wrapper!(ScheduleDB, DB::Schedule, ScheduleLog);
 impl_database_wrapper!(RemindersDB, DB::Reminders, ScheduleLog);
 impl_database_wrapper!(TicketReviewsDB, DB::TicketReviews, TicketReviewLog);
 impl_database_wrapper!(NotesDB, DB::Notes, Note);
+impl_database_wrapper!(TweetsDB, DB::Tweets);
+impl_database_wrapper!(DeadchatDB, DB::Deadchat);
