@@ -67,6 +67,7 @@ impl ChatFilter {
         let channel = message.resolve_guild_channel().await;
         let category_music: ChannelId = ConfigDB::get_instance().lock().await
             .get("category_music").await.unwrap().into();
+        let level30 = message.get_resolver().resolve_role("Level 30+").await.unwrap()[0].id;
 
         for word in message.words.iter() {
 
@@ -75,6 +76,11 @@ impl ChatFilter {
                     filter_type: FilterType::Slur,
                     context: word.to_string()
                 };
+            }
+
+            // users above level 30 can bypass link filter
+            if message.has_role(&level30).await {
+                continue;
             }
 
             let url_regex = RegexManager::get_url_regex();
