@@ -1,5 +1,13 @@
 
+use serenity::all::ChannelId;
+use tokio::sync::Mutex;
+use once_cell::sync::Lazy;
+
+use std::sync::Arc;
+
 use crate::utility::*;
+use crate::databases::*;
+use crate::impl_singleton;
 
 
 #[derive(PartialEq)]
@@ -9,62 +17,62 @@ pub enum FilterType {
     Fine
 }
 
-pub struct ChatFilter {
-    pub filter: FilterType,
+pub struct Filter {
+    pub filter_type: FilterType,
     pub context: String
 }
 
-pub struct ChatFilterManager<'a> {
-    message: &'a MessageManager,
+pub struct ChatFilter {
     slurs: Vec<String>,
-    domain_whitelist: Vec<String>,
+    domains: Vec<String>,
+    music_domains: Vec<String>,
 }
 
-impl<'a> ChatFilterManager<'_> {
+impl ChatFilter {
 
-    pub fn new(message: &'a MessageManager) -> ChatFilterManager<'a> {
-        let slurs = vec![
-            "nigga",
-            "nigger",
-            "niglet",
-            "faggot",
-            "fag",
-            "retard",
-            "chink",
-            "dyke",
-            "lesbo",
-            "gypsy",
-            "gypped",
-            "ching chong",
-            "tranny",
-            "beaner"
-        ].into_iter().map(|str| str.to_string()).collect::<Vec<String>>();
-        let domain_whitelist = vec![
-            "tenor.com",
-            "giphy.com",
-            "discord.com",
-            "spotify.com",
-            "spotify.link"
-        ].into_iter().map(|str| str.to_string()).collect::<Vec<String>>();
-        ChatFilterManager {
-            message,
-            slurs,
-            domain_whitelist
+    pub fn new() -> ChatFilter {
+        ChatFilter {
+            slurs: vec![
+                "nigga",
+                "nigger",
+                "niglet",
+                "faggot",
+                "fag",
+                "retard",
+                "chink",
+                "dyke",
+                "lesbo",
+                "gypsy",
+                "gypped",
+                "ching chong",
+                "tranny",
+                "beaner"
+            ].into_iter().map(|slur| slur.to_string()).collect(),
+            domains: vec![
+                "tenor.com",
+                "giphy.com",
+                "discord.com",
+                "spotify.com",
+                "spotify.link"
+            ].into_iter().map(|domain| domain.to_string()).collect(),
+            music_domains: vec![
+                "youtube.com",
+                "soundcloud.com"
+            ].into_iter().map(|domain| domain.to_string()).collect()
         }
     }
 
-    pub async fn filter(&self) -> ChatFilter {
+    pub async fn apply(&self, message: &MessageManager) -> Filter {
 
-        let words = self.message.payload(None, None)
-            .split_whitespace()
-            .map(|str| str.to_string())
-            .collect::<Vec<String>>();
+        let channel = message.resolve_guild_channel().await;
+        let category_music: ChannelId = ConfigDB::get_instance().lock().await
+            .get("category_music").await.unwrap().into();
 
-        for word in words {
+        for word in message.words.iter() {
 
             if self.slurs.contains(&word) {
-                return ChatFilter {
-                    filter: FilterType::Slur,
+                return Filter {
+                    filter_type: FilterType::Slur,
                     context: word.to_string()
                 };
             }
@@ -72,25 +80,48 @@ impl<'a> ChatFilterManager<'_> {
             let url_regex = RegexManager::get_url_regex();
             if url_regex.is_match(word.as_str()) {
                 let mut external = true;
-                for domain in &self.domain_whitelist {
+
+                // compare against regular list of whitelisted domains
+                for domain in &self.domains {
                     if word.contains(domain) {
                         external = false;
                         break;
                     }
                 }
+
+                // check music category
                 if external {
-                    return ChatFilter {
-                        filter: FilterType::Link,
+                    if let Some(channel) = &channel {
+                        if let Some(category) = channel.parent_id {
+                            if category == category_music {
+                                for music_domain in &self.music_domains {
+                                    if word.contains(music_domain) {
+                                        external = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // if non-whitelisted domain is hit
+                if external {
+                    println!("illegal link");
+                    return Filter {
+                        filter_type: FilterType::Link,
                         context: word.to_string()
                     };
                 }
             }
         }
 
-        ChatFilter {
-            filter: FilterType::Fine,
+        Filter {
+            filter_type: FilterType::Fine,
             context: String::new()
         }
     }
 
 }
+
+impl_singleton!(ChatFilter);

@@ -11,7 +11,7 @@ pub mod message_manager;
 pub use message_manager::MessageManager;
 
 pub mod chat_filter;
-pub use chat_filter::{ChatFilter, ChatFilterManager, FilterType};
+pub use chat_filter::{ChatFilter, Filter, FilterType};
 
 pub mod traits;
 pub use traits::{Singleton, ToMessage, ToList, Triggerable, MatchType, match_triggerables};

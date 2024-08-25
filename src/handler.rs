@@ -68,9 +68,9 @@ impl EventHandler for Handler {
         }
 
         // directly delete messages in the verify channel
-        let channel_verify = ConfigDB::get_instance().lock().await
-            .get("channel_verify").await.unwrap().to_string();
-        if message.get_channel().get().to_string() == channel_verify {
+        let channel_verify: ChannelId = ConfigDB::get_instance().lock().await
+            .get("channel_verify").await.unwrap().into();
+        if message.get_channel() == channel_verify {
             message.delete().await;
         }
 
@@ -104,8 +104,8 @@ impl EventHandler for Handler {
                 }}).await;
 
         // check guideline violations
-        let chat_filter = ChatFilterManager::new(&message).filter().await;
-        if chat_filter.filter == FilterType::Fine
+        let filter = ChatFilter::get_instance().lock().await.apply(&message).await;
+        if filter.filter_type == FilterType::Fine
             || message.is_trial().await
             || message.get_author().bot {
 
@@ -119,21 +119,21 @@ impl EventHandler for Handler {
 
             // automatically delete message and warn
             #[cfg(feature = "auto_moderation")]
-            if chat_filter.filter != FilterType::Fine {
+            if filter.filter_type != FilterType::Fine {
 
                 message.delete().await;
 
                 // warn user
                 let warn_message = format!("<@{}>, you have been **automatically warned** `>` {}",
                     author,
-                    chat_filter.context);
+                    filter.context);
                 let _ = message.reply(warn_message.to_message()).await;
 
                 // log to database
                 let log = ModLog::new(
                     author,
                     bot_id.to_string(),
-                    format!("Automatically warned ('{}')", chat_filter.context),
+                    format!("Automatically warned ('{}')", filter.context),
                 );
                 WarningsDB::get_instance().lock().await
                     .append(&message.get_author().id.to_string(), &log.into()).await;
