@@ -104,11 +104,6 @@ impl Command for UnmuteCommand {
                 let _ = modlogs.send_message(message, log).await;
 
                 message.reply_success().await;
-
-                // check for active flags
-                #[cfg(feature = "auto_moderation")]
-                AutoModerator::get_instance().lock().await
-                    .check_mutes(resolver, target).await;
             }
         )
     }

@@ -17,6 +17,16 @@ pub enum FilterType {
     Fine
 }
 
+impl FilterType {
+    pub fn to_string(&self) -> String {
+        match self {
+            FilterType::Slur => "slur",
+            FilterType::Link => "link",
+            FilterType::Fine => "fine"
+        }.to_string()
+    }
+}
+
 pub struct Filter {
     pub filter_type: FilterType,
     pub context: String
@@ -113,7 +123,6 @@ impl ChatFilter {
 
                 // if non-whitelisted domain is hit
                 if external {
-                    println!("illegal link");
                     return Filter {
                         filter_type: FilterType::Link,
                         context: word.to_string()

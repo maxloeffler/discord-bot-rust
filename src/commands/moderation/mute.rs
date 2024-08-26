@@ -67,7 +67,6 @@ impl Command for MuteCommand {
 
                 // log mute to database
                 let log = ModLog::new(
-                    target.id.to_string(),
                     message.get_author().id.to_string(),
                     reason.clone()
                 );
@@ -78,7 +77,6 @@ impl Command for MuteCommand {
                 let log_message = message.get_log_builder()
                     .title("[MUTE]")
                     .description(&format!("<@{}> has been muted", target.id))
-                    .color(0xff8200)
                     .staff()
                     .user(&target)
                     .arbitrary("Reason", &reason)
@@ -93,7 +91,7 @@ impl Command for MuteCommand {
                 // check for active flags
                 #[cfg(feature = "auto_moderation")]
                 AutoModerator::get_instance().lock().await
-                    .check_mutes(resolver, target).await;
+                    .check_flags(message, target).await;
             }
         )
     }

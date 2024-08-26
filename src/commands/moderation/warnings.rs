@@ -74,6 +74,8 @@ impl Command for WarningsCommand {
                     };
 
                     let _ = message.reply(embed).await;
+                    AutoModerator::get_instance().lock().await
+                        .check_warnings(message, target).await;
                 }
             }
         )

@@ -75,14 +75,15 @@ impl EventHandler for Handler {
         }
 
         // check if author is afk
-        let author = message.get_author().id.to_string();
-        let author_afk = AfkDB::get_instance().lock().await.get(&author).await;
+        let author = &message.get_author();
+        let author_id = &author.id.to_string();
+        let author_afk = AfkDB::get_instance().lock().await.get(author_id).await;
         if author_afk.is_ok() {
             let embed = MessageManager::create_embed(|embed| {
                 embed.description("Removed your afk.")
             }).await;
             let _ = message.reply(embed).await;
-            AfkDB::get_instance().lock().await.delete(&author).await;
+            AfkDB::get_instance().lock().await.delete(&author_id).await;
         }
 
         // check if message mentions an afk user
@@ -105,9 +106,7 @@ impl EventHandler for Handler {
 
         // check guideline violations
         let filter = ChatFilter::get_instance().lock().await.apply(&message).await;
-        if filter.filter_type == FilterType::Fine
-            || message.is_trial().await
-            || message.get_author().bot {
+        if filter.filter_type == FilterType::Fine || message.is_trial().await || author.bot {
 
             // execute command
             #[cfg(feature = "commands")]
@@ -122,22 +121,8 @@ impl EventHandler for Handler {
             if filter.filter_type != FilterType::Fine {
 
                 message.delete().await;
-
-                // warn user
-                let warn_message = format!("<@{}>, you have been **automatically warned** `>` {}",
-                    author,
-                    filter.context);
-                let _ = message.reply(warn_message.to_message()).await;
-
-                // log to database
-                let log = ModLog::new(
-                    author,
-                    bot_id.to_string(),
-                    format!("Automatically warned ('{}')", filter.context),
-                );
-                WarningsDB::get_instance().lock().await
-                    .append(&message.get_author().id.to_string(), &log.into()).await;
-
+                AutoModerator::get_instance().lock().await
+                    .perform_warn(&message, &author, filter.filter_type.to_string(), filter.context).await;
             }
         }
     }

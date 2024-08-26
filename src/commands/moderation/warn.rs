@@ -57,12 +57,13 @@ impl Command for WarnCommand {
 
                 // log to database
                 let log = ModLog::new(
-                    target.id.to_string(),
                     message.get_author().id.to_string(),
                     reason.clone(),
                 );
                 WarningsDB::get_instance().lock().await
                     .append(&target.id.to_string(), &log.into()).await;
+
+                // create embed
                 let embed = MessageManager::create_embed(|embed|
                     embed
                         .title(&format!("Warning"))
@@ -75,6 +76,7 @@ impl Command for WarnCommand {
                 // log to mod logs
                 let log_message = message.get_log_builder()
                     .title("[WARNING]")
+                    .target(&target)
                     .description(&format!("<@{}> has been warned", target.id))
                     .color(0xff8200)
                     .staff()
@@ -89,7 +91,7 @@ impl Command for WarnCommand {
                 // check if the user has been warned too many times
                 #[cfg(feature = "auto_moderation")]
                 AutoModerator::get_instance().lock().await
-                    .check_warnings(resolver, &target).await;
+                    .check_warnings(message, &target).await;
 
             }
         )

@@ -58,7 +58,7 @@ macro_rules! as_db_entry {
     }
 }
 
-as_db_entry!(ModLog, staff_id: String, member_id: String, reason: String);
+as_db_entry!(ModLog, staff_id: String, reason: String);
 as_db_entry!(FlagLog, staff_id: String, member_id: String, reason: String, monthly: bool);
 as_db_entry!(TicketReviewLog, reviewer_id: String, approved: bool, notes: String);
 

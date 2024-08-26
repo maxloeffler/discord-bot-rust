@@ -57,7 +57,6 @@ impl Command for BanCommand {
 
                     // log ban to database
                     let log = ModLog::new(
-                        target.id.to_string(),
                         message.get_author().id.to_string(),
                         reason.clone()
                     );

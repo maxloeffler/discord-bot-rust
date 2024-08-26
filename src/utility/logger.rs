@@ -24,8 +24,8 @@ impl Logger {
             None          => label.to_string()
         };
         match inline {
-            true => print!("[{}] {}", prefix, content),
-            false  => println!("[{}] {}", prefix, content),
+            true  => print!("[{}] {}", prefix, content),
+            false => println!("[{}] {}", prefix, content),
         }
     }
 
