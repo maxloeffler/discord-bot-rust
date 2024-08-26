@@ -94,12 +94,11 @@ impl UserDecorator {
 
                 // prepare dropdown options
                 let last_messages = message.last_messages(20).await;
-                let mut set = HashSet::new();
+                let mut users_set = HashSet::from([message.get_author()]);
                 last_messages.iter().for_each(|message| {
-                    set.insert(&message.author);
+                    users_set.insert(&message.author);
                 });
-                let mut users: Vec<&User> = set.into_iter().collect();
-                users.push(message.get_author());
+                let users: Vec<&User> = users_set.into_iter().collect();
 
                 // create dropdown interaction
                 let selected_user = Arc::new(Mutex::new(None));

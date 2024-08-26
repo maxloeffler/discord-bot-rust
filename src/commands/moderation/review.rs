@@ -2,6 +2,8 @@
 use serenity::all::*;
 use nonempty::{NonEmpty, nonempty};
 
+use std::collections::HashSet;
+
 use crate::commands::command::{Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
@@ -174,11 +176,11 @@ impl Command for ReviewCommand {
                             .split(" ")
                             .map(|id| UserId::from(regex.find(&id).unwrap().as_str().parse::<u64>().unwrap()))
                             .collect::<Vec<_>>();
-                        let mut staff: Vec<User> = Vec::new();
+                        let mut staff = HashSet::new();
                         for id in staff_ids {
                             let user = resolver.resolve_user(id).await;
                             if let Some(user) = user {
-                                staff.push(user);
+                                staff.insert(user);
                             }
                         }
                         let staff: Vec<&User> = staff.iter().collect();

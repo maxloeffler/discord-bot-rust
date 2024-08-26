@@ -31,7 +31,16 @@ impl<'a> InteractionHelper<'_> {
 
     pub async fn create_buttons(&self,
                             message: impl ToMessage,
-                            buttons: Vec<CreateButton>) -> Option<String> {
+                            mut buttons: Vec<CreateButton>) -> Option<String> {
+
+        // handle button limit
+        if buttons.len() > 5 {
+            buttons = buttons[..5].to_vec();
+            Logger::err(
+                &format!(
+                    "Discord only supports up to 5 buttons per message ({} requested).",
+                    buttons.len()));
+        }
 
         // prepare message
         let message = message.to_message();
