@@ -26,10 +26,10 @@ impl Command for UnmuteCommand {
             .add_required("user")
             .new_usage()
             .add_required("user")
-            .add_required("-flag")
+            .add_constant("-flag", false)
             .add_required("reason")
-            .add_optional("-monthly")
-            .example("unmute @BadBoy -flag")
+            .add_constant("-monthly", false)
+            .example("@BadBoy -flag")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

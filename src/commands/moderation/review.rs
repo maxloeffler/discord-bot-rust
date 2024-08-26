@@ -74,9 +74,12 @@ impl Command for ReviewCommand {
         UsageBuilder::new(nonempty![
             "review".to_string(),
         ])
-            .add_required("-approve / -deny")
+            .add_constant("-approve", false)
             .add_optional("notes")
-            .example("review -approve You did a good job!")
+            .new_usage()
+            .add_constant("-deny", false)
+            .add_optional("notes")
+            .example("-approve You did a good job!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

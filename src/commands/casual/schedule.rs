@@ -15,9 +15,8 @@ impl Command for ScheduleCommand {
             "schedule".to_string(),
             "later".to_string(),
         ])
-            .add_required("time (0..86400s)")
-            .add_required("message")
-            .example("schedule 60 One minute later!")
+            .add_required(vec!["time (0..86400s)", "message"])
+            .example("60 One minute later!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

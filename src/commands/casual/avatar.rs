@@ -15,7 +15,7 @@ impl Command for AvatarCommand {
             "av".to_string()
         ])
             .add_required("user")
-            .example("avatar @Poggy")
+            .example("@Poggy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

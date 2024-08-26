@@ -21,8 +21,8 @@ impl Command for NotesCommand {
         ])
             .add_optional("label")
             .new_usage()
-            .add_required("-list")
-            .example("notes edate")
+            .add_constant("-list", false)
+            .example("edate")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

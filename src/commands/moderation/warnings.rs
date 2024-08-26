@@ -26,7 +26,7 @@ impl Command for WarningsCommand {
         ])
             .add_required("user")
             .add_optional("more")
-            .example("warnings @BadBoy")
+            .example("@BadBoy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

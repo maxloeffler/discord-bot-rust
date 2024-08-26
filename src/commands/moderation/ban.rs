@@ -25,7 +25,7 @@ impl Command for BanCommand {
         ])
             .add_required("user")
             .add_optional("reason")
-            .example("ban @JuicyJuggler we could not handle you anymore")
+            .example("@JuicyJuggler we could not handle you anymore")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

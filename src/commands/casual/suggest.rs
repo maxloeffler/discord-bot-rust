@@ -19,7 +19,7 @@ impl Command for SuggestCommand {
             "suggest".to_string(),
         ])
             .add_required("message")
-            .example("suggest Add unicorns to planet earth!")
+            .example("Add unicorns to planet earth!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

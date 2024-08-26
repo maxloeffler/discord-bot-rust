@@ -16,11 +16,10 @@ impl Command for RemindCommand {
             "remind-me".to_string(),
             "reminder".to_string(),
         ])
-            .add_required("time (0..604800s)")
-            .add_required("message")
+            .add_required(vec!["time (0..604800s)", "message"])
             .new_usage()
-            .add_required("-list")
-            .example("remind 60 One minute later!")
+            .add_constant("-list", false)
+            .example("60 One minute later!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

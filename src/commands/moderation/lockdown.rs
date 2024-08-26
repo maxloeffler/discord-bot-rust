@@ -29,7 +29,7 @@ impl Command for LockdownCommand {
             "lockdown".to_string(),
         ])
             .new_usage()
-            .add_required("-end")
+            .add_constant("-end", false)
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

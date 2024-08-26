@@ -25,7 +25,7 @@ impl Command for UnbanCommand {
         ])
             .add_required("user-id")
             .add_optional("reason")
-            .example("unban @RecoveredRobin has promised to behave")
+            .example("@RecoveredRobin has promised to behave")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

@@ -21,14 +21,17 @@ impl Command for FlagCommand {
 
     fn define_usage(&self) -> UsageBuilder {
         UsageBuilder::new(nonempty![
-            "manual-flag".to_string(),
             "manually-flag".to_string(),
+            "manual-flag".to_string(),
             "manflag".to_string(),
         ])
             .add_required("user")
             .add_optional("reason")
-            .add_optional("-monthly")
-            .example("manually-flag @GoodGirl repeatedly being bad -monthly")
+            .new_usage()
+            .add_required("user")
+            .add_optional("reason")
+            .add_constant("-monthly", false)
+            .example("@GoodGirl repeatedly being bad -monthly")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

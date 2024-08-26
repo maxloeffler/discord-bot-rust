@@ -174,20 +174,17 @@ impl CommandManager {
         else {
 
             // find command
-            let trigger = payload.split_whitespace().next().unwrap();
-            let message = &message.spoof(
-                format!("{}{}", message.get_prefix().unwrap(), trigger)).await;
+            let trigger = &payload.split_whitespace().next().unwrap().to_string();
 
             // match command
             let triggerables = self.commands.iter()
                 .map(|command| command as &dyn Triggerable)
                 .collect::<Vec<_>>();
-            let index = match_triggerables(message, &message.get_command().unwrap(), triggerables).await;
+            let index = match_triggerables(message, &trigger, triggerables).await;
 
             // display usage
             if let Ok(index) = index {
                 let command = &self.commands[index];
-                self.run_command(command, message).await;
                 let params = CommandParams::new(message.clone());
                 command.display_usage(params, "Command Description".to_string()).await;
             }

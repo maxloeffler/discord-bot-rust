@@ -19,7 +19,7 @@ impl Command for RemoveWarningCommand {
             "remove-warning".to_string()
         ])
             .add_required("database ID")
-            .example("remove-warn 12")
+            .example("12")
     }
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {

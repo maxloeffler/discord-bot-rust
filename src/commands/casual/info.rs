@@ -14,7 +14,7 @@ impl Command for InfoCommand {
             "info".to_string(),
         ])
             .add_required("user")
-            .example("avatar @Poggy")
+            .example("@Poggy")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

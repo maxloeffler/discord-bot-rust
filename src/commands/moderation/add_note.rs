@@ -19,11 +19,8 @@ impl Command for AddNoteCommand {
             "add-note".to_string(),
             "addnote".to_string(),
         ])
-            .add_required("-label")
-            .add_required("label")
-            .add_required("-content")
-            .add_required("content")
-            .example("add-note -label Edate -content Edating is a great falacy!")
+            .add_constant(vec!["-label", "-content"], true)
+            .example("-label Edate -content Edating is a great falacy!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

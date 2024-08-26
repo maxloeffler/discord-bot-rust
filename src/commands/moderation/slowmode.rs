@@ -29,8 +29,8 @@ impl Command for SlowmodeCommand {
         ])
             .add_required("delay (0 .. 21600s)")
             .new_usage()
-            .add_required("-off")
-            .example("slowmode 11")
+            .add_constant("-off", false)
+            .example("11")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

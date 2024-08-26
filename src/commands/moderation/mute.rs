@@ -25,7 +25,7 @@ impl Command for MuteCommand {
         ])
             .add_required("user")
             .add_optional("reason")
-            .example("mute @BadBoy continuously being bad")
+            .example("@BadBoy continuously being bad")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

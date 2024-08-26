@@ -26,7 +26,7 @@ impl Command for CheckBanCommand {
             "bans".to_string(),
         ])
             .add_required("user-id")
-            .example("check-ban 996364193588592740")
+            .example("996364193588592740")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

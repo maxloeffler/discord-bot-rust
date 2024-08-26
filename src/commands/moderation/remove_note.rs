@@ -20,7 +20,7 @@ impl Command for RemoveNoteCommand {
             "removenote".to_string(),
         ])
             .add_required("label")
-            .example("remove-note OldRule")
+            .example("Deprecated Note")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

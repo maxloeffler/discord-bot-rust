@@ -50,7 +50,7 @@ pub trait Command: Send + Sync {
                         .title(title)
                         .description(&usage)
                         .footer(CreateEmbedFooter::new(
-                            format!("Syntax Legend: <> = required, [] = optional"),
+                            format!("Syntax Legend: () = required, [] = optional"),
                         ))
                 }).await;
                 let _ = message.reply(embed.to_message()).await;

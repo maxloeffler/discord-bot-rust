@@ -18,10 +18,11 @@ impl Command for PollCommand {
         UsageBuilder::new(nonempty![
             "poll".to_string(),
         ])
-            .add_required("-title")
-            .add_required("-opts")
-            .add_constant("+option1 +option2 ... +option9")
-            .example("poll -title What is the best color? -opts +Reddish Blue +Blue +Green")
+            .add_constant("-title", true)
+            .add_constant("-opts", false)
+            .add_required("+option1")
+            .add_optional("+option2 .. +option9")
+            .example("-title What is the best color? -opts +Reddish Blue +Blue +Green")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

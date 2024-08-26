@@ -22,9 +22,8 @@ impl Command for NicknameCommand {
             "nick".to_string(),
             "nickname".to_string(),
         ])
-            .add_required("user")
-            .add_required("nickname")
-            .example("nick @Poggy Poggor")
+            .add_required(vec!["user", "nickname"])
+            .example("@Poggy Poggor")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

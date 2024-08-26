@@ -43,7 +43,7 @@ impl Command for EightBallCommand {
             "eightball".to_string(),
         ])
             .add_required("question")
-            .example("8ball Will I get a promotion to moderator next week?")
+            .example("Will I get a promotion to moderator next week?")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

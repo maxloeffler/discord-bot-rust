@@ -20,7 +20,7 @@ impl Command for TweetCommand {
             "tweet".to_string(),
         ])
             .add_required("message (max 280 characters)")
-            .example("tweet Twitter is now X!")
+            .example("Twitter is now X!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

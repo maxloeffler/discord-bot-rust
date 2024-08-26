@@ -24,9 +24,8 @@ impl Command for AddEmojiCommand {
         ])
             .add_required("emoji-id")
             .new_usage()
-            .add_required("name")
-            .add_required("img-url")
-            .example("add-emoji <:pandauwu:1259245515309060238>")
+            .add_required(vec!["name", "img-url"])
+            .example("<:pandauwu:1259245515309060238>")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

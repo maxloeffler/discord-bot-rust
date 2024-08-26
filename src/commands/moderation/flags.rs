@@ -25,8 +25,10 @@ impl Command for FlagsCommand {
             "flags".to_string(),
         ])
             .add_required("user")
-            .add_optional("-more")
-            .example("flags @BadBoy -more")
+            .new_usage()
+            .add_required("user")
+            .add_constant("-more", false)
+            .example("@BadBoy -more")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

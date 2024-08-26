@@ -25,7 +25,7 @@ impl Command for WarnCommand {
         ])
             .add_required("user")
             .add_optional("reason")
-            .example("warn @BadBoy being bad")
+            .example("@BadBoy being bad")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

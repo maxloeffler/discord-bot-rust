@@ -26,9 +26,8 @@ impl Command for RoleCommand {
         UsageBuilder::new(nonempty![
             "role".to_string(),
         ])
-            .add_required("user")
-            .add_required("rolenames")
-            .example("role @UnhappyCustomer Europe Blue")
+            .add_required(vec!["user", "rolenames"])
+            .example("@UnhappyCustomer Europe Blue")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

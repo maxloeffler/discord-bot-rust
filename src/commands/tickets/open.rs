@@ -21,11 +21,11 @@ impl Command for OpenTicketCommand {
             "open".to_string(),
         ])
             .add_required("user")
-            .add_required("m")
+            .add_constant("m", false)
             .new_usage()
             .add_required("user")
-            .add_required("d")
-            .example("open @ModAnnoyer m")
+            .add_constant("d", false)
+            .example("@ModAnnoyer m")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

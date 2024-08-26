@@ -26,9 +26,9 @@ impl Command for PurgeCommand {
         UsageBuilder::new(nonempty![
             "purge".to_string(),
         ])
-            .add_required("amount (between 1 and 100)")
+            .add_required("amount (1..100)")
             .add_optional("user")
-            .example("purge 15 @EvilCorp")
+            .example("15 @EvilCorp")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

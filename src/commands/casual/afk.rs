@@ -14,8 +14,8 @@ impl Command for AfkCommand {
         UsageBuilder::new(nonempty![
             "afk".to_string()
         ])
-            .add_optional("message (>= 154 characters)")
-            .example("afk I am going afk now :)")
+            .add_optional("message (max 154 characters)")
+            .example("I am going afk now :)")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
