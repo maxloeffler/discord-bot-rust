@@ -59,7 +59,7 @@ macro_rules! as_db_entry {
 }
 
 as_db_entry!(ModLog, staff_id: String, reason: String);
-as_db_entry!(FlagLog, staff_id: String, member_id: String, reason: String, monthly: bool);
+as_db_entry!(FlagLog, staff_id: String, reason: String, monthly: bool);
 as_db_entry!(TicketReviewLog, reviewer_id: String, approved: bool, notes: String);
 
 impl FlagLog {
@@ -80,7 +80,6 @@ impl From<FlagLog> for ModLog {
             key: flag_log.key,
             timestamp: flag_log.timestamp,
             staff_id: flag_log.staff_id,
-            member_id: flag_log.member_id,
             reason: flag_log.reason
         }
     }

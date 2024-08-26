@@ -47,7 +47,7 @@ impl Command for RemoveWarningCommand {
 
                 // resolve target
                 let log = &warn.unwrap()[0];
-                let user_id = UserId::from(log.member_id.parse::<u64>().unwrap());
+                let user_id = UserId::from(log.key.parse::<u64>().unwrap());
                 let target = message.get_resolver().resolve_user(user_id).await.unwrap();
 
                 // log to mod logs

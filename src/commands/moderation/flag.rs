@@ -50,7 +50,6 @@ impl Command for FlagCommand {
 
                 // log to database
                 let log = FlagLog::new(
-                    target.id.to_string(),
                     message.get_author().id.to_string(),
                     reason,
                     monthly,

@@ -55,16 +55,16 @@ impl EventHandler for Handler {
 
         // parse message
         let resolver = Resolver::new(ctx, msg.guild_id);
-        let message = Arc::new(MessageManager::new(resolver, msg).await);
+        let mut message = Arc::new(MessageManager::new(resolver, msg).await);
 
         // if message pings the bot
         let bot_id = &ConfigDB::get_instance().lock().await
             .get("bot_id").await.unwrap().to_string();
-        let bot_pings = vec![format!("<@!{}>", bot_id),
-                             format!("<@{}>",  bot_id)];
+        let bot_pings = vec![format!("<@!{}>", bot_id), format!("<@{}>",  bot_id)];
         if bot_pings.contains(&message.payload(None, None)) {
-            let _ = message.reply("Hello!").await;
-            return;
+            let prefix = ConfigDB::get_instance().lock().await
+                .get("command_prefix").await.unwrap().to_string();
+            message = message.spoof(format!("{}about", prefix)).await.into();
         }
 
         // directly delete messages in the verify channel

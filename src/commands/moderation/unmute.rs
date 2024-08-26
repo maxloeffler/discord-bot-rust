@@ -81,7 +81,6 @@ impl Command for UnmuteCommand {
 
                     // log flag to database
                     let log = FlagLog::new(
-                        target.id.to_string(),
                         message.get_author().id.to_string(),
                         reason.clone(),
                         monthly
