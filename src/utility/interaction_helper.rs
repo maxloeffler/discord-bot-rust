@@ -36,7 +36,7 @@ impl<'a> InteractionHelper<'_> {
         // handle button limit
         if buttons.len() > 5 {
             buttons = buttons[..5].to_vec();
-            Logger::err(
+            Logger::warn(
                 &format!(
                     "Discord only supports up to 5 buttons per message ({} requested).",
                     buttons.len()));

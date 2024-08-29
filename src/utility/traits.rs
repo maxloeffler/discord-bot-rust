@@ -245,6 +245,7 @@ pub async fn match_triggerables<'a>
 
     // initialize search
     let mut fuzzy_matches = Vec::new();
+    let compare = &compare.to_lowercase();
 
     for (i, triggerable) in triggerables.clone().into_iter().enumerate() {
         match triggerable.is_triggered_by(compare) {
@@ -260,8 +261,8 @@ pub async fn match_triggerables<'a>
     let buttons = fuzzy_matches.iter().enumerate()
         .map(|(i, (_, closest_match))| {
             CreateButton::new(i.to_string())
-                .label(closest_match)
-                .style(ButtonStyle::Secondary)
+                .label(Note::deescape(closest_match.to_string()))
+                .style(ButtonStyle::Primary)
         }).collect::<Vec<_>>();
 
     if buttons.is_empty() {

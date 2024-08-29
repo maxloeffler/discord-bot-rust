@@ -20,7 +20,7 @@ impl Command for AddNoteCommand {
             "addnote".to_string(),
         ])
             .add_constant(vec!["-label", "-content"], true)
-            .example("-label Edate -content Edating is a great falacy!")
+            .example("-label Edate -content Edating is a great fallacy!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

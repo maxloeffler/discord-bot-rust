@@ -106,7 +106,7 @@ impl Note {
 
 impl Triggerable for Note {
     fn get_triggers(&self) -> NonEmpty<String> {
-        nonempty![self.key.clone()]
+        nonempty![Note::deescape(self.key.clone())]
     }
 }
 

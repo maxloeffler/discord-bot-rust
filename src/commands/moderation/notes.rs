@@ -30,7 +30,7 @@ impl Command for NotesCommand {
             async move {
 
                 let message = &params.message;
-                let label = Note::escape(message.payload(None, None));
+                let label = message.payload(None, None);
 
                 // list all notes
                 if message.has_parameter("list") || label.is_empty() {
@@ -41,7 +41,7 @@ impl Command for NotesCommand {
                         .into_iter()
                         .map(|key| format!("`{}`", Note::deescape(key)))
                         .collect::<Vec<String>>()
-                        .join("\n");
+                        .join(", ");
 
                     // create embed
                     let embed = MessageManager::create_embed(|embed| {
