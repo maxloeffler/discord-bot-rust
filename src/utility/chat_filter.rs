@@ -82,7 +82,7 @@ impl ChatFilter {
 
         for word in message.words.iter() {
 
-            if self.slurs.contains(&word) {
+            if self.slurs.contains(&word.to_lowercase()) {
                 return Filter {
                     filter_type: FilterType::Slur,
                     context: word.to_string()
@@ -111,7 +111,7 @@ impl ChatFilter {
                         if let Some(category) = channel.parent_id {
                             if category == category_music {
                                 for music_domain in &self.music_domains {
-                                    if word.contains(music_domain) {
+                                    if word.to_lowercase().contains(music_domain) {
                                         external = false;
                                         break;
                                     }
