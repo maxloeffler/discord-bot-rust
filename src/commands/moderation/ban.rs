@@ -82,7 +82,7 @@ impl Command for BanCommand {
                     let guild = resolver.resolve_guild(None).await.unwrap();
                     let notify_message = message.get_log_builder()
                         .title("You've been banned!")
-                        .description(&format!("You have been banned from {} for \"{}\"\nYou can appeal your ban [here](https://dyno.gg/form/76afa59d) if you believe we made a mistake!",
+                        .description(&format!("You have been banned from {} for \"{}\"\nYou can appeal your ban [here](https://dyno.gg/form/f2f3a893) if you believe that we made a mistake!",
                             guild.name,
                             reason))
                         .target(&target)
