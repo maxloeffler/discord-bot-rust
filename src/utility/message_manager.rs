@@ -77,7 +77,7 @@ impl MessageManager {
         if self.words.len() > 0 {
             let prefix = ConfigDB::get_instance()
                 .get("command_prefix").await.unwrap().to_string();
-            if self.words[0].starts_with(&prefix) {
+            if self.words[0].starts_with(&prefix) && self.words[0].len() > 1 {
                 let command = self.words[0].to_string();
                 self.command = command.strip_prefix(&prefix).map(|s| s.to_string());
                 self.prefix = Some(prefix);
