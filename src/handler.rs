@@ -80,7 +80,7 @@ impl EventHandler for Handler {
             let embed = MessageManager::create_embed(|embed| {
                 embed.description("Removed your afk.")
             }).await;
-            let _ = message.reply(embed).await;
+            let _ = message.reply_temporary(embed).await;
             AfkDB::get_instance().delete(&author_id).await;
         }
 
