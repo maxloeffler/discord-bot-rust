@@ -5,7 +5,7 @@ use futures::StreamExt;
 
 use std::sync::Arc;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -15,9 +15,10 @@ pub struct PollCommand;
 impl Command for PollCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "poll".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["poll".to_string()]
+        )
             .add_constant("-title", true)
             .add_constant("-opts", false)
             .add_required("+option1")

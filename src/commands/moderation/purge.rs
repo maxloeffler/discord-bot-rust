@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -23,9 +23,10 @@ impl Command for PurgeCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "purge".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["purge".to_string()]
+        )
             .add_required("amount (1..100)")
             .add_optional("user")
             .example("15 @EvilCorp")

@@ -209,6 +209,10 @@ pub trait Triggerable: Sync {
 
     fn get_triggers(&self) -> NonEmpty<String>;
 
+    fn trigger(&self) -> String {
+        self.get_triggers().head.clone()
+    }
+
     fn is_triggered_by(&self, compare: &String) -> MatchType {
 
         let compare = compare.to_lowercase();
@@ -290,9 +294,9 @@ pub async fn match_triggerables<'a>
     // execute callback
     if let Some(pressed) = pressed {
         let button_index = pressed.parse::<usize>().unwrap();
-        let fuzzy_match = fuzzy_matches[button_index].0.get_triggers()[0].clone();
+        let fuzzy_match = fuzzy_matches[button_index].0.trigger();
         let triggerables_position = triggerables.into_iter()
-            .position(|triggerable| fuzzy_match == triggerable.get_triggers()[0]);
+            .position(|triggerable| fuzzy_match == triggerable.trigger());
         return Ok(triggerables_position.unwrap());
     }
 

@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,9 +20,10 @@ impl Command for UnbanCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "unban".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["unban".to_string()]
+        )
             .add_required("user-id")
             .add_optional("reason")
             .example("@RecoveredRobin has promised to behave")

@@ -6,7 +6,7 @@ use chrono::Utc;
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -16,10 +16,10 @@ pub struct DeadchatCommand;
 impl Command for DeadchatCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "dcp".to_string(),
-            "deadchat".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["dcp".to_string(), "deadchat".to_string()]
+        )
             .add_optional("message")
     }
 

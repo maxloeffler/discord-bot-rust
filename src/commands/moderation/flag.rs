@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,11 +20,10 @@ impl Command for FlagCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "manually-flag".to_string(),
-            "manual-flag".to_string(),
-            "manflag".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["manually-flag".to_string(), "manual-flag".to_string(), "manflag".to_string()]
+        )
             .add_required("user")
             .add_optional("reason")
             .new_usage()

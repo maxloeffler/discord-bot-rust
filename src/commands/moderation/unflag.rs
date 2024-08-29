@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,9 +20,10 @@ impl Command for UnflagCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "unflag".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["unflag".to_string()]
+        )
             .add_required("user")
     }
 

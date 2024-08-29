@@ -3,7 +3,7 @@ use serenity::builder::CreateAttachment;
 use serenity::utils::parse_emoji;
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 
 
@@ -18,9 +18,9 @@ impl Command for AddEmojiCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "add-emoji".to_string(),
-            "addemoji".to_string(),
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["add-emoji".to_string(), "addemoji".to_string(),
         ])
             .add_required("emoji-id")
             .new_usage()

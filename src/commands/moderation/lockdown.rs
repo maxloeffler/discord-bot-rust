@@ -9,7 +9,7 @@ use std::cmp::min;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -25,9 +25,10 @@ impl Command for LockdownCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "lockdown".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["lockdown".to_string()]
+        )
             .new_usage()
             .add_constant("-end", false)
     }

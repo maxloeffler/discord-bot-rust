@@ -4,7 +4,7 @@ use serenity::all::UserId;
 use rand::seq::SliceRandom;
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -38,10 +38,10 @@ impl EightBallCommand {
 impl Command for EightBallCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "8ball".to_string(),
-            "eightball".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Games,
+            nonempty!["8ball".to_string(), "eightball".to_string()]
+        )
             .add_required("question")
             .example("Will I get a promotion to moderator next week?")
     }

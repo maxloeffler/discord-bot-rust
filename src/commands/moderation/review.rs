@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::collections::HashSet;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -73,9 +73,10 @@ impl Command for ReviewCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "review".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["review".to_string()]
+        )
             .add_constant("-approve", false)
             .add_optional("notes")
             .new_usage()

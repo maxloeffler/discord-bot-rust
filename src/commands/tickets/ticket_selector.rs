@@ -4,7 +4,7 @@ use serenity::builder::{CreateSelectMenu, CreateSelectMenuKind, CreateSelectMenu
 use serenity::model::id::UserId;
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,10 +20,10 @@ impl Command for TicketSelectorCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "select-ticket".to_string(),
-            "ticket-selector".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Tickets,
+            nonempty!["select-ticket".to_string(), "ticket-selector".to_string()]
+        )
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

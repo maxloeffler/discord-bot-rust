@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -15,10 +15,10 @@ pub struct NotesCommand;
 impl Command for NotesCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "notes".to_string(),
-            "cc".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["notes".to_string(),"cc".to_string()]
+        )
             .add_optional("label")
             .new_usage()
             .add_constant("-list", false)
@@ -36,18 +36,18 @@ impl Command for NotesCommand {
                 if message.has_parameter("list") || label.is_empty() {
 
                     // get all notes
-                    let notes = NotesDB::get_instance()
-                        .get_keys().await
-                        .into_iter()
+                    let mut notes = NotesDB::get_instance()
+                        .get_keys().await;
+                    notes.sort();
+                    notes = notes.into_iter()
                         .map(|key| format!("`{}`", Note::deescape(key)))
-                        .collect::<Vec<String>>()
-                        .join(", ");
+                        .collect::<Vec<String>>();
 
                     // create embed
                     let embed = MessageManager::create_embed(|embed| {
                         embed
                             .title("List of all Notes")
-                            .description(&notes)
+                            .description(&notes.join(", "))
                     }).await;
                     let _ = message.reply(embed).await;
 

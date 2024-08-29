@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,9 +20,10 @@ impl Command for UnmuteCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "unmute".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["unmute".to_string()]
+        )
             .add_required("user")
             .new_usage()
             .add_required("user")

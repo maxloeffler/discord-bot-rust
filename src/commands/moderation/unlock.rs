@@ -8,7 +8,7 @@ use std::cmp::min;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -24,10 +24,10 @@ impl Command for UnlockCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "unlock".to_string(),
-            "unlock-user".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["unlock".to_string(), "unlock-user".to_string()]
+        )
             .add_required("user")
     }
 

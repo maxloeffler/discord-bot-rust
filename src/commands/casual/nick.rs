@@ -2,7 +2,7 @@
 use serenity::builder::EditMember;
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 
 
@@ -18,10 +18,10 @@ impl Command for NicknameCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "nick".to_string(),
-            "nickname".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["nick".to_string(), "nickname".to_string()]
+        )
             .add_required(vec!["user", "nickname"])
             .example("@Poggy Poggor")
     }

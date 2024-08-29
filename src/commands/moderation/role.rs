@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -23,9 +23,10 @@ impl Command for RoleCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "role".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["role".to_string()]
+        )
             .add_required(vec!["user", "rolenames"])
             .example("@UnhappyCustomer Europe Blue")
     }

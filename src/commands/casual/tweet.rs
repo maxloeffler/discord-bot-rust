@@ -6,7 +6,7 @@ use chrono::Utc;
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -16,9 +16,10 @@ pub struct TweetCommand;
 impl Command for TweetCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "tweet".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["tweet".to_string()]
+        )
             .add_required("message (max 280 characters)")
             .example("Twitter is now X!")
     }

@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -20,11 +20,10 @@ impl Command for CheckBanCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "check-ban".to_string(),
-            "checkban".to_string(),
-            "bans".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["check-ban".to_string(), "checkban".to_string(), "bans".to_string()]
+        )
             .add_required("user-id")
             .example("996364193588592740")
     }

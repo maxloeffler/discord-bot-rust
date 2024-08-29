@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -11,10 +11,10 @@ pub struct ScheduleCommand;
 impl Command for ScheduleCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "schedule".to_string(),
-            "later".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["schedule".to_string(),"later".to_string()]
+        )
             .add_required(vec!["time (0..86400s)", "message"])
             .example("60 One minute later!")
     }

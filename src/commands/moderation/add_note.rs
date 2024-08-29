@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -15,10 +15,10 @@ pub struct AddNoteCommand;
 impl Command for AddNoteCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "add-note".to_string(),
-            "addnote".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["add-note".to_string(), "addnote".to_string()]
+        )
             .add_constant(vec!["-label", "-content"], true)
             .example("-label Edate -content Edating is a great fallacy!")
     }

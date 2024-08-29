@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -11,9 +11,10 @@ pub struct AfkCommand;
 impl Command for AfkCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "afk".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["afk".to_string()]
+        )
             .add_optional("message (max 154 characters)")
             .example("I am going afk now :)")
     }

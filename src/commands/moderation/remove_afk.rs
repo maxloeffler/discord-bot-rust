@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -11,9 +11,10 @@ pub struct RemoveAfkCommand;
 impl Command for RemoveAfkCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "remove-afk".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["remove-afk".to_string()]
+        )
             .add_required("user")
     }
 

@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -17,10 +17,10 @@ impl Command for AddMemberToTicketCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "add-user".to_string(),
-            "add".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Tickets,
+            nonempty!["add-user".to_string(), "add".to_string()]
+        )
             .add_required("user")
     }
 

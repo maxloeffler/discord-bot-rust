@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 use std::cmp::min;
 use std::sync::Arc;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -21,9 +21,10 @@ impl Command for WarningsCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "warnings".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["warnings".to_string()]
+        )
             .add_required("user")
             .add_optional("more")
             .example("@BadBoy")

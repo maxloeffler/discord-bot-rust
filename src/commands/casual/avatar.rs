@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 
 
@@ -10,10 +10,10 @@ pub struct AvatarCommand;
 impl Command for AvatarCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "avatar".to_string(),
-            "av".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["av".to_string(), "avatar".to_string()]
+        )
             .add_required("user")
             .example("@Poggy")
     }

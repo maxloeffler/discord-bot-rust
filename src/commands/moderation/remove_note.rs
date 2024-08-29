@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -15,10 +15,10 @@ pub struct RemoveNoteCommand;
 impl Command for RemoveNoteCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "remove-note".to_string(),
-            "removenote".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["remove-note".to_string(),"removenote".to_string()]
+        )
             .add_required("label")
             .example("Deprecated Note")
     }

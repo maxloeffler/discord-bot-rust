@@ -7,7 +7,7 @@ use std::cmp::min;
 use std::sync::Arc;
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -23,10 +23,10 @@ impl Command for SlowmodeCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "slowmode".to_string(),
-            "slow".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["slowmode".to_string(), "slow".to_string()]
+        )
             .add_required("delay (0 .. 21600s)")
             .new_usage()
             .add_constant("-off", false)

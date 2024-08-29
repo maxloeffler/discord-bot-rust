@@ -2,7 +2,7 @@
 use serenity::all::UserId;
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -12,9 +12,10 @@ pub struct AboutCommand;
 impl Command for AboutCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "about".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["about".to_string()]
+        )
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {

@@ -2,12 +2,13 @@
 use serenity::builder::CreateButton;
 use serenity::all::ButtonStyle;
 use serenity::all::UserId;
+use strum::IntoEnumIterator;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::str::FromStr;
 
-use crate::commands::command::CommandParams;
+use crate::commands::command::{CommandType, CommandParams};
 use crate::utility::*;
 use crate::commands::*;
 use crate::databases::*;
@@ -139,26 +140,15 @@ impl CommandManager {
             .get("bot_id").await.unwrap().into();
         let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
-        // display all available commands
+        // display categories
         let payload = message.payload(None, None);
         if payload.is_empty() {
 
-            // filter commands
-            let mut allowed_commands = Vec::new();
-            for command in self.commands.iter() {
-                if command.permission(message).await {
-                    allowed_commands.push(command);
-                }
-            }
-
-            // collect commands
-            let prefix = message.get_prefix().unwrap();
-            let description = allowed_commands.into_iter()
-                .map(|command| {
-                    format!("`{}{}`", prefix, command.define_usage().triggers[0].clone())
-                })
+            let categories = CommandType::iter()
+                .map(|category| format!("`{}`", category.to_string()))
                 .collect::<Vec<_>>()
-                .join("\n");
+                .join(", ");
+            let description = format!("Commands are categorized into groups which are listed below. If you cannot find the command you are searching for or if you need help with anything else, you can make a ticket through our tickets channel.\n\n**Categories**\n{categories}");
 
             // create embed
             let embed = message.get_log_builder()
@@ -176,6 +166,34 @@ impl CommandManager {
             // find command
             let trigger = &payload.split_whitespace().next().unwrap().to_string();
 
+            for command_type in CommandType::iter() {
+                if command_type.to_string().to_lowercase() == *trigger.to_lowercase() {
+
+                    // filter commands
+                    let mut commands = Vec::new();
+                    for command in self.commands.iter() {
+                        if command.define_usage().command_type == command_type {
+                            commands.push(command);
+                        }
+                    }
+
+                    let mut command_strings = commands.iter()
+                        .map(|command| format!("`{}{}`", message.get_prefix().unwrap(), command.trigger()))
+                        .collect::<Vec<_>>();
+                    command_strings.sort();
+
+                    // create embed
+                    let embed = message.get_log_builder()
+                        .target(&bot)
+                        .no_thumbnail()
+                        .title(format!("{} Commands", command_type.to_string()))
+                        .description(&command_strings.join(", "))
+                        .build().await;
+                    let _ = message.reply(embed.to_message()).await;
+                    return;
+                }
+            }
+
             // match command
             let triggerables = self.commands.iter()
                 .map(|command| command as &dyn Triggerable)
@@ -188,8 +206,6 @@ impl CommandManager {
                 let params = CommandParams::new(message.clone());
                 command.display_usage(params, "Command Description".to_string()).await;
             }
-
         }
     }
-
 }

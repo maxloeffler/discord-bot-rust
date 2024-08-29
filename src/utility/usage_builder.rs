@@ -1,6 +1,7 @@
 
 use nonempty::NonEmpty;
 
+use crate::commands::command::CommandType;
 use crate::utility::*;
 
 
@@ -18,6 +19,7 @@ struct Parameter {
 type Usage = Vec<Parameter>;
 
 pub struct UsageBuilder {
+    pub command_type: CommandType,
     pub triggers: NonEmpty<String>,
     usage: Vec<Usage>,
     example: Option<String>,
@@ -25,8 +27,9 @@ pub struct UsageBuilder {
 
 impl UsageBuilder {
 
-    pub fn new(triggers: NonEmpty<String>) -> UsageBuilder {
+    pub fn new(command_type: CommandType, triggers: NonEmpty<String>) -> UsageBuilder {
         UsageBuilder {
+            command_type: command_type,
             triggers: triggers,
             usage: Vec::new(),
             example: None,

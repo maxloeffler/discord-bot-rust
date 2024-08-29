@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 use std::cmp::min;
 use std::sync::Arc;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -21,10 +21,10 @@ impl Command for TicketReviewsCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "ticket-reviews".to_string(),
-            "reviews".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Tickets,
+            nonempty!["ticket-reviews".to_string(), "reviews".to_string()]
+        )
             .add_required("user")
     }
 

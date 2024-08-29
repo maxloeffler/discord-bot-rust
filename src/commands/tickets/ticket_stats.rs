@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -14,9 +14,10 @@ pub struct TicketStatsCommand;
 impl Command for TicketStatsCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "ticket-stats".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Tickets,
+            nonempty!["ticket-stats".to_string()]
+        )
             .add_optional("user")
     }
 

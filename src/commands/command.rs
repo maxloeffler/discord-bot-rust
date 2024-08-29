@@ -2,6 +2,7 @@
 use serenity::builder::CreateEmbedFooter;
 use serenity::model::user::User;
 use nonempty::NonEmpty;
+use strum_macros::EnumIter;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -9,6 +10,37 @@ use std::collections::HashSet;
 
 use crate::utility::*;
 
+
+#[derive(PartialEq, EnumIter)]
+pub enum CommandType {
+    Casual,
+    Games,
+    Moderation,
+    Tickets
+}
+
+impl CommandType {
+    pub fn to_string(&self) -> String {
+        match self {
+            CommandType::Casual => "Casual".to_string(),
+            CommandType::Games => "Games".to_string(),
+            CommandType::Moderation => "Moderation".to_string(),
+            CommandType::Tickets => "Tickets".to_string(),
+        }
+    }
+}
+
+impl From<String> for CommandType {
+    fn from(s: String) -> Self {
+        match s.as_str() {
+            "Casual" => CommandType::Casual,
+            "Games" => CommandType::Games,
+            "Moderation" => CommandType::Moderation,
+            "Tickets" => CommandType::Tickets,
+            _ => CommandType::Casual,
+        }
+    }
+}
 
 pub struct CommandParams {
     pub message: MessageManager,

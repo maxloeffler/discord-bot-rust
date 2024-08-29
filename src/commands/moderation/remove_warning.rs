@@ -4,7 +4,7 @@ use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::{CommandType, Command, CommandParams};
 use crate::utility::*;
 use crate::databases::*;
 
@@ -14,10 +14,10 @@ pub struct RemoveWarningCommand;
 impl Command for RemoveWarningCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "remove-warn".to_string(),
-            "remove-warning".to_string()
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["remove-warn".to_string(), "remove-warning".to_string()],
+        )
             .add_required("database ID")
             .example("12")
     }

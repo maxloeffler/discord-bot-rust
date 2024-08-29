@@ -5,7 +5,7 @@ use nonempty::{NonEmpty, nonempty};
 use std::cmp::min;
 use std::sync::Arc;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -21,9 +21,10 @@ impl Command for FlagsCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "flags".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["flags".to_string()]
+        )
             .add_required("user")
             .new_usage()
             .add_required("user")

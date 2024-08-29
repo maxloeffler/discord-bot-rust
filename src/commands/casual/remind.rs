@@ -1,7 +1,7 @@
 
 use nonempty::{NonEmpty, nonempty};
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -11,11 +11,10 @@ pub struct RemindCommand;
 impl Command for RemindCommand {
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "remind".to_string(),
-            "remind-me".to_string(),
-            "reminder".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Casual,
+            nonempty!["remind".to_string(), "remind-me".to_string(), "reminder".to_string()]
+        )
             .add_required(vec!["time (0..604800s)", "message"])
             .new_usage()
             .add_constant("-list", false)

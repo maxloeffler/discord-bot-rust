@@ -5,7 +5,7 @@ use chrono::Utc;
 
 use std::str::FromStr;
 
-use crate::commands::command::{Command, CommandParams};
+use crate::commands::command::*;
 use crate::utility::*;
 use crate::databases::*;
 
@@ -51,10 +51,10 @@ impl Command for ModStatsCommand {
     }
 
     fn define_usage(&self) -> UsageBuilder {
-        UsageBuilder::new(nonempty![
-            "mod-stats".to_string(),
-            "modstats".to_string(),
-        ])
+        UsageBuilder::new(
+            CommandType::Moderation,
+            nonempty!["mod-stats".to_string(),"modstats".to_string()]
+        )
             .add_required("user")
     }
 
