@@ -205,13 +205,9 @@ impl Resolver {
     }
 
     pub async fn has_role(&self, user: &User, roles: impl ToList<RoleId>) -> bool {
-        if let Some(guild) = self.guild_id {
-            for role in roles.to_list() {
-                let has_role = user.has_role(self.ctx.clone(), guild.clone(), role).await;
-                if let Ok(true) = has_role {
-                    return true;
-                }
-            }
+        let member = self.resolve_member(user).await;
+        if let Some(member) = member {
+            return roles.to_list().iter().any(|role| member.roles.contains(role));
         }
         false
     }

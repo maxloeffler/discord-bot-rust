@@ -78,6 +78,7 @@ impl ChatFilter {
         let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
         let link_perm_roles = message.get_resolver().resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
+        let has_link_perms = message.has_role(link_perm_roles).await;
 
         for word in message.words.iter() {
 
@@ -88,8 +89,7 @@ impl ChatFilter {
                 };
             }
 
-            // users above level 30 can bypass link filter
-            if message.has_role(link_perm_roles.clone()).await {
+            if has_link_perms {
                 continue;
             }
 
