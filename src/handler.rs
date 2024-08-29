@@ -275,7 +275,7 @@ impl EventHandler for Handler {
             }
 
             let name = resolver.resolve_name(message.get_author());
-            let log_builder = message.get_log_builder()
+            let mut log_builder = message.get_log_builder()
                 .title(&format!("{}'s Message Deleted", name))
                 .description("Message Information")
                 .labeled_timestamp("Sent", message.get_timestamp())
@@ -283,20 +283,12 @@ impl EventHandler for Handler {
                 .channel();
 
             // split message content into chunks of 1024 because of Discord embed field limit
-            let chars = message.payload(None, None)
-                .chars().collect::<Vec<_>>();
-            let chunks = chars
-                .chunks(1024)
-                .collect::<Vec<_>>();
-            let _ = chunks
-                .iter()
-                .enumerate()
-                .for_each(|(i, chunk)| {
-                    let content = chunk.iter().collect::<String>();
-                    log_builder.clone().arbitrary(
-                        &format!("Message Content ({}/{})", i + 1, chunks.len()),
-                        &content);
-                });
+            let chars = message.payload(None, None).chars().collect::<Vec<_>>();
+            let chunks = chars.chunks(1024).collect::<Vec<_>>();
+            for chunk in chunks.into_iter() {
+                let content = chunk.into_iter().collect::<String>();
+                log_builder = log_builder.arbitrary("Message Content", &content);
+            }
 
             // add additional fields
             let mut log_message = log_builder.build().await
