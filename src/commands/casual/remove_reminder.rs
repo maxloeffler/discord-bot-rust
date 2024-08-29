@@ -40,8 +40,7 @@ impl Command for RemoveReminderCommand {
                 }
                 let id = id.unwrap();
 
-                RemindersDB::get_instance().lock().await
-                    .delete_by_id(id).await;
+                RemindersDB::get_instance().delete_by_id(id).await;
 
                 message.reply_success().await;
             }

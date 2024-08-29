@@ -39,7 +39,7 @@ impl Command for LockdownCommand {
                 let message = &params.message;
                 let end_lockdown = message.has_parameter("end");
 
-                let categories: Vec<ChannelId> = ConfigDB::get_instance().lock().await
+                let categories: Vec<ChannelId> = ConfigDB::get_instance()
                     .get_all("category_lockdown").await.unwrap()
                     .into_iter()
                     .map(|category| category.into())
@@ -80,7 +80,7 @@ impl Command for LockdownCommand {
                         .staff()
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(message, embed.to_message()).await;
 

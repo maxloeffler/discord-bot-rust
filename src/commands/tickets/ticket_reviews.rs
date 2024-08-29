@@ -35,13 +35,12 @@ impl Command for TicketReviewsCommand {
                 let message = &params.message;
                 let target = &params.target.unwrap();
 
-                let reviews = TicketReviewsDB::get_instance().lock().await
+                let reviews = TicketReviewsDB::get_instance()
                     .get_all(&target.id.to_string()).await;
 
-                if let Ok(mut reviews) = reviews {
+                if let Ok(reviews) = reviews {
 
                     // split reviews into chunks of 25
-                    let total_reviews = reviews.len();
                     let reviews = reviews.chunks(25).collect::<Vec<_>>();
 
                     // create embed

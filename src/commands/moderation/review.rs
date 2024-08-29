@@ -35,11 +35,11 @@ impl ReviewCommand {
                 approved,
                 notes.clone(),
             );
-            TicketReviewsDB::get_instance().lock().await
+            TicketReviewsDB::get_instance()
                 .append(&reviewee.id.to_string(), &log.into()).await;
 
             // create review embed
-            let review_amount = TicketReviewsDB::get_instance().lock().await
+            let review_amount = TicketReviewsDB::get_instance()
                 .get_all(&reviewee.id.to_string()).await.unwrap().len();
             let transcript_button = CreateButton::new_link(transcript_url).label("Transcript");
             let embed = MessageManager::create_embed(|embed|
@@ -94,7 +94,7 @@ impl Command for ReviewCommand {
 
                 // ---- Sanity Checks ---- //
 
-                let review_channels = ConfigDB::get_instance().lock().await
+                let review_channels = ConfigDB::get_instance()
                     .get_multiple(vec!["channel_suggestions", "channel_transcripts", "channel_admin"]).await.unwrap()
                     .into_iter()
                     .map(|entry| entry.value.to_string())
@@ -196,10 +196,10 @@ impl Command for ReviewCommand {
                             .find(|field| field.name == "Category")
                             .unwrap().value.clone());
                         let dump_channel: ChannelId = match category {
-                            TicketType::StaffReport => ConfigDB::get_instance().lock()
-                                .await.get("channel_headmod").await.unwrap().into(),
-                            _ => ConfigDB::get_instance().lock()
-                                .await.get("channel_reviews").await.unwrap().into()
+                            TicketType::StaffReport => ConfigDB::get_instance()
+                                .get("channel_headmod").await.unwrap().into(),
+                            _ => ConfigDB::get_instance()
+                                .get("channel_reviews").await.unwrap().into()
                         };
 
                         // find reviewer and reviewee, and then call ReviewCommand::review_ticket

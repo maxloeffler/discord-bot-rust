@@ -34,9 +34,7 @@ impl Command for RemoveNoteCommand {
                     self.invalid_usage(params).await;
                     return;
                 }
-
-                NotesDB::get_instance().lock().await
-                    .delete(&label).await;
+                NotesDB::get_instance().delete(&label).await;
 
                 message.reply_success().await;
             }

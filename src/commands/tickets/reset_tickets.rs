@@ -33,13 +33,12 @@ impl Command for ResetTicketsCommand {
 
                 let message = &params.message;
 
-                let keys = TicketReviewsDB::get_instance().lock().await
+                let keys = TicketReviewsDB::get_instance()
                     .get_keys().await;
 
                 // delete all reviews fom the database
                 for key in keys {
-                    TicketReviewsDB::get_instance().lock().await
-                        .delete(&key).await;
+                    TicketReviewsDB::get_instance().delete(&key).await;
                 }
 
                 // delete reviews from local storage

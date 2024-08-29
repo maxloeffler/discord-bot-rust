@@ -43,7 +43,7 @@ impl Command for OpenTicketCommand {
                 }
 
                 // create ticket
-                let ticket = TicketHandler::get_instance().lock().await
+                let ticket = TicketHandler::get_instance()
                     .new_ticket(message.get_resolver(), target, ticket_type.clone().into()).await;
                 if ticket.is_err() {
                     message.reply_failure("Failed to create ticket.").await;

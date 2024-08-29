@@ -33,7 +33,7 @@ impl Command for UnflagCommand {
                 let message = &params.message;
                 let target = &params.target.unwrap();
 
-                let last_flag = FlagsDB::get_instance().lock().await
+                let last_flag = FlagsDB::get_instance()
                     .get_last(&target.id.to_string(), 1).await;
 
                 if let Ok(last_flag) = last_flag {
@@ -44,7 +44,7 @@ impl Command for UnflagCommand {
                     }
 
                     // delete last flag
-                    FlagsDB::get_instance().lock().await
+                    FlagsDB::get_instance()
                         .delete_by_id(last_flag[0].id).await;
 
                     // log to mod logs
@@ -55,7 +55,7 @@ impl Command for UnflagCommand {
                         .staff()
                         .user(&target)
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(message, embed.to_message()).await;
 

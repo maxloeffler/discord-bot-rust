@@ -1,7 +1,7 @@
 
 use serenity::model::prelude::*;
 use serenity::builder::{CreateEmbed, CreateMessage, CreateButton};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
 use nonempty::NonEmpty;
 
@@ -18,7 +18,7 @@ use crate::databases::*;
 
 
 pub trait Singleton: Sized {
-    fn get_instance() -> &'static Mutex<Self>;
+    fn get_instance() -> &'static Self;
     fn new() -> Self;
 }
 
@@ -26,8 +26,8 @@ pub trait Singleton: Sized {
 macro_rules! impl_singleton {
     ($t:ty) => {
         impl Singleton for $t {
-            fn get_instance() -> &'static Mutex<Self> {
-                static INSTANCE: Lazy<Arc<Mutex<$t>>> = Lazy::new(|| Arc::new(Mutex::new(<$t>::new())));
+            fn get_instance() -> &'static Self {
+                static INSTANCE: Lazy<Arc<$t>> = Lazy::new(|| Arc::new(<$t>::new()));
                 &INSTANCE
             }
 

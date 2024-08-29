@@ -46,7 +46,7 @@ impl Command for PurgeCommand {
                 if let Some(channel) = message.resolve_guild_channel().await {
 
                     // check if the category is protected
-                    let category_protected_purge = ConfigDB::get_instance().lock().await
+                    let category_protected_purge = ConfigDB::get_instance()
                         .get_all("category_protected_purge").await.unwrap()
                         .into_iter()
                         .map(|category| category.to_string())
@@ -76,7 +76,7 @@ impl Command for PurgeCommand {
                         .channel()
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(message, embed.to_message()).await;
 

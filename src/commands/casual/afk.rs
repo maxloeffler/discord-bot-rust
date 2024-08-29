@@ -30,7 +30,7 @@ impl Command for AfkCommand {
                     return;
                 }
 
-                AfkDB::get_instance().lock().await
+                AfkDB::get_instance()
                     .set(&message.get_author().id.to_string(), content).await;
 
                 message.reply_success().await;

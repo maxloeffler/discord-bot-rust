@@ -30,7 +30,7 @@ impl Command for AddMemberToTicketCommand {
 
                 let message = params.message;
                 let member = params.target.unwrap().id;
-                let ticket = TicketHandler::get_instance().lock().await
+                let ticket = TicketHandler::get_instance()
                     .get_ticket(&message.get_channel()).await;
 
                 match ticket {

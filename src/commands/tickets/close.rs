@@ -31,7 +31,7 @@ impl Command for CloseTicketCommand {
 
                 let message = &params.message;
                 let staff = &message.get_author().id;
-                let ticket = &TicketHandler::get_instance().lock().await
+                let ticket = &TicketHandler::get_instance()
                     .get_ticket(&message.get_channel()).await;
 
                 match ticket {
@@ -46,17 +46,17 @@ impl Command for CloseTicketCommand {
 
                         // obtain channel to dump log
                         let dump_channel: ChannelId = match ticket.ticket_type {
-                            TicketType::StaffReport => ConfigDB::get_instance().lock()
-                                .await.get("channel_admin").await.unwrap().into(),
-                            _ => ConfigDB::get_instance().lock()
-                                .await.get("channel_transcripts").await.unwrap().into()
+                            TicketType::StaffReport => ConfigDB::get_instance()
+                                .get("channel_admin").await.unwrap().into(),
+                            _ => ConfigDB::get_instance()
+                                .get("channel_transcripts").await.unwrap().into()
                         };
 
                         // produce transcript
                         ticket.transcribe().await;
 
                         // remove ticket from handler
-                        TicketHandler::get_instance().lock().await
+                        TicketHandler::get_instance()
                             .close_ticket(&ticket.channel.id).await;
 
                         // obtain ticket information

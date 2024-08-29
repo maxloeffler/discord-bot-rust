@@ -60,7 +60,7 @@ impl Command for WarnCommand {
                     message.get_author().id.to_string(),
                     reason.clone(),
                 );
-                WarningsDB::get_instance().lock().await
+                WarningsDB::get_instance()
                     .append(&target.id.to_string(), &log.into()).await;
 
                 // create embed
@@ -84,13 +84,13 @@ impl Command for WarnCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(message, log_message.to_message()).await;
 
                 // check if the user has been warned too many times
                 #[cfg(feature = "auto_moderation")]
-                AutoModerator::get_instance().lock().await
+                AutoModerator::get_instance()
                     .check_warnings(message, &target).await;
 
             }

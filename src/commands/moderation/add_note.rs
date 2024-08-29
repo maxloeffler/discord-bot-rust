@@ -38,8 +38,7 @@ impl Command for AddNoteCommand {
                 let content = message.get_parameter("content");
 
                 let note = Note::new(content);
-                NotesDB::get_instance().lock().await
-                    .set(&label, &note.into()).await;
+                NotesDB::get_instance().set(&label, &note.into()).await;
 
                 message.reply_success().await;
             }

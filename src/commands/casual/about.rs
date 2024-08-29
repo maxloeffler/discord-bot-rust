@@ -24,7 +24,7 @@ impl Command for AboutCommand {
                 let message = &params.message;
 
                 // get uptime and bot_id from database
-                let query = ConfigDB::get_instance().lock().await
+                let query = ConfigDB::get_instance()
                     .get_multiple(vec!["uptime", "bot_id", "command_prefix", "executed_commands"]).await.unwrap();
                 let uptime = query[0].to_string().parse::<i64>().unwrap();
                 let bot_id: UserId = query[1].clone().into();

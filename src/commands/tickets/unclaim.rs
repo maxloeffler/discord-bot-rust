@@ -28,7 +28,7 @@ impl Command for UnclaimTicketCommand {
 
                 let message = params.message;
                 let staff = message.get_author().id;
-                let ticket = TicketHandler::get_instance().lock().await
+                let ticket = TicketHandler::get_instance()
                     .get_ticket(&message.get_channel()).await;
 
                 match ticket {

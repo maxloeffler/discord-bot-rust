@@ -36,7 +36,7 @@ impl Command for NotesCommand {
                 if message.has_parameter("list") || label.is_empty() {
 
                     // get all notes
-                    let notes = NotesDB::get_instance().lock().await
+                    let notes = NotesDB::get_instance()
                         .get_keys().await
                         .into_iter()
                         .map(|key| format!("`{}`", Note::deescape(key)))
@@ -54,13 +54,12 @@ impl Command for NotesCommand {
                 // display single note
                 } else {
 
-                    let note_keys = NotesDB::get_instance().lock().await
-                        .get_keys().await;
+                    let note_keys = NotesDB::get_instance().get_keys().await;
                     let note_keys = note_keys
                         .iter()
                         .map(|key| key.as_str())
                         .collect::<Vec<&str>>();
-                    let notes = NotesDB::get_instance().lock().await
+                    let notes = NotesDB::get_instance()
                         .get_multiple(note_keys).await.unwrap();
 
                     // match note

@@ -35,7 +35,7 @@ impl Command for RemoveWarningCommand {
                 let message = &params.message;
                 let warn_id = params.number.unwrap();
 
-                let warn = WarningsDB::get_instance().lock().await
+                let warn = WarningsDB::get_instance()
                     .query("", &format!("OR id = {}", warn_id)).await;
                 if warn.is_err() || warn.clone().unwrap().is_empty() {
                     message.reply_failure("Warning not found.").await;
@@ -43,7 +43,7 @@ impl Command for RemoveWarningCommand {
                 }
 
                 // remove warning
-                WarningsDB::get_instance().lock().await.delete_by_id(warn_id).await;
+                WarningsDB::get_instance().delete_by_id(warn_id).await;
 
                 // resolve target
                 let log = &warn.unwrap()[0];
@@ -59,7 +59,7 @@ impl Command for RemoveWarningCommand {
                     .user(&target)
                     .timestamp()
                     .build().await;
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(message, log_message.to_message()).await;
 

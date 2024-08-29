@@ -65,7 +65,7 @@ impl Command for UnmuteCommand {
                 // flag member if specified
                 if message.has_parameter("flag") {
 
-                    let last_mute = MutesDB::get_instance().lock().await
+                    let last_mute = MutesDB::get_instance()
                         .get_last(&target.id.to_string(), 1).await.unwrap();
 
                     // obtain the reason
@@ -85,7 +85,7 @@ impl Command for UnmuteCommand {
                         reason.clone(),
                         monthly
                     );
-                    FlagsDB::get_instance().lock().await
+                    FlagsDB::get_instance()
                         .append(&target.id.to_string(), &log.into()).await;
 
                     let timestamp_now = chrono::Utc::now().timestamp();
@@ -98,7 +98,7 @@ impl Command for UnmuteCommand {
 
                 // log to mod logs
                 let log = builder.build().await.to_message();
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(message, log).await;
 

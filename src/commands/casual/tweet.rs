@@ -41,7 +41,7 @@ impl Command for TweetCommand {
                     return;
                 }
 
-                let last_tweet = TweetsDB::get_instance().lock().await
+                let last_tweet = TweetsDB::get_instance()
                     .get_last(author, 1).await.unwrap();
 
                 // You can only tweet every 10 minutes to rate limit pings
@@ -57,7 +57,7 @@ impl Command for TweetCommand {
 
                 // resolve role and channel
                 let role_tweets = message.get_resolver().resolve_role("Tweets").await.unwrap()[0].id;
-                let channel_tweets: ChannelId = ConfigDB::get_instance().lock().await
+                let channel_tweets: ChannelId = ConfigDB::get_instance()
                     .get("channel_tweets").await.unwrap().into();
 
                 // create tweet message
@@ -71,8 +71,7 @@ impl Command for TweetCommand {
                     .allowed_mentions(allowed_mentions);
 
                 // log last tweet
-                TweetsDB::get_instance().lock().await
-                    .set(author, &content).await;
+                TweetsDB::get_instance().set(author, &content).await;
 
                 // send to tweets channel
                 let _ = channel_tweets.send_message(&message, tweet).await;

@@ -59,7 +59,7 @@ impl Command for SlowmodeCommand {
                 if let Some(channel) = message.resolve_guild_channel().await {
 
                     // check if the category is protected
-                    let category_protected_slowmode = ConfigDB::get_instance().lock().await
+                    let category_protected_slowmode = ConfigDB::get_instance()
                         .get_all("category_protected_slowmode").await.unwrap()
                         .into_iter()
                         .map(|category| category.to_string())
@@ -88,7 +88,7 @@ impl Command for SlowmodeCommand {
                         .channel()
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(message, embed.to_message()).await;
 

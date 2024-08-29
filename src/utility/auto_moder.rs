@@ -1,7 +1,7 @@
 
 use serenity::all::ChannelId;
 use serenity::model::user::User;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
 
 use std::sync::Arc;
@@ -30,7 +30,7 @@ impl AutoModerator {
     pub async fn check_warnings(&self, message: &MessageManager, target: &User) {
 
         // get timestamp of last mute
-        let last_mute = MutesDB::get_instance().lock().await
+        let last_mute = MutesDB::get_instance()
             .get_last(&target.id.to_string(), 1).await;
         let mut last_mute_timestamp = 0;
         if let Ok(last_mute) = last_mute {
@@ -40,7 +40,7 @@ impl AutoModerator {
         }
 
         // get all warnings since last mute
-        let recent_warnings = &WarningsDB::get_instance().lock().await
+        let recent_warnings = &WarningsDB::get_instance()
             .query(&target.id.to_string(),
                    &format!("AND timestamp > {} LIMIT 3", last_mute_timestamp)).await;
 
@@ -62,7 +62,7 @@ impl AutoModerator {
         let resolver = message.get_resolver();
 
         // get all flags
-        let all_flags = FlagsDB::get_instance().lock().await
+        let all_flags = FlagsDB::get_instance()
             .get_all(&target.id.to_string()).await;
 
         if let Ok(all_flags) = all_flags {
@@ -95,7 +95,7 @@ impl AutoModerator {
                 let responsibility = format!("<@&{}> <@&{}>", role_ids[0].id, role_ids[1].id);
 
                 // get muted channel
-                let channel: ChannelId = ConfigDB::get_instance().lock().await
+                let channel: ChannelId = ConfigDB::get_instance()
                     .get("channel_muted").await.unwrap().into();
 
                 // send flag notice
@@ -118,7 +118,7 @@ impl AutoModerator {
             reason);
         let _ = message.reply(warn_message.to_message()).await;
 
-        let bot_id = ConfigDB::get_instance().lock().await
+        let bot_id = ConfigDB::get_instance()
             .get("bot_id").await.unwrap().to_string();
 
         // log to database
@@ -126,8 +126,7 @@ impl AutoModerator {
             bot_id,
             context.clone()
         );
-        WarningsDB::get_instance().lock().await
-            .append(&target_id, &log.into()).await;
+        WarningsDB::get_instance().append(&target_id, &log.into()).await;
 
         // log to mod logs
         let log_message = message.get_log_builder()
@@ -139,7 +138,7 @@ impl AutoModerator {
             .arbitrary("Reason", &context)
             .timestamp()
             .build().await;
-        let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+        let modlogs: ChannelId = ConfigDB::get_instance()
             .get("channel_modlogs").await.unwrap().into();
         let _ = modlogs.send_message(resolver, log_message.to_message()).await;
 
@@ -158,14 +157,12 @@ impl AutoModerator {
         member.add_role(&resolver, role_muted.id).await.unwrap();
 
         // log mute to database
-        let bot_id = ConfigDB::get_instance().lock().await
-            .get("bot_id").await.unwrap().to_string();
+        let bot_id = ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
         let log = ModLog::new(
             bot_id.clone(),
             reason.clone(),
         );
-        MutesDB::get_instance().lock().await
-            .append(&target.id.to_string(), &log.into()).await;
+        MutesDB::get_instance().append(&target.id.to_string(), &log.into()).await;
 
         // log mute to modlogs
         let log_message = message.get_log_builder()
@@ -176,7 +173,7 @@ impl AutoModerator {
             .arbitrary("Reason", reason)
             .timestamp()
             .build().await;
-        let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+        let modlogs: ChannelId = ConfigDB::get_instance()
             .get("channel_modlogs").await.unwrap().into();
         let _ = modlogs.send_message(message.get_resolver(), log_message.to_message()).await;
 
@@ -195,7 +192,7 @@ impl AutoModerator {
         }).await;
 
         // find person responsible for the last warning (to ping them)
-        let last_warning = &WarningsDB::get_instance().lock().await
+        let last_warning = &WarningsDB::get_instance()
             .get_last(&target_id, 1).await.unwrap()[0];
         let role_automute = &resolver.resolve_role("Auto Mute").await.unwrap()[0];
         let responsibility = match last_warning.staff_id == bot_id {
@@ -204,7 +201,7 @@ impl AutoModerator {
         };
 
         // get muted channel
-        let channel: ChannelId = ConfigDB::get_instance().lock().await
+        let channel: ChannelId = ConfigDB::get_instance()
             .get("channel_muted").await.unwrap().into();
 
         // send automute message
@@ -223,14 +220,12 @@ impl AutoModerator {
                 Ok(_) => {
 
                     // log ban to database
-                    let bot_id = ConfigDB::get_instance().lock().await
-                        .get("bot_id").await.unwrap().to_string();
+                    let bot_id = ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
                     let log = ModLog::new(
                         bot_id.clone(),
                         format!("Automatically banned ('{}')", reason),
                     );
-                    BansDB::get_instance().lock().await
-                        .append(&target.id.to_string(), &log.into()).await;
+                    BansDB::get_instance().append(&target.id.to_string(), &log.into()).await;
 
                     // create embed
                     let embed = MessageManager::create_embed(|embed| {
@@ -244,7 +239,7 @@ impl AutoModerator {
                     }).await;
 
                     // get modlogs channel
-                    let channel: ChannelId = ConfigDB::get_instance().lock().await
+                    let channel: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
 
                     // send autoban message

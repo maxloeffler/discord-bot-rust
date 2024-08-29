@@ -51,7 +51,7 @@ impl Command for CheckBanCommand {
                 };
 
                 // get bans
-                let bans = BansDB::get_instance().lock().await
+                let bans = BansDB::get_instance()
                     .get_all(target_id).await;
 
                 if let Ok(bans) = bans {
@@ -60,7 +60,7 @@ impl Command for CheckBanCommand {
                     if bans.is_empty() {
 
                         // resolve bot
-                        let bot_id: UserId = ConfigDB::get_instance().lock().await
+                        let bot_id: UserId = ConfigDB::get_instance()
                             .get("bot_id").await.unwrap().into();
                         let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 

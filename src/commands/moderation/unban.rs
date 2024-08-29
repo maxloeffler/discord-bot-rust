@@ -61,15 +61,12 @@ impl Command for UnbanCommand {
                     let _ = guild_id.unban(&message, target_id).await;
 
                     // clear databases
-                    WarningsDB::get_instance().lock().await
-                        .delete(&target_id.to_string()).await;
-                    MutesDB::get_instance().lock().await
-                        .delete(&target_id.to_string()).await;
-                    FlagsDB::get_instance().lock().await
-                        .delete(&target_id.to_string()).await;
+                    WarningsDB::get_instance().delete(&target_id.to_string()).await;
+                    MutesDB::get_instance().delete(&target_id.to_string()).await;
+                    FlagsDB::get_instance().delete(&target_id.to_string()).await;
 
                     // get reason of last ban
-                    let last_ban = BansDB::get_instance().lock().await
+                    let last_ban = BansDB::get_instance()
                         .get_last(&target_id.to_string(), 1).await;
                     let ban_reason = match last_ban {
                         Ok(bans) => {
@@ -85,7 +82,7 @@ impl Command for UnbanCommand {
                     let target = match target {
                         Some(ref target) => target,
                         None => {
-                            let bot_id: UserId = ConfigDB::get_instance().lock().await
+                            let bot_id: UserId = ConfigDB::get_instance()
                                 .get("bot_id").await.unwrap().into();
                             &resolver.resolve_user(bot_id).await.unwrap()
                         }
@@ -100,7 +97,7 @@ impl Command for UnbanCommand {
                         .arbitrary("Unban Reason", &reason)
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(message, embed.to_message()).await;
 

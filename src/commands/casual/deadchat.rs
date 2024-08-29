@@ -35,7 +35,7 @@ impl Command for DeadchatCommand {
                     false => format!(" `>` {}", content)
                 };
 
-                let last_dcp = DeadchatDB::get_instance().lock().await
+                let last_dcp = DeadchatDB::get_instance()
                     .get_last(author, 1).await.unwrap();
 
                 // You can only dcp every 10 minutes to rate limit pings
@@ -51,7 +51,7 @@ impl Command for DeadchatCommand {
 
                 // resolve role and channel
                 let role_dcp = message.get_resolver().resolve_role("Dead Chat").await.unwrap()[0].id;
-                let channel_welcome: ChannelId = ConfigDB::get_instance().lock().await
+                let channel_welcome: ChannelId = ConfigDB::get_instance()
                     .get("channel_welcome").await.unwrap().into();
 
                 // create dcp message
@@ -62,7 +62,7 @@ impl Command for DeadchatCommand {
                     .allowed_mentions(allowed_mentions);
 
                 // log last dcp
-                DeadchatDB::get_instance().lock().await
+                DeadchatDB::get_instance()
                     .set(author, &content).await;
 
                 // send to general channel

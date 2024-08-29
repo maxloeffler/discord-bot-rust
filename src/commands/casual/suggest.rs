@@ -48,7 +48,7 @@ impl Command for SuggestCommand {
                 let suggestion = embed.to_message().reactions(reactions);
 
                 // send to suggestions channel
-                let channel: ChannelId = ConfigDB::get_instance().lock().await
+                let channel: ChannelId = ConfigDB::get_instance()
                     .get("channel_suggestions").await.unwrap().into();
                 let _ = channel.send_message(&message, suggestion).await;
 

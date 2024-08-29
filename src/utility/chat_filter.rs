@@ -1,6 +1,6 @@
 
 use serenity::all::ChannelId;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
 
 use std::sync::Arc;
@@ -75,7 +75,7 @@ impl ChatFilter {
     pub async fn apply(&self, message: &MessageManager) -> Filter {
 
         let channel = message.resolve_guild_channel().await;
-        let category_music: ChannelId = ConfigDB::get_instance().lock().await
+        let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
         let link_perm_roles = message.get_resolver().resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
 

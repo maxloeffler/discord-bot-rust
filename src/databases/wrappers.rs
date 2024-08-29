@@ -1,6 +1,6 @@
 
 use serde::{Serialize, Deserialize};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use once_cell::sync::Lazy;
 use nonempty::{NonEmpty, nonempty};
 

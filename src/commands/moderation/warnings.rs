@@ -36,7 +36,7 @@ impl Command for WarningsCommand {
                 let message = &params.message;
                 let target = &params.target.unwrap();
 
-                let warnings = WarningsDB::get_instance().lock().await
+                let warnings = WarningsDB::get_instance()
                     .get_all(&target.id.to_string()).await;
 
                 if let Ok(mut warnings) = warnings {
@@ -74,7 +74,9 @@ impl Command for WarningsCommand {
                     };
 
                     let _ = message.reply(embed).await;
-                    AutoModerator::get_instance().lock().await
+
+                    #[cfg(feature = "auto_moderation")]
+                    AutoModerator::get_instance()
                         .check_warnings(message, target).await;
                 }
             }

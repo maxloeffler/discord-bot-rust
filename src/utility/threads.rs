@@ -4,7 +4,7 @@ use serenity::all::*;
 use serenity::model::id::ChannelId;
 use serenity::builder::{CreateWebhook, CreateAttachment, ExecuteWebhook, CreateAllowedMentions};
 use tokio::runtime::Runtime;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use strum::IntoEnumIterator;
 use chrono::Utc;
 use futures::stream::StreamExt;
@@ -36,7 +36,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
 
             match words[0] {
                 "ls" => {
-                    let mut keys = database.lock().await.get_keys().await;
+                    let mut keys = database.get_keys().await;
                     keys.sort();
                     Logger::info_long("Keys", &keys.join(", "));
                 }
@@ -47,7 +47,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                         },
                         2 => {
                             let key = words[1];
-                            let value = database.lock().await.get(key).await;
+                            let value = database.get(key).await;
                             match value {
                                 Ok(value) => Logger::info_long(&format!("Value of {}", key), &value.to_string()),
                                 Err(err) => Logger::err(err.as_str())
@@ -56,7 +56,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                         _ => {
                             match words[1] {
                                 "all" => {
-                                    let values = database.lock().await.get_all(words[2]).await;
+                                    let values = database.get_all(words[2]).await;
                                     match values {
                                         Ok(values) => {
                                             let values: Vec<_> = values.iter().map(|entry| entry.to_string()).collect();
@@ -66,7 +66,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                                     }
                                 },
                                 _ => {
-                                    let values = database.lock().await.get_multiple(words[1..].to_vec()).await;
+                                    let values = database.get_multiple(words[1..].to_vec()).await;
                                     match values {
                                         Ok(values) => {
                                             let values: Vec<_> = values.iter().map(|entry| entry.to_string()).collect();
@@ -87,7 +87,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                         3 => {
                             let key = words[1];
                             let value = words[2];
-                            database.lock().await.set(key, value).await;
+                            database.set(key, value).await;
                             Logger::info_long(&format!("Set value for {}", key), value);
                         }
                         _ => {
@@ -101,7 +101,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                     match words.len() {
                         2 => {
                             let key = words[1];
-                            database.lock().await.delete(key).await;
+                            database.delete(key).await;
                             Logger::info_long("Removed key", key);
                         }
                         _ => {
@@ -117,7 +117,7 @@ pub fn database_interface<'a>() -> BoxedFuture<'a, ()> {
                         3 => {
                             let key = words[1];
                             let value = words[2];
-                            database.lock().await.append(key, value).await;
+                            database.append(key, value).await;
                             Logger::info_long(&format!("Appended value to {}", key), value);
                         }
                         _ => {
@@ -162,8 +162,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
         loop {
 
             // check for scheduled messages
-            let users = ScheduleDB::get_instance().lock().await
-                .get_keys().await;
+            let users = ScheduleDB::get_instance().get_keys().await;
             let now = chrono::Utc::now().timestamp();
 
             // remove all pending webhooks
@@ -183,7 +182,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                     async move {
 
                         // get scheduled messages
-                        let scheduled_messages = ScheduleDB::get_instance().lock().await
+                        let scheduled_messages = ScheduleDB::get_instance()
                             .get_all(&user.to_string()).await;
                         let user = resolver.resolve_user(user).await.unwrap();
 
@@ -195,8 +194,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                 if scheduled_message.is_expired(now) {
 
                                     // delete scheduled message from database
-                                    ScheduleDB::get_instance().lock().await
-                                        .delete_by_id(scheduled_message.id).await;
+                                    ScheduleDB::get_instance().delete_by_id(scheduled_message.id).await;
 
                                     // create webhook
                                     let channel_id = ChannelId::from_str(&scheduled_message.channel_id).unwrap();
@@ -218,8 +216,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 
 
             // check for reminders
-            let users = RemindersDB::get_instance().lock().await
-                .get_keys().await;
+            let users = RemindersDB::get_instance().get_keys().await;
             let now = chrono::Utc::now().timestamp();
 
             // for all users that have scheduled messages
@@ -229,8 +226,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                     async move {
 
                         // get scheduled messages
-                        let reminders = RemindersDB::get_instance().lock().await
-                            .get_all(&user.to_string()).await;
+                        let reminders = RemindersDB::get_instance().get_all(&user.to_string()).await;
                         let user = resolver.resolve_user(user).await.unwrap();
 
                         // for all reminders
@@ -241,8 +237,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                 if reminder.is_expired(now) {
 
                                     // delete scheduled message from database
-                                    RemindersDB::get_instance().lock().await
-                                        .delete_by_id(reminder.id).await;
+                                    RemindersDB::get_instance().delete_by_id(reminder.id).await;
 
                                     // create embed
                                     let embed = MessageManager::create_embed(|embed| {
@@ -278,7 +273,7 @@ pub fn hook_ticket_selector<'a>(resolver: Resolver, selector: Message) -> BoxedF
             match interaction.data.kind {
                 StringSelect{values} => {
                     let ticket_type = TicketType::from(values[0].clone());
-                    let _ = TicketHandler::get_instance().lock().await
+                    let _ = TicketHandler::get_instance()
                         .new_ticket(resolver, &interaction.user, ticket_type).await;
                 }
                 _ => {}

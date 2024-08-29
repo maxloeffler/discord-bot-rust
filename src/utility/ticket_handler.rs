@@ -7,13 +7,13 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use futures::stream::StreamExt;
 use uuid::Uuid;
-use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
 
 use std::sync::Arc;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::process::Command;
+use std::sync::RwLock;
 
 use crate::utility::*;
 use crate::databases::*;
@@ -83,7 +83,7 @@ impl Debug for Ticket {
 
 #[cfg(feature = "tickets")]
 pub struct TicketHandler {
-    tickets: Arc<Mutex<HashMap<String, Arc<Ticket>>>>,
+    tickets: Arc<RwLock<HashMap<String, Arc<Ticket>>>>,
 }
 
 #[cfg(feature = "tickets")]
@@ -94,7 +94,7 @@ impl TicketHandler {
 
     pub fn new() -> Self {
         TicketHandler {
-            tickets: Arc::new(Mutex::new(HashMap::new())),
+            tickets: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -109,7 +109,7 @@ impl TicketHandler {
         if let Some(channels) = channels {
 
             // get the ticket category
-            let ticket_category = ConfigDB::get_instance().lock().await
+            let ticket_category = ConfigDB::get_instance()
                 .get("category_tickets").await.unwrap().to_string();
 
             // recover all tickets
@@ -128,7 +128,8 @@ impl TicketHandler {
                         let ticket = Ticket::parse_ticket(resolver, channel).await;
                         if let Ok(ticket) = ticket {
                             let ticket = Arc::new(ticket);
-                            tickets.lock().await.insert(channel.id.to_string(), ticket);
+                            tickets.write().expect("Could not get tickets")
+                                .insert(channel.id.to_string(), ticket);
                         }
                     }
                 });
@@ -138,7 +139,7 @@ impl TicketHandler {
         #[cfg(feature = "debug")]
         Logger::info("Hooking ticket selector");
 
-        let channel_id: ChannelId = ConfigDB::get_instance().lock().await
+        let channel_id: ChannelId = ConfigDB::get_instance()
             .get("channel_tickets").await.unwrap().into();
         let channel = resolver.resolve_guild_channel(channel_id).await;
 
@@ -180,7 +181,7 @@ impl TicketHandler {
         if let Some(guild) = guild {
 
             // get the ticket category
-            let ticket_category = ConfigDB::get_instance().lock().await
+            let ticket_category = ConfigDB::get_instance()
                 .get("category_tickets").await.unwrap().to_string();
             let ticket_category = ticket_category.parse::<u64>().unwrap();
 
@@ -238,7 +239,7 @@ impl TicketHandler {
 
                 // create ticket
                 let ticket = Arc::new(Ticket {
-                    channel: channel,
+                    channel: channel.clone(),
                     ticket_type: ticket_type,
                     resolver: resolver.clone(),
                     uuid: Uuid::new_v4(),
@@ -250,7 +251,8 @@ impl TicketHandler {
                 });
 
                 ticket.allow_participants().await;
-                self.tickets.lock().await.insert(ticket.channel.id.to_string(), Arc::clone(&ticket));
+                self.tickets.write().expect("Could not get tickets")
+                    .insert(channel.id.to_string(), Arc::clone(&ticket));
 
                 #[cfg(feature = "debug")]
                 Logger::info_long("End", logstr);
@@ -281,7 +283,7 @@ impl TicketHandler {
     }
 
     pub async fn get_ticket(&self, channel: &ChannelId) -> Option<Arc<Ticket>> {
-        let tickets = self.tickets.lock().await;
+        let tickets = self.tickets.read().expect("Could not get tickets");
         match tickets.get(&channel.to_string()) {
             Some(ticket) => {
                 let ticket = Arc::clone(ticket);
@@ -322,7 +324,7 @@ impl Ticket {
 
             if let Ok(messages) = &messages {
 
-                let bot_id = &ConfigDB::get_instance().lock().await
+                let bot_id = &ConfigDB::get_instance()
                     .get("bot_id").await.unwrap().to_string();
                 let regex = Arc::new(RegexManager::get_id_regex());
 
@@ -509,7 +511,7 @@ impl Ticket {
         #[cfg(feature = "debug")]
         Logger::info_long("Start", logstr);
 
-        let token = ConfigDB::get_instance().lock().await
+        let token = ConfigDB::get_instance()
             .get("token").await.unwrap().to_string();
 
         if cfg!(target_os = "linux") {

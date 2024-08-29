@@ -36,12 +36,12 @@ impl Command for TicketStatsCommand {
                     .map(|user_id| user_id.to_string())
                     .collect::<Vec<_>>();
                 if target_ids.is_empty() {
-                    target_ids = TicketReviewsDB::get_instance().lock().await
+                    target_ids = TicketReviewsDB::get_instance()
                         .get_keys().await;
                 }
 
                 // resolve bot
-                let bot_id: UserId = ConfigDB::get_instance().lock().await
+                let bot_id: UserId = ConfigDB::get_instance()
                     .get("bot_id").await.unwrap().into();
                 let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
@@ -56,7 +56,7 @@ impl Command for TicketStatsCommand {
                     let user = message.get_resolver().resolve_user(user_id).await.unwrap();
                     let name = message.get_resolver().resolve_name(&user);
 
-                    let reviews = TicketReviewsDB::get_instance().lock().await
+                    let reviews = TicketReviewsDB::get_instance()
                         .get_all(&target_id).await.unwrap();
 
                     if reviews.is_empty() {
@@ -66,7 +66,6 @@ impl Command for TicketStatsCommand {
                     }
 
                     let approved = reviews.iter().filter(|review| review.approved).count();
-                    let rejected = reviews.len() - approved;
                     builder = builder
                         .arbitrary_block(name, format!(
                             "{}% ({}/{})", approved * 100 / reviews.len(), approved, reviews.len()

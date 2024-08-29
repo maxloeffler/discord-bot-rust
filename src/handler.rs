@@ -39,13 +39,13 @@ impl EventHandler for Handler {
         #[cfg(feature = "debug")]
         Logger::info("Bot is ready!");
 
-        let main_guild = ConfigDB::get_instance().lock().await
+        let main_guild = ConfigDB::get_instance()
             .get("guild_main").await.unwrap().to_string();
         let guild_id = GuildId::from_str(&main_guild).unwrap();
         let resolver = Resolver::new(ctx, Some(guild_id));
 
         #[cfg(feature = "tickets")]
-        TicketHandler::get_instance().lock().await
+        TicketHandler::get_instance()
             .init(&resolver).await;
 
         spawn(periodic_checks(resolver.clone())).await;
@@ -58,17 +58,15 @@ impl EventHandler for Handler {
         let mut message = Arc::new(MessageManager::new(resolver, msg).await);
 
         // if message pings the bot
-        let bot_id = &ConfigDB::get_instance().lock().await
-            .get("bot_id").await.unwrap().to_string();
+        let bot_id = &ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
         let bot_pings = vec![format!("<@!{}>", bot_id), format!("<@{}>",  bot_id)];
         if bot_pings.contains(&message.payload(None, None)) {
-            let prefix = ConfigDB::get_instance().lock().await
-                .get("command_prefix").await.unwrap().to_string();
+            let prefix = ConfigDB::get_instance().get("command_prefix").await.unwrap().to_string();
             message = message.spoof(format!("{}about", prefix)).await.into();
         }
 
         // directly delete messages in the verify channel
-        let channel_verify: ChannelId = ConfigDB::get_instance().lock().await
+        let channel_verify: ChannelId = ConfigDB::get_instance()
             .get("channel_verify").await.unwrap().into();
         if message.get_channel() == channel_verify {
             message.delete().await;
@@ -77,13 +75,13 @@ impl EventHandler for Handler {
         // check if author is afk
         let author = &message.get_author();
         let author_id = &author.id.to_string();
-        let author_afk = AfkDB::get_instance().lock().await.get(author_id).await;
+        let author_afk = AfkDB::get_instance().get(author_id).await;
         if author_afk.is_ok() {
             let embed = MessageManager::create_embed(|embed| {
                 embed.description("Removed your afk.")
             }).await;
             let _ = message.reply(embed).await;
-            AfkDB::get_instance().lock().await.delete(&author_id).await;
+            AfkDB::get_instance().delete(&author_id).await;
         }
 
         // check if message mentions an afk user
@@ -92,7 +90,7 @@ impl EventHandler for Handler {
             .for_each_concurrent(None, |mention| {
                 let message = Arc::clone(&message);
                 async move {
-                    let mention_afk = AfkDB::get_instance().lock().await.get(&mention.to_string()).await;
+                    let mention_afk = AfkDB::get_instance().get(&mention.to_string()).await;
                     if let Ok(afk) = mention_afk {
                         let embed = MessageManager::create_embed(|embed| {
                             embed.description(
@@ -105,7 +103,7 @@ impl EventHandler for Handler {
                 }}).await;
 
         // check guideline violations
-        let filter = ChatFilter::get_instance().lock().await.apply(&message).await;
+        let filter = ChatFilter::get_instance().apply(&message).await;
         if filter.filter_type == FilterType::Fine || message.is_trial().await || author.bot {
 
             // execute command
@@ -121,7 +119,7 @@ impl EventHandler for Handler {
             if filter.filter_type != FilterType::Fine {
 
                 message.delete().await;
-                AutoModerator::get_instance().lock().await
+                AutoModerator::get_instance()
                     .perform_warn(&message, &author, filter.filter_type.to_string(), filter.context).await;
             }
         }
@@ -137,7 +135,7 @@ impl EventHandler for Handler {
         let guild = resolver.resolve_guild(None).await;
 
         // get member count channel
-        let channel: ChannelId = ConfigDB::get_instance().lock().await
+        let channel: ChannelId = ConfigDB::get_instance()
             .get("channel_member_count").await.unwrap().into();
 
         // update channel name
@@ -158,7 +156,7 @@ impl EventHandler for Handler {
         let resolver = Resolver::new(ctx, Some(guild_id));
         let is_muted = resolver.has_role(&user, "Muted").await;
         if is_muted {
-            AutoModerator::get_instance().lock().await
+            AutoModerator::get_instance()
                 .perform_ban(&resolver, &user, "Left while muted.".to_string()).await;
         }
     }
@@ -173,7 +171,7 @@ impl EventHandler for Handler {
     ) {
 
         // get all excluded channels
-        let channel_protected_log: Vec<_> = ConfigDB::get_instance().lock().await
+        let channel_protected_log: Vec<_> = ConfigDB::get_instance()
             .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
             .iter()
             .map(|entry| entry.value.to_string())
@@ -249,7 +247,7 @@ impl EventHandler for Handler {
     ) {
 
         // get all excluded channels
-        let channel_protected_log: Vec<_> = ConfigDB::get_instance().lock().await
+        let channel_protected_log: Vec<_> = ConfigDB::get_instance()
             .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
             .iter()
             .map(|entry| entry.value.to_string())

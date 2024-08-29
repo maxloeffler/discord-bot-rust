@@ -34,7 +34,7 @@ impl Command for RemoveReviewCommand {
                 let message = &params.message;
                 let review_id = params.number.unwrap();
 
-                let review = TicketReviewsDB::get_instance().lock().await
+                let review = TicketReviewsDB::get_instance()
                     .query("", &format!("OR id = {}", review_id)).await;
                 if review.is_err() || review.clone().unwrap().is_empty() {
                     message.reply_failure("Review not found.").await;
@@ -43,7 +43,7 @@ impl Command for RemoveReviewCommand {
                 let review = &review.unwrap()[0];
 
                 // remove review
-                TicketReviewsDB::get_instance().lock().await.delete_by_id(review_id).await;
+                TicketReviewsDB::get_instance().delete_by_id(review_id).await;
 
                 // resolve target
                 let user_id = UserId::from(review.key.parse::<u64>().unwrap());
@@ -58,7 +58,7 @@ impl Command for RemoveReviewCommand {
                     .user(&target)
                     .timestamp()
                     .build().await;
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(message, log_message.to_message()).await;
 

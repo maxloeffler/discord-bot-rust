@@ -47,7 +47,7 @@ impl Command for VerifyCommand {
             async move {
 
                 let message = &params.message;
-                let channel_verify = ConfigDB::get_instance().lock().await
+                let channel_verify = ConfigDB::get_instance()
                     .get("channel_verify").await.unwrap().to_string();
 
                 if message.get_channel().to_string() == channel_verify {
@@ -69,7 +69,7 @@ impl Command for VerifyCommand {
                         message.reply_success().await;
 
                         // send welcome message
-                        let channel: ChannelId = ConfigDB::get_instance().lock().await
+                        let channel: ChannelId = ConfigDB::get_instance()
                             .get("channel_welcome").await.unwrap().into();
                         let welcome_message = VerifyCommand::random_welcome_message();
                         let _ = channel.send_message(message,

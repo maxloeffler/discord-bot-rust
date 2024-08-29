@@ -96,10 +96,10 @@ impl CommandManager {
             command.run(CommandParams::new(message.clone())).await;
 
             // increment executed commands
-            let executed_commands = ConfigDB::get_instance().lock().await.
-                get("executed_commands").await.unwrap().to_string().parse::<i64>().unwrap() + 1;
-            ConfigDB::get_instance().lock().await.
-                set("executed_commands", &executed_commands.to_string()).await;
+            let executed_commands = ConfigDB::get_instance()
+                .get("executed_commands").await.unwrap().to_string().parse::<i64>().unwrap() + 1;
+            ConfigDB::get_instance()
+                .set("executed_commands", &executed_commands.to_string()).await;
 
         } else {
             message.reply_failure("You do not have permission to use this command").await;
@@ -135,7 +135,7 @@ impl CommandManager {
         message.delete().await;
 
         // resolve bot user
-        let bot_id: UserId = ConfigDB::get_instance().lock().await
+        let bot_id: UserId = ConfigDB::get_instance()
             .get("bot_id").await.unwrap().into();
         let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 

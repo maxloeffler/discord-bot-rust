@@ -31,7 +31,7 @@ impl Command for TicketSelectorCommand {
             async move {
 
                 let message = params.message;
-                let bot_id: UserId = ConfigDB::get_instance().lock().await
+                let bot_id: UserId = ConfigDB::get_instance()
                     .get("bot_id").await.unwrap().into();
                 let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 

@@ -2,13 +2,13 @@
 use serenity::all::{ChannelId, UserId};
 use serenity::model::colour::Colour;
 use rusqlite::{params, Connection};
-use tokio::sync::Mutex;
 use strum_macros::EnumIter;
 
 use std::str::FromStr;
 use std::sync::Arc;
 use std::collections::HashSet;
 use std::fmt;
+use std::sync::RwLock;
 
 use crate::utility::*;
 
@@ -87,9 +87,8 @@ impl From<DBEntry> for UserId {
     }
 }
 
-#[derive(Clone)]
 pub struct Database {
-    connection: Arc<Mutex<Connection>>,
+    connection: RwLock<Connection>,
     pub identifier: DB,
 }
 
@@ -107,15 +106,15 @@ impl Database {
             )", identifier.to_string()),
             [],
         ).expect("Failed to create table");
-        Database { connection: Arc::new(Mutex::new(connection)), identifier: identifier }
+        Database { connection: RwLock::new(connection), identifier: identifier }
     }
 
     pub async fn get_keys(&self) -> Vec<String> {
-        let connection = self.connection.lock().await;
+        let connection = self.connection.read().expect("Failed to get connection");
         let mut keys = HashSet::new();
-        let mut statement = connection.prepare(
-            &format!("SELECT key FROM {}", self.identifier.to_string())
-        ).expect("Failed to prepare statement");
+        let mut statement = connection
+            .prepare(&format!("SELECT key FROM {}", self.identifier.to_string()))
+            .expect("Failed to prepare statement");
         let rows = statement.query_map(
             [],
             |row| row.get(0)
@@ -127,7 +126,7 @@ impl Database {
     }
 
     pub async fn query(&self, key: &str, query_string: &str) -> Result<Vec<DBEntry>> {
-        let connection = self.connection.lock().await;
+        let connection = self.connection.read().expect("Failed to get connection");
         let mut statement = connection.prepare(&format!(
             "SELECT id, key, value, timestamp FROM {} WHERE key = ? {}",
             self.identifier.to_string(),
@@ -169,7 +168,7 @@ impl Database {
 
     pub async fn set(&self, key: &str, value: impl ToList<&str>) {
 
-        let connection = self.connection.lock().await;
+        let connection = self.connection.write().expect("Failed to get connection");
         for value in value.to_list() {
 
             // Delete old values
@@ -187,7 +186,7 @@ impl Database {
     }
 
     pub async fn append(&self, key: &str, value: &str) {
-        let connection = self.connection.lock().await;
+        let connection = self.connection.write().expect("Failed to get connection");
         connection.execute(
             &format!("INSERT INTO {} (key, value, timestamp) VALUES (?, ?, ?)", self.identifier.to_string()),
             params![key, value, chrono::Utc::now().timestamp()],
@@ -195,7 +194,7 @@ impl Database {
     }
 
     pub async fn delete(&self, key: &str) {
-        let connection = self.connection.lock().await;
+        let connection = self.connection.write().expect("Failed to get connection");
         connection.execute(
             &format!("DELETE FROM {} WHERE key = ?", self.identifier.to_string()),
             params![key],
@@ -203,13 +202,13 @@ impl Database {
     }
 
     pub async fn delete_by_id(&self, id: i64) {
-        let connection = self.connection.lock().await;
+        let connection = self.connection.write().expect("Failed to get connection");
         connection.execute(
             &format!("DELETE FROM {} WHERE id = ?", self.identifier.to_string()),
             params![id],
         ).expect("Failed to delete value");
     }
-
 }
 
-
+unsafe impl Send for Database {}
+unsafe impl Sync for Database {}

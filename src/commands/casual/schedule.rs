@@ -45,7 +45,7 @@ impl Command for ScheduleCommand {
                 );
 
                 // append log
-                ScheduleDB::get_instance().lock().await
+                ScheduleDB::get_instance()
                     .append(&message.get_author().id.to_string(), &log.into()).await;
                 message.reply_success().await;
             }

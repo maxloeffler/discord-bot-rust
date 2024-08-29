@@ -60,7 +60,7 @@ impl Command for BanCommand {
                         message.get_author().id.to_string(),
                         reason.clone()
                     );
-                    BansDB::get_instance().lock().await
+                    BansDB::get_instance()
                         .append(&target.id.to_string(), &log.into()).await;
 
                     // log ban to mod logs
@@ -73,7 +73,7 @@ impl Command for BanCommand {
                         .arbitrary("Reason", &reason)
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                    let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(resolver, log_message.to_message()).await;
 

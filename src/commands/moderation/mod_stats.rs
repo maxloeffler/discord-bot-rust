@@ -66,11 +66,11 @@ impl Command for ModStatsCommand {
                 let target = &params.target.unwrap();
 
                 // fetch moderation logs
-                let warnings = WarningsDB::get_instance().lock().await
+                let warnings = WarningsDB::get_instance()
                     .get_by_staff(&target.id.to_string()).await;
-                let mutes = MutesDB::get_instance().lock().await
+                let mutes = MutesDB::get_instance()
                     .get_by_staff(&target.id.to_string()).await;
-                let bans = BansDB::get_instance().lock().await
+                let bans = BansDB::get_instance()
                     .get_by_staff(&target.id.to_string()).await;
 
                 let (warns_last_day, warns_last_week, warns_last_month) = ModStatsCommand::distribution(warnings);

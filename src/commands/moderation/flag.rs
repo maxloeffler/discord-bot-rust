@@ -54,7 +54,7 @@ impl Command for FlagCommand {
                     reason,
                     monthly,
                 );
-                FlagsDB::get_instance().lock().await
+                FlagsDB::get_instance()
                     .append(&target.id.to_string(), &log.into()).await;
 
                 // log to mod logs
@@ -70,7 +70,7 @@ impl Command for FlagCommand {
                         false => timestamp_now + (7  * 24 * 60 * 60)
                     })
                     .build().await;
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(message, embed.to_message()).await;
 

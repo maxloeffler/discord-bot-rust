@@ -31,7 +31,7 @@ impl Command for RemoveAfkCommand {
                 let target_id = &params.target.unwrap().id.to_string();
 
                 // check if user is afk
-                let afk = AfkDB::get_instance().lock().await
+                let afk = AfkDB::get_instance()
                     .get(&target_id).await;
                 if afk.is_err() {
                     message.reply_failure("This user is not afk.").await;
@@ -39,7 +39,7 @@ impl Command for RemoveAfkCommand {
                 }
 
                 // remove afk message
-                AfkDB::get_instance().lock().await
+                AfkDB::get_instance()
                     .set(&target_id, "This afk message was **removed** by a moderator.").await;
 
                 message.reply_success().await;

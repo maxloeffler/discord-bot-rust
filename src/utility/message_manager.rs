@@ -75,7 +75,7 @@ impl MessageManager {
 
         // Obtain command
         if self.words.len() > 0 {
-            let prefix = ConfigDB::get_instance().lock().await
+            let prefix = ConfigDB::get_instance()
                 .get("command_prefix").await.unwrap().to_string();
             if self.words[0].starts_with(&prefix) {
                 let command = self.words[0].to_string();
@@ -214,7 +214,7 @@ impl MessageManager {
     }
 
     pub async fn create_embed(fn_style: impl FnOnce(CreateEmbed) -> CreateEmbed) -> CreateEmbed {
-        let color_primary = ConfigDB::get_instance().lock().await
+        let color_primary = ConfigDB::get_instance()
             .get("color_primary").await.unwrap();
         let embed = fn_style(CreateEmbed::default());
         let styled_embed = embed.color(color_primary);

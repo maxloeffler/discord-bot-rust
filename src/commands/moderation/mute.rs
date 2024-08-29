@@ -70,7 +70,7 @@ impl Command for MuteCommand {
                     message.get_author().id.to_string(),
                     reason.clone()
                 );
-                MutesDB::get_instance().lock().await
+                MutesDB::get_instance()
                     .append(&target.id.to_string(), &log.into()).await;
 
                 // log mute to mod logs
@@ -82,7 +82,7 @@ impl Command for MuteCommand {
                     .arbitrary("Reason", &reason)
                     .timestamp()
                     .build().await;
-                let modlogs: ChannelId = ConfigDB::get_instance().lock().await
+                let modlogs: ChannelId = ConfigDB::get_instance()
                     .get("channel_modlogs").await.unwrap().into();
                 let _ = modlogs.send_message(resolver, log_message.to_message()).await;
 
@@ -90,7 +90,7 @@ impl Command for MuteCommand {
 
                 // check for active flags
                 #[cfg(feature = "auto_moderation")]
-                AutoModerator::get_instance().lock().await
+                AutoModerator::get_instance()
                     .check_flags(message, target).await;
             }
         )

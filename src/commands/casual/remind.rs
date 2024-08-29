@@ -32,7 +32,7 @@ impl Command for RemindCommand {
                 // list all reminders
                 if list {
 
-                    let reminders = RemindersDB::get_instance().lock().await
+                    let reminders = RemindersDB::get_instance()
                         .get_all(&message.get_author().id.to_string()).await.unwrap();
                     let description = match reminders.len() {
                         0 => "You have no reminders.".to_string(),
@@ -89,7 +89,7 @@ impl Command for RemindCommand {
                     );
 
                     // append log
-                    RemindersDB::get_instance().lock().await
+                    RemindersDB::get_instance()
                         .append(&message.get_author().id.to_string(), &log.into()).await;
                     message.reply_success().await;
                 }

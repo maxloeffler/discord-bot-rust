@@ -50,7 +50,7 @@ async fn main() {
 
 
 async fn setup() -> String {
-    let config = ConfigDB::get_instance().lock().await;
+    let config = ConfigDB::get_instance();
     config.set("uptime", &chrono::Utc::now().timestamp().to_string()).await;
     config.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
     config.get("token").await.unwrap().to_string()
