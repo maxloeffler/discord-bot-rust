@@ -128,6 +128,10 @@ impl UserDecorator {
 
 impl Command for UserDecorator {
 
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+        self.command.permission(message)
+    }
+
     fn define_usage(&self) -> UsageBuilder {
         self.command.define_usage()
     }
@@ -192,6 +196,10 @@ impl NumberDecorator {
 }
 
 impl Command for NumberDecorator {
+
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+        self.command.permission(message)
+    }
 
     fn define_usage(&self) -> UsageBuilder {
         self.command.define_usage()
