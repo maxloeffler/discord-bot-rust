@@ -64,8 +64,11 @@ impl CommandParams {
 
 pub trait Command: Send + Sync {
 
-    fn permission<'a>(&'a self, _message: &'a MessageManager) -> BoxedFuture<'_, bool> {
-        Box::pin(async move { true })
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+        Box::pin(async move {
+            let muted = &message.get_resolver().resolve_role("Muted").await.unwrap()[0];
+            !message.has_role(muted).await
+        })
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()>;
