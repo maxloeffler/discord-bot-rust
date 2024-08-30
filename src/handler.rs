@@ -283,7 +283,7 @@ impl EventHandler for Handler {
                 .channel();
 
             // split message content into chunks of 1024 because of Discord embed field limit
-            let chars = message.payload(None, None).chars().collect::<Vec<_>>();
+            let chars = message.words.join(" ").chars().collect::<Vec<_>>();
             let chunks = chars.chunks(1024).collect::<Vec<_>>();
             for chunk in chunks.into_iter() {
                 let content = chunk.into_iter().collect::<String>();

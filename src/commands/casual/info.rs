@@ -27,11 +27,11 @@ impl Command for InfoCommand {
 
                 let mut embed = message.get_log_builder()
                     .target(target)
-                    .title(&format!("{}'s Information", message.resolve_name()))
+                    .title(&format!("{}'s Information", message.get_resolver().resolve_name(target)))
                     .arbitrary("Handle", &format!("<@{}>", target.id.to_string()))
                     .labeled_timestamp("Created At", target.created_at().unix_timestamp());
 
-                let member = message.resolve_member().await;
+                let member = message.get_resolver().resolve_member(target).await;
                 if let Some(member) = member {
 
                     if let Some(timestamp) = member.joined_at {
