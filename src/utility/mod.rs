@@ -20,7 +20,7 @@ pub mod usage_builder;
 pub use usage_builder::UsageBuilder;
 
 pub mod mixed;
-pub use mixed::{BoxedFuture, Result, RegexManager, string_distance};
+pub use mixed::{BoxedFuture, Result, RegexManager, string_distance, parse_time};
 
 pub mod resolver;
 pub use resolver::{Resolver, is_trial};

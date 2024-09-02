@@ -2,7 +2,7 @@
 pub mod command_manager;
 
 pub mod command;
-pub use command::{CommandType, Command, UserDecorator, NumberDecorator};
+pub use command::{CommandType, Command, UserDecorator, NumberDecorator, TimeDecorator};
 
 // ---- src/commands/casual/ ---- //
 

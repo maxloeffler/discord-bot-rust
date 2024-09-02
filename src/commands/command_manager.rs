@@ -34,7 +34,7 @@ impl CommandManager {
             Box::new( AfkCommand{} ),
             Box::new( PollCommand{} ),
             Box::new( AddEmojiCommand{} ),
-            Box::new( NumberDecorator{ command: Box::new(ScheduleCommand{}) }),
+            Box::new( TimeDecorator{ command: Box::new(ScheduleCommand{}) }),
             Box::new( SuggestCommand{} ),
             Box::new( RemindCommand{} ),
             Box::new( NumberDecorator{ command: Box::new(RemoveReminderCommand{}) }),

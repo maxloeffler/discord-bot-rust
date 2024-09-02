@@ -46,11 +46,12 @@ pub struct CommandParams {
     pub message: MessageManager,
     pub target: Option<User>,
     pub number: Option<i64>,
+    pub time:   Option<u64>,
 }
 
 impl CommandParams {
     pub fn new(message: MessageManager) -> Self {
-        Self { message, target: None, number: None }
+        Self { message, target: None, number: None, time: None }
     }
     pub fn set_target(mut self, target: Option<User>) -> Self {
         self.target = target;
@@ -58,6 +59,10 @@ impl CommandParams {
     }
     pub fn set_number(mut self, number: Option<i64>) -> Self {
         self.number = number;
+        self
+    }
+    pub fn set_time(mut self, time: Option<u64>) -> Self {
+        self.time = time;
         self
     }
 }
@@ -115,7 +120,7 @@ pub struct UserDecorator {
 
 impl UserDecorator {
 
-    async fn get_target(&self, message: &MessageManager) -> Option<User> {
+    pub async fn get_target(message: &MessageManager) -> Option<User> {
         let mentions = message.get_mentions().await;
         match mentions.len() {
 
@@ -173,7 +178,7 @@ impl Command for UserDecorator {
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
-                let target = self.get_target(&params.message).await;
+                let target = UserDecorator::get_target(&params.message).await;
                 if target.is_some() {
                     let augmented_params = params.set_target(target);
                     self.command.run(augmented_params.into()).await;
@@ -192,7 +197,7 @@ pub struct NumberDecorator {
 
 impl NumberDecorator {
 
-    async fn get_number(&self, message: &MessageManager) -> Option<i64> {
+    pub async fn get_number(message: &MessageManager) -> Option<i64> {
         for word in message.words.iter() {
             if let Ok(number) = word.parse::<i64>() {
                 return Some(number);
@@ -245,7 +250,7 @@ impl Command for NumberDecorator {
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
-                let number = self.get_number(&params.message).await;
+                let number = NumberDecorator::get_number(&params.message).await;
                 if number.is_some() {
                     let augmented_params = params.set_number(number);
                     self.command.run(augmented_params.into()).await;
@@ -257,4 +262,48 @@ impl Command for NumberDecorator {
     }
 
 }
+
+
+pub struct TimeDecorator {
+    pub command: Box<dyn Command>,
+}
+
+impl TimeDecorator {
+
+    pub async fn get_time(message: &MessageManager) -> Option<u64> {
+        for word in message.words.iter() {
+            if let Ok(time) = parse_time(word) {
+                return Some(time);
+            }
+        }
+        None
+    }
+}
+
+impl Command for TimeDecorator {
+
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+        self.command.permission(message)
+    }
+
+    fn define_usage(&self) -> UsageBuilder {
+        self.command.define_usage()
+    }
+
+    fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
+        Box::pin(
+            async move {
+                let time = TimeDecorator::get_time(&params.message).await;
+                if time.is_some() {
+                    let augmented_params = params.set_time(time);
+                    self.command.run(augmented_params.into()).await;
+                } else {
+                    params.message.reply_failure("No time provided.").await;
+                }
+            }
+        )
+    }
+
+}
+
 

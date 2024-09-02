@@ -87,6 +87,7 @@ impl ChatFilter {
         let channel = channel.unwrap();
 
         // no filtering in ticket channels
+        #[cfg(feature = "tickets")]
         if TicketHandler::get_instance().get_ticket(&channel.id).await.is_some() {
             return Filter {
                 filter_type: FilterType::Fine,

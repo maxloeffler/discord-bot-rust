@@ -15,8 +15,8 @@ impl Command for ScheduleCommand {
             CommandType::Casual,
             nonempty!["schedule".to_string(),"later".to_string()]
         )
-            .add_required(vec!["time (0..86400s)", "message"])
-            .example("60 One minute later!")
+            .add_required(vec!["time", "message"])
+            .example("1m30s Ninty seconds later!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -24,10 +24,10 @@ impl Command for ScheduleCommand {
             async move {
 
                 let message = &params.message;
-                let time = params.number.unwrap();
+                let time = params.time.unwrap();
 
-                if time < 0 || time > 86400 {
-                    self.invalid_usage(params).await;
+                if time < 0 || time > 86_400 {
+                    message.reply_failure("Time can at most be 1 day.").await;
                     return;
                 }
 
@@ -39,7 +39,7 @@ impl Command for ScheduleCommand {
 
                 // create log
                 let log = ScheduleLog::new(
-                    chrono::Utc::now().timestamp() + time,
+                    chrono::Utc::now().timestamp() + time as i64,
                     content,
                     message.get_channel().to_string(),
                 );

@@ -15,10 +15,10 @@ impl Command for RemindCommand {
             CommandType::Casual,
             nonempty!["remind".to_string(), "remind-me".to_string(), "reminder".to_string()]
         )
-            .add_required(vec!["time (0..604800s)", "message"])
+            .add_required(vec!["time", "message"])
             .new_usage()
             .add_constant("-list", false)
-            .example("60 One minute later!")
+            .example("1m30s Ninty later!")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -54,23 +54,15 @@ impl Command for RemindCommand {
                 // create reminder
                 else {
 
-                    let mut time = None;
-                    for word in message.words.iter() {
-                        if let Ok(time_value) = word.parse::<i64>() {
-                            time = Some(time_value);
-                            break;
-                        }
-                    }
-
+                    let time = TimeDecorator::get_time(message).await;
                     if time.is_none() {
                         self.invalid_usage(params).await;
                         return;
                     }
                     let time = time.unwrap();
 
-                    // max: 2 weeks
                     if time < 0 || time > 604_800 {
-                        self.invalid_usage(params).await;
+                        message.reply_failure("Time can at most be 1 week.").await;
                         return;
                     }
 
@@ -82,7 +74,7 @@ impl Command for RemindCommand {
 
                     // create log
                     let log = ScheduleLog::new(
-                        chrono::Utc::now().timestamp() + time,
+                        chrono::Utc::now().timestamp() + time as i64,
                         content,
                         message.get_channel().to_string(),
                     );

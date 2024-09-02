@@ -41,6 +41,37 @@ pub fn string_distance(a: &str, b: &str) -> usize {
 
 }
 
+pub fn parse_time(input: impl Into<String>) -> Result<u64> {
+
+    let re = Regex::new(r"(?i)(?P<value>\d+)(?P<unit>[dhms])").map_err(|e| e.to_string())?;
+    let mut total_seconds = 0;
+
+    let input = &input.into();
+    let captures = re.captures_iter(input).collect::<Vec<_>>();
+    if captures.is_empty() {
+        return Err("Invalid time format".to_string());
+    }
+
+    for cap in captures.iter() {
+        let value: u64 = cap["value"].parse().map_err(|_| "Invalid number".to_string())?;
+        let unit = &cap["unit"];
+
+        // Convert the parsed value to seconds based on the unit
+        let seconds = match unit.to_lowercase().as_str() {
+            "w" => value * 604_800, // weeks
+            "d" => value * 86_400,  // days
+            "h" => value * 3_600,   // hours
+            "m" => value * 60,      // minutes
+            "s" => value,           // seconds
+            _ => return Err(format!("Invalid unit: {}", unit)),
+        };
+
+        total_seconds += seconds;
+    }
+
+    Ok(total_seconds)
+}
+
 pub struct RegexManager {}
 
 impl RegexManager {
