@@ -153,8 +153,7 @@ impl UserDecorator {
                 user
             },
             _ => {
-                let user = message.get_resolver().resolve_user(mentions[0]).await;
-                Some(user.unwrap())
+                message.get_resolver().resolve_user(mentions[0]).await
             }
         }
     }
@@ -175,8 +174,12 @@ impl Command for UserDecorator {
         Box::pin(
             async move {
                 let target = self.get_target(&params.message).await;
-                let augmented_params = params.set_target(target);
-                self.command.run(augmented_params.into()).await;
+                if target.is_some() {
+                    let augmented_params = params.set_target(target);
+                    self.command.run(augmented_params.into()).await;
+                } else {
+                    params.message.reply_failure("User not found.").await;
+                }
             }
         )
     }
@@ -219,12 +222,11 @@ impl NumberDecorator {
         let number = reply.content.parse::<i64>();
 
         match number {
-            Ok(number) => Some(number),
-            Err(_) => {
+            Ok(number) => {
                 let _ = reply.delete(message).await;
-                self.invalid_usage(CommandParams::new(message.clone())).await;
-                None
-            }
+                Some(number)
+            },
+            Err(_) => None
         }
     }
 
@@ -247,6 +249,8 @@ impl Command for NumberDecorator {
                 if number.is_some() {
                     let augmented_params = params.set_number(number);
                     self.command.run(augmented_params.into()).await;
+                } else {
+                    params.message.reply_failure("No number provided.").await;
                 }
             }
         )
