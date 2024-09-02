@@ -91,7 +91,6 @@ impl Command for UnbanCommand {
                     let embed = message.get_log_builder()
                         .title("[UNBAN]")
                         .target(target)
-                        .description(&format!("{} has been unbanned", name))
                         .color(0xff8200)
                         .staff()
                         .arbitrary("Ban Reason", &ban_reason)

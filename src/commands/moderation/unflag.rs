@@ -51,7 +51,6 @@ impl Command for UnflagCommand {
                     // log to mod logs
                     let embed = message.get_log_builder()
                         .title("[UNFLAG]")
-                        .description(&format!("<@{}> has been unflagged", target.id))
                         .color(0xff8200)
                         .staff()
                         .user(&target)

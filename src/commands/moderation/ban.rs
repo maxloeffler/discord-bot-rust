@@ -67,7 +67,6 @@ impl Command for BanCommand {
                     // log ban to mod logs
                     let log_message = message.get_log_builder()
                         .title("[BAN]")
-                        .description(&format!("<@{}> has been banned", target.id))
                         .target(&target)
                         .color(0xff8200)
                         .staff()

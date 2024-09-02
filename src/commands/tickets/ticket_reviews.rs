@@ -67,7 +67,7 @@ impl Command for TicketReviewsCommand {
                                 for entry in chunk.iter() {
 
                                     builder = builder.arbitrary_block(
-                                        format!("**Databse ID**: {}", entry.id),
+                                        format!("**Database ID**: {}", entry.id),
                                         format!("<@{}> `>` {}\n**Notes**: {}",
                                             target.id,
                                             match entry.approved { true => "Approved", false => "Denied" },

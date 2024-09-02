@@ -54,6 +54,7 @@ impl Command for RemoveWarningCommand {
                 let log_message = message.get_log_builder()
                     .title("[REMOVE WARNING]")
                     .description(&format!("Removed warning with **ID {}**", warn_id))
+                    .target(&target)
                     .color(0xff8200)
                     .staff()
                     .user(&target)

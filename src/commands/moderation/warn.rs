@@ -85,7 +85,6 @@ impl Command for WarnCommand {
                 let log_message = message.get_log_builder()
                     .title("[WARNING]")
                     .target(&target)
-                    .description(&format!("<@{}> has been warned", target.id))
                     .color(0xff8200)
                     .staff()
                     .user(&target)

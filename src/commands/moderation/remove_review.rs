@@ -53,6 +53,7 @@ impl Command for RemoveReviewCommand {
                 let log_message = message.get_log_builder()
                     .title("[REMOVE REVIEW]")
                     .description(&format!("Removed review with **ID {}**", review_id))
+                    .target(&target)
                     .color(0xff8200)
                     .staff()
                     .user(&target)

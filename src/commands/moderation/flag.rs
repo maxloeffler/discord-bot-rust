@@ -60,7 +60,7 @@ impl Command for FlagCommand {
                 let timestamp_now = chrono::Utc::now().timestamp();
                 let embed = message.get_log_builder()
                     .title("[FLAG]")
-                    .description(&format!("<@{}> has been flagged", target.id))
+                    .target(&target)
                     .color(0xff8200)
                     .staff()
                     .user(&target)

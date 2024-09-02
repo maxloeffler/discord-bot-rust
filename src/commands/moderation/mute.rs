@@ -77,7 +77,6 @@ impl Command for MuteCommand {
                 // log mute to mod logs
                 let log_message = message.get_log_builder()
                     .title("[MUTE]")
-                    .description(&format!("<@{}> has been muted", target.id))
                     .target(&target)
                     .staff()
                     .user(&target)

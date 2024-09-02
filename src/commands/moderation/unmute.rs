@@ -58,10 +58,11 @@ impl Command for UnmuteCommand {
                 member.remove_role(&resolver, role_muted).await.unwrap();
                 let mut builder = message.get_log_builder()
                     .title("[UNMUTE]")
-                    .description(&format!("<@{}> has been unmuted", target.id))
+                    .target(&target)
                     .color(0xff8200)
                     .staff()
-                    .user(&target);
+                    .user(&target)
+                    .timestamp();
 
                 // flag member if specified
                 if message.has_parameter("flag") {
