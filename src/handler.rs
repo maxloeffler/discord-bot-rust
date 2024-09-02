@@ -106,6 +106,11 @@ impl EventHandler for Handler {
         let filter = ChatFilter::get_instance().apply(&message).await;
         if filter.filter_type == FilterType::Fine || message.is_trial().await || author.bot {
 
+            // react to welcome messages
+            if message.payload(None, None).to_lowercase().contains("welcome") {
+                let _ = message.react("💫").await;
+            }
+
             // execute command
             #[cfg(feature = "commands")]
             if message.is_command() {

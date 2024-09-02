@@ -235,6 +235,10 @@ impl MessageManager {
         InteractionHelper::new(self.get_channel(), self.get_resolver())
     }
 
+    pub async fn react(&self, reaction: &str) {
+        let _ = self.raw_message.react(&self.resolver, ReactionType::Unicode(reaction.to_string())).await;
+    }
+
     // ---- Basics ---- //
 
     pub fn get_channel(&self) -> ChannelId {
