@@ -13,7 +13,7 @@ use std::sync::RwLock;
 use crate::utility::*;
 
 
-#[derive(EnumIter, Clone)]
+#[derive(EnumIter, Clone, Hash, PartialEq, Eq, Debug)]
 pub enum DB {
     Config,
     Warnings,
