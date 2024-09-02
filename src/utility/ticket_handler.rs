@@ -463,7 +463,8 @@ impl Ticket {
 
     pub async fn add_staff(&self, staff: &UserId) {
         let handler = self.get_permissions();
-        let staff_lock = self.present_staff.lock().await;
+        let mut staff_lock = self.present_staff.lock().await;
+        staff_lock.insert(*staff);
 
         // deny all staff to send, when the ticket is freshly claimed
         if staff_lock.len() == 1 {
