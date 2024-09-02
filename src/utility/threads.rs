@@ -257,6 +257,36 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                         }
                     }
                 }).await;
+
+            // clean message logs
+            #[cfg(feature = "message_logs")]
+            {
+                let channel_id: ChannelId = ConfigDB::get_instance().get("channel_messagelogs").await.unwrap().into();
+                let channel = resolver.resolve_guild_channel(channel_id).await.unwrap();
+
+                let mut last_message = channel.last_message_id.unwrap();
+                let mut count = 500;
+
+                while count > 0 {
+                    let messages = channel.messages(resolver, GetMessages::new().before(last_message).limit(100)).await.unwrap();
+                    if messages.len() == 0 {
+                        break;
+                    }
+                    last_message = messages.last().unwrap().id;
+                    count -= messages.len();
+                }
+
+                let builder = GetMessages::new().before(last_message).limit(100);
+                let messages = channel.messages(resolver, builder).await;
+                match messages {
+                    Ok(messages) => {
+                        println!("Deleting {} messages", messages.len());
+                        println!("{:?}", messages.last().unwrap().id);
+                        channel_id.delete_messages(resolver, messages).await;
+                    },
+                    Err(_) => {},
+                };
+            }
         }
     })
 }
