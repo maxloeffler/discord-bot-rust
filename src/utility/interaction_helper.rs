@@ -5,6 +5,7 @@ use serenity::model::application::ButtonStyle;
 use serenity::builder::{
     CreateEmbed,
     CreateButton,
+    CreateActionRow,
     CreateInteractionResponse,
     CreateSelectMenu,
     CreateSelectMenuKind,
@@ -34,19 +35,30 @@ impl<'a> InteractionHelper<'_> {
                             mut buttons: Vec<CreateButton>) -> Option<String> {
 
         // handle button limit
-        if buttons.len() > 5 {
-            buttons = buttons[..5].to_vec();
+        if buttons.len() > 24 {
+            buttons = buttons[..24].to_vec();
             Logger::warn(
                 &format!(
-                    "Discord only supports up to 5 buttons per message ({} requested).",
+                    "Discord only supports up to 25 buttons per message ({} requested, 1 is blocked to be the interaction cancel button).",
                     buttons.len()));
         }
 
+        // add cancel button
+        let cancel_button = CreateButton::new("cancel")
+            .label("Cancel")
+            .style(ButtonStyle::Danger);
+        buttons.push(cancel_button);
+
+        // split buttons in chunks of 5
+        let button_chunks = buttons.chunks(5)
+            .map(|chunk| chunk.to_vec())
+            .collect::<Vec<Vec<CreateButton>>>();
+        let action_rows = button_chunks.into_iter().map(|chunk| {
+            CreateActionRow::Buttons(chunk)
+        }).collect();
+
         // prepare message
-        let message = message.to_message();
-        let message = buttons.into_iter().fold(message, |message, button| {
-            message.button(button)
-        });
+        let message = message.to_message().components(action_rows);
 
         // send message
         let sent_message = self.channel
@@ -67,7 +79,12 @@ impl<'a> InteractionHelper<'_> {
 
             // delete message
             let _ = sent_message.delete(&self.resolver).await;
-            return Some(interaction.data.custom_id.to_string());
+            let id = interaction.data.custom_id.to_string();
+
+            match id.as_str() {
+                "cancel" => return None,
+                _ => return Some(id)
+            }
         }
         None
     }
