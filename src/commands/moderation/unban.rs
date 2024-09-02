@@ -90,7 +90,7 @@ impl Command for UnbanCommand {
                     };
                     let embed = message.get_log_builder()
                         .title("[UNBAN]")
-                        .target(target)
+                        .description(&format!("{} has been unbanned", name))
                         .color(0xff8200)
                         .staff()
                         .arbitrary("Ban Reason", &ban_reason)
@@ -112,7 +112,7 @@ impl Command for UnbanCommand {
                         .no_thumbnail()
                         .color(0xff0000)
                         .build().await;
-                    let sent = target.direct_message(resolver, notify_message.to_message()).await;
+                    let sent = target.dm(resolver, notify_message.to_message()).await;
 
                     match sent {
                         Ok(_)  => message.reply_success().await,

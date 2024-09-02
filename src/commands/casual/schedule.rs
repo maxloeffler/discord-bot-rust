@@ -26,7 +26,7 @@ impl Command for ScheduleCommand {
                 let message = &params.message;
                 let time = params.time.unwrap();
 
-                if time < 0 || time > 86_400 {
+                if time > 86_400 {
                     message.reply_failure("Time can at most be 1 day.").await;
                     return;
                 }

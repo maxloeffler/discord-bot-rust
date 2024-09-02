@@ -85,7 +85,11 @@ impl EventHandler for Handler {
         }
 
         // check if message mentions an afk user
-        let mentions = message.get_mentions().await;
+        let mut mentions = message.get_mentions().await;
+        if message.is_referencing() {
+            let reference = message.get_referenced();
+            mentions.push(reference.author.id);
+        }
         futures::stream::iter(mentions)
             .for_each_concurrent(None, |mention| {
                 let message = Arc::clone(&message);
@@ -101,6 +105,7 @@ impl EventHandler for Handler {
                         message.reply_temporary(embed).await;
                     }
                 }}).await;
+
 
         // check guideline violations
         let filter = ChatFilter::get_instance().apply(&message).await;
@@ -200,7 +205,6 @@ impl EventHandler for Handler {
             let name = message.resolve_name();
             let log_builder = message.get_log_builder()
                 .title(&format!("{}'s Message Edited", name))
-                .description("Message Information")
                 .labeled_timestamp("Sent", message.get_timestamp())
                 .labeled_timestamp("Edited", chrono::Utc::now().timestamp())
                 .channel();
@@ -282,7 +286,6 @@ impl EventHandler for Handler {
             let name = resolver.resolve_name(message.get_author());
             let mut log_builder = message.get_log_builder()
                 .title(&format!("{}'s Message Deleted", name))
-                .description("Message Information")
                 .labeled_timestamp("Sent", message.get_timestamp())
                 .labeled_timestamp("Deleted", chrono::Utc::now().timestamp())
                 .channel();

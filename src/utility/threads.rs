@@ -279,11 +279,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                 let builder = GetMessages::new().before(last_message).limit(100);
                 let messages = channel.messages(resolver, builder).await;
                 match messages {
-                    Ok(messages) => {
-                        println!("Deleting {} messages", messages.len());
-                        println!("{:?}", messages.last().unwrap().id);
-                        channel_id.delete_messages(resolver, messages).await;
-                    },
+                    Ok(messages) => { let _ = channel_id.delete_messages(resolver, messages).await; },
                     Err(_) => {},
                 };
             }

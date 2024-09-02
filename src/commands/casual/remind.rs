@@ -61,7 +61,7 @@ impl Command for RemindCommand {
                     }
                     let time = time.unwrap();
 
-                    if time < 0 || time > 604_800 {
+                    if time > 604_800 {
                         message.reply_failure("Time can at most be 1 week.").await;
                         return;
                     }

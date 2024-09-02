@@ -89,7 +89,7 @@ impl Command for BanCommand {
                         .no_thumbnail()
                         .color(0xff0000)
                         .build().await;
-                    let sent = target.direct_message(resolver, notify_message.to_message()).await;
+                    let sent = target.dm(resolver, notify_message.to_message()).await;
 
                     match sent {
                         Ok(_)  => message.reply_success().await,
