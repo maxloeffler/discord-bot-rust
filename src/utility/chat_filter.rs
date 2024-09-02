@@ -74,14 +74,36 @@ impl ChatFilter {
 
     pub async fn apply(&self, message: &MessageManager) -> Filter {
 
+        // fetch channel
         let channel = message.resolve_guild_channel().await;
+
+        // do not moderate dms
+        if channel.is_none() {
+            return Filter {
+                filter_type: FilterType::Fine,
+                context: message.payload(None, None)
+            };
+        }
+        let channel = channel.unwrap();
+
+        // no filtering in ticket channels
+        if TicketHandler::get_instance().get_ticket(&channel.id).await.is_some() {
+            return Filter {
+                filter_type: FilterType::Fine,
+                context: message.payload(None, None)
+            };
+        }
+
+        // fetch additional roles and channels
         let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
         let link_perm_roles = message.get_resolver().resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
         let has_link_perms = message.has_role(link_perm_roles).await;
 
+        // perform word based analysis
         for word in message.words.iter() {
 
+            // check for slurs
             if self.slurs.contains(&word.to_lowercase()) {
                 return Filter {
                     filter_type: FilterType::Slur,
@@ -89,10 +111,12 @@ impl ChatFilter {
                 };
             }
 
+            // allows permitted users to post links
             if has_link_perms {
                 continue;
             }
 
+            // check for links
             let url_regex = RegexManager::get_url_regex();
             if url_regex.is_match(word.as_str()) {
                 let mut external = true;
@@ -107,14 +131,12 @@ impl ChatFilter {
 
                 // check music category
                 if external {
-                    if let Some(channel) = &channel {
-                        if let Some(category) = channel.parent_id {
-                            if category == category_music {
-                                for music_domain in &self.music_domains {
-                                    if word.to_lowercase().contains(music_domain) {
-                                        external = false;
-                                        break;
-                                    }
+                    if let Some(category) = channel.parent_id {
+                        if category == category_music {
+                            for music_domain in &self.music_domains {
+                                if word.to_lowercase().contains(music_domain) {
+                                    external = false;
+                                    break;
                                 }
                             }
                         }
