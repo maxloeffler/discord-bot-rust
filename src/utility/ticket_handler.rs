@@ -467,7 +467,7 @@ impl Ticket {
 
         // deny all staff to send, when the ticket is freshly claimed
         if staff_lock.len() == 1 {
-            handler.allow_role(Permissions::SEND_MESSAGES, &self.allowed_roles).await;
+            handler.deny_role(Permissions::SEND_MESSAGES, &self.allowed_roles).await;
         }
 
         // grant newly added staff access
