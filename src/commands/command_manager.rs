@@ -67,6 +67,7 @@ impl CommandManager {
             Box::new( NotesCommand{} ),
             Box::new( AddNoteCommand{} ),
             Box::new( RemoveNoteCommand{} ),
+            Box::new( UserDecorator{ command: Box::new(HistoryCommand{}) }),
         ];
         #[cfg(feature = "tickets")]
         let ticket_commands: Vec<Box<dyn Command>> = vec![

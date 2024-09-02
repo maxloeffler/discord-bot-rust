@@ -58,6 +58,7 @@ pub use moderation::lockdown::LockdownCommand;
 pub use moderation::notes::NotesCommand;
 pub use moderation::add_note::AddNoteCommand;
 pub use moderation::remove_note::RemoveNoteCommand;
+pub use moderation::history::HistoryCommand;
 
 // ---- src/commands/tickets/ ---- //
 

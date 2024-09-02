@@ -23,3 +23,4 @@ pub mod lockdown;
 pub mod notes;
 pub mod add_note;
 pub mod remove_note;
+pub mod history;
