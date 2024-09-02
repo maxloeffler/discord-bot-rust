@@ -449,10 +449,10 @@ impl Ticket {
     pub async fn deny_all(&self) {
         let handler = self.get_permissions();
         for user_id in self.present_members.lock().await.iter() {
-            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
+            handler.member(Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES, user_id).await;
         }
         for user_id in self.present_staff.lock().await.iter() {
-            handler.deny_member(&Permissions::SEND_MESSAGES, user_id).await;
+            handler.member(Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES, user_id).await;
         }
         #[cfg(feature = "debug")]
         Logger::warn("Denying roles when closing a Ticket is currently disabled");
@@ -468,7 +468,7 @@ impl Ticket {
 
         // deny all staff to send, when the ticket is freshly claimed
         if staff_lock.len() == 1 {
-            handler.deny_role(Permissions::SEND_MESSAGES, &self.allowed_roles).await;
+            handler.role(Permissions::VIEW_CHANNEL, Permissions::SEND_MESSAGES, &self.allowed_roles).await;
         }
 
         // grant newly added staff access

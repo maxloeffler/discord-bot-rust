@@ -23,10 +23,9 @@ impl<'a> PermissionHandler<'_> {
     }
 
     async fn update_permissions(&self, overwrites: Vec<PermissionOverwrite>) {
-        futures::stream::iter(overwrites)
-            .for_each_concurrent(None, |overwrite| async move {
-                let _ = self.channel.create_permission(self.resolver, overwrite).await;
-            }).await;
+        for overwrite in overwrites {
+            let _ = self.channel.create_permission(self.resolver, overwrite).await;
+        }
     }
 
     pub async fn allow_role(&self, allows: impl ToList<Permissions>, roles: &impl ToList<RoleId>) {
