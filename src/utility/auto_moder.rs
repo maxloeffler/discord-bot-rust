@@ -183,9 +183,7 @@ impl AutoModerator {
             embed
                 .title("Automatic Mute")
                 .description(
-                    "You have been **automatically muted** because you reached **3** warnings.
-                    A staff member will shortly open a **ticket** with you to discuss your warnings.
-                    The staff member to delete this note should be the one to create the ticket.")
+                    "You have been **automatically muted** because you reached **3** warnings. A staff member will shortly open a **ticket** with you to discuss your warnings. The staff member to delete this note should be the one to create the ticket.")
                 .color(0xFF0000)
         }).await;
 
@@ -194,8 +192,8 @@ impl AutoModerator {
             .get_last(&target_id, 1).await.unwrap()[0];
         let role_automute = &resolver.resolve_role("Auto Mute").await.unwrap()[0];
         let responsibility = match last_warning.staff_id == bot_id {
-            true  => format!("<@&{}>", role_automute.id),
-            false => format!("<@{}>", last_warning.staff_id)
+            true  => format!("<@{}><@&{}>", target_id, role_automute.id),
+            false => format!("<@{}><@{}>",  target_id, last_warning.staff_id)
         };
 
         // get muted channel
