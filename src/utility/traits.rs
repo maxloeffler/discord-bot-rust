@@ -280,13 +280,14 @@ pub async fn match_triggerables<'a>
     let highlight = " ".repeat(hit) + &"^".repeat(compare.len());
     let embed = MessageManager::create_embed(|embed| {
         embed
-            .title("Did you mean ...")
+            .title(format!("{}, did you mean ...", message.resolve_name()))
             .description(&format!("`{message_content}`\n`{}`", highlight))
     }).await;
 
     // create interaction
     let interaction_helper = message.get_interaction_helper();
     let pressed = interaction_helper.create_buttons(
+        message.get_author().id,
         embed,
         buttons
     ).await;

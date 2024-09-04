@@ -31,6 +31,7 @@ impl<'a> InteractionHelper<'_> {
     }
 
     pub async fn create_buttons(&self,
+                            target: UserId,
                             message: impl ToMessage,
                             mut buttons: Vec<CreateButton>) -> Option<String> {
 
@@ -66,7 +67,8 @@ impl<'a> InteractionHelper<'_> {
 
         // await interaction
         let interaction = &sent_message
-            .await_component_interaction(&self.resolver.ctx().shard)
+            .await_component_interactions(&self.resolver.ctx().shard)
+            .author_id(target)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
@@ -87,32 +89,6 @@ impl<'a> InteractionHelper<'_> {
             }
         }
         None
-    }
-
-    pub async fn create_choice_interaction(&self,
-                                     message: impl ToMessage,
-                                     yes_callback: BoxedFuture<'a, ()>,
-                                     no_callback:  BoxedFuture<'a, ()>) {
-
-        // prepare message
-        let yes_button = CreateButton::new("Yes")
-            .label("Yes")
-            .style(ButtonStyle::Primary);
-        let no_button  = CreateButton::new("No")
-            .label("No")
-            .style(ButtonStyle::Secondary);
-
-        // create interaction and wait for response
-        let pressed = self.create_buttons(message, vec![yes_button, no_button]).await;
-        if let Some(pressed) = pressed {
-
-            // execute callback
-            match pressed.as_str() {
-                "Yes" => yes_callback.await,
-                "No"  => no_callback.await,
-                _ => unreachable!()
-            };
-        }
     }
 
     pub async fn create_dropdown_interaction(&self,
