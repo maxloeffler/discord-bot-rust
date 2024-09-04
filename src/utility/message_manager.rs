@@ -98,7 +98,7 @@ impl MessageManager {
                 let split_regex = Regex::new(keys.join("|").as_str());
 
                 if let Ok(regex) = split_regex {
-                    let payload = self.words[1..].join(" ");
+                    let payload = self.raw_message.content.clone();
                     let splits = regex.split(&payload).collect::<Vec<&str>>();
                     splits[1..].into_iter()
                         .enumerate()
