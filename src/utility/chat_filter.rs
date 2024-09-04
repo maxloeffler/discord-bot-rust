@@ -103,13 +103,16 @@ impl ChatFilter {
 
         // perform word based analysis
         for word in message.words.iter() {
+            let word_lc = word.to_lowercase();
 
             // check for slurs
-            if self.slurs.contains(&word.to_lowercase()) {
-                return Filter {
-                    filter_type: FilterType::Slur,
-                    context: word.to_string()
-                };
+            for slur in &self.slurs {
+                if word_lc.contains(slur) {
+                    return Filter {
+                        filter_type: FilterType::Slur,
+                        context: word.to_string()
+                    };
+                }
             }
 
             // allows permitted users to post links
@@ -135,7 +138,7 @@ impl ChatFilter {
                     if let Some(category) = channel.parent_id {
                         if category == category_music {
                             for music_domain in &self.music_domains {
-                                if word.to_lowercase().contains(music_domain) {
+                                if word_lc.contains(music_domain) {
                                     external = false;
                                     break;
                                 }
