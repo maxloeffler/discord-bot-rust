@@ -102,6 +102,7 @@ impl ChatFilter {
         let has_link_perms = message.has_role(link_perm_roles).await;
 
         // perform word based analysis
+        let url_regex = RegexManager::get_url_regex();
         for word in message.words.iter() {
             let word_lc = word.to_lowercase();
 
@@ -121,13 +122,12 @@ impl ChatFilter {
             }
 
             // check for links
-            let url_regex = RegexManager::get_url_regex();
-            if url_regex.is_match(word.as_str()) {
+            if url_regex.is_match(word.as_str()) && !word_lc.ends_with(".gif") {
                 let mut external = true;
 
                 // compare against regular list of whitelisted domains
-                for domain in &self.domains {
-                    if word.contains(domain) {
+                for whitelisted_domain in &self.domains {
+                    if word.contains(whitelisted_domain) {
                         external = false;
                         break;
                     }
@@ -137,8 +137,8 @@ impl ChatFilter {
                 if external {
                     if let Some(category) = channel.parent_id {
                         if category == category_music {
-                            for music_domain in &self.music_domains {
-                                if word_lc.contains(music_domain) {
+                            for whitelisted_music_domain in &self.music_domains {
+                                if word_lc.contains(whitelisted_music_domain) {
                                     external = false;
                                     break;
                                 }
