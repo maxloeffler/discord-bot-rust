@@ -57,6 +57,7 @@ impl Command for LockCommand {
                         .title("[LOCK]")
                         .target(target)
                         .staff()
+                        .user(target)
                         .channel()
                         .timestamp()
                         .build().await;

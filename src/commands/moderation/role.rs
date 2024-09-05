@@ -79,6 +79,7 @@ impl Command for RoleCommand {
                             })
                             .target(target)
                             .staff()
+                            .user(target)
                             .arbitrary("Role", format!("<@&{}>", &role.id))
                             .timestamp()
                             .build().await;

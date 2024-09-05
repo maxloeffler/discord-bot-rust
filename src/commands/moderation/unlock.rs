@@ -57,6 +57,7 @@ impl Command for UnlockCommand {
                         .title("[UNLOCK]")
                         .target(target)
                         .staff()
+                        .user(target)
                         .channel()
                         .timestamp()
                         .build().await;
