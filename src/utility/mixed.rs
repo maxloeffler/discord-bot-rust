@@ -29,7 +29,7 @@ pub fn string_distance(a: &str, b: &str) -> usize {
         return a.len();
     }
 
-    if a.chars().next().unwrap() == b.chars().next().unwrap() {
+    if a[0..1] == b[0..1] {
         return string_distance(&a[1..], &b[1..]);
     }
 
