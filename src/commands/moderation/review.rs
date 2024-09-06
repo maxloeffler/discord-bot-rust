@@ -217,6 +217,7 @@ impl Command for ReviewCommand {
 
                                 message.get_interaction_helper()
                                     .create_user_dropdown_interaction(
+                                        reviewer.id,
                                         embed,
                                         staff,
                                         |reviewee: User| ReviewCommand::review_ticket(reviewee, reviewer, transcript_url, notes, dump_channel, message)).await;

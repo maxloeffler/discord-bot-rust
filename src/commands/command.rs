@@ -143,6 +143,7 @@ impl UserDecorator {
                 // create dropdown interaction
                 let selected_user = Arc::new(Mutex::new(None));
                 let _ = message.get_interaction_helper().create_user_dropdown_interaction(
+                    message.get_author().id,
                     embed,
                     users,
                     |value: User| {

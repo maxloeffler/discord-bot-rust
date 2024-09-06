@@ -92,6 +92,7 @@ impl<'a> InteractionHelper<'_> {
     }
 
     pub async fn create_dropdown_interaction(&self,
+                                        target: UserId,
                                         message: impl ToMessage,
                                         options: Vec<CreateSelectMenuOption>,
                                         callback: impl FnOnce(&String) -> BoxedFuture<'a, ()>) {
@@ -111,6 +112,7 @@ impl<'a> InteractionHelper<'_> {
         // await interaction
         let interaction = &sent_message
             .await_component_interaction(&self.resolver.ctx().shard)
+            .author_id(target)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
@@ -135,6 +137,7 @@ impl<'a> InteractionHelper<'_> {
     }
 
     pub async fn create_user_dropdown_interaction(&self,
+                                        target: UserId,
                                         message: impl ToMessage,
                                         users: Vec<&User>,
                                         callback: impl FnOnce(User) -> BoxedFuture<'a, ()>) {
@@ -157,6 +160,7 @@ impl<'a> InteractionHelper<'_> {
         // await interaction
         let interaction = sent_message
             .await_component_interaction(&self.resolver.ctx().shard)
+            .author_id(target)
             .timeout(Duration::from_secs(60)).await;
 
         // execute callback
