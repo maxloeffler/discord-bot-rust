@@ -288,11 +288,13 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 }
 
 #[cfg(feature = "tickets")]
-pub fn hook_ticket_selector<'a>(resolver: Resolver, selector: Message) -> BoxedFuture<'a, ()> {
+pub fn hook_ticket_selector<'a>(resolver: Resolver, channel: GuildChannel) -> BoxedFuture<'a, ()> {
     Box::pin(async move {
+
+        // listen for reactions
         let resolver = &resolver;
         let mut last_reaction = (None, chrono::Utc::now().timestamp());
-        let mut reactions = selector
+        let mut reactions = channel
             .await_reaction(&resolver.ctx().shard)
             .stream();
 

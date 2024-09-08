@@ -51,10 +51,10 @@ impl Command for TicketSelectorCommand {
                     .to_message()
                     .reactions(reactions);
 
-                let selector = message.reply(selector).await;
-                if let Ok(selector) = selector {
-                    spawn(hook_ticket_selector(message.get_resolver().clone(), selector)).await;
-                }
+                let _ = message.reply(selector).await;
+                let channel_id = message.get_channel();
+                let channel = message.get_resolver().resolve_guild_channel(channel_id).await.unwrap();
+                spawn(hook_ticket_selector(message.get_resolver().clone(), channel)).await;
             }
         )
     }

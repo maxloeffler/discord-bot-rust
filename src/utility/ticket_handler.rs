@@ -139,26 +139,12 @@ impl TicketHandler {
         #[cfg(feature = "debug")]
         Logger::info("Hooking ticket selector");
 
+        // get channel
         let channel_id: ChannelId = ConfigDB::get_instance()
             .get("channel_tickets").await.unwrap().into();
-        let channel = resolver.resolve_guild_channel(channel_id).await;
+        let channel = resolver.resolve_guild_channel(channel_id).await.unwrap();
 
-        if let Some(channel) = channel {
-            if let Some(last_message_id) = channel.last_message_id {
-
-                // fetch last message
-                let message = resolver.resolve_message(channel.id, last_message_id).await;
-                if let Some(message) = message {
-
-                    // hook selector
-                    if message.author.bot {
-                        spawn(hook_ticket_selector(resolver.clone(), message)).await;
-                    }
-                }
-            }
-        }
-
-
+        spawn(hook_ticket_selector(resolver.clone(), channel)).await;
 
         #[cfg(feature = "debug")]
         Logger::info_long("End", "Initilizing ticket handler");
