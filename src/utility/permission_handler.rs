@@ -106,4 +106,9 @@ impl<'a> PermissionHandler<'_> {
         self.update_permissions(overwrites).await;
     }
 
+    pub async fn remove_overwrites(&self, target: UserId) {
+        let permission = PermissionOverwriteType::Member(target);
+        let _ = self.channel.delete_permission(self.resolver, permission).await;
+    }
+
 }

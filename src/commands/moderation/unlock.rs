@@ -47,10 +47,7 @@ impl Command for UnlockCommand {
 
                     // revoke member's permissions
                     let handler = PermissionHandler::new(&message.get_resolver(), &channel);
-                    handler.allow_member(
-                        vec![&Permissions::SEND_MESSAGES, &Permissions::VIEW_CHANNEL],
-                        &target.id)
-                    .await;
+                    handler.remove_overwrites(target.id).await;
 
                     // log user lock to modlogs
                     let embed = message.get_log_builder()
