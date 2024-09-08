@@ -291,13 +291,31 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 pub fn hook_ticket_selector<'a>(resolver: Resolver, selector: Message) -> BoxedFuture<'a, ()> {
     Box::pin(async move {
         let resolver = &resolver;
+        let mut last_interaction = (None, chrono::Utc::now().timestamp());
         let mut interactions = selector
             .await_component_interactions(&resolver.ctx().shard)
             .stream();
 
         while let Some(interaction) = interactions.next().await {
             match interaction.data.kind {
-                StringSelect{values} => {
+                StringSelect{ref values} => {
+
+                    // end interaction
+                    let _ = interaction.create_response(&resolver,
+                        CreateInteractionResponse::Acknowledge
+                    ).await;
+
+                    // same user cannot create multiple tickets within 10 seconds
+                    if last_interaction.0.is_some()
+                        && last_interaction.0.unwrap() == interaction.user.id
+                        && last_interaction.1 + 10 > chrono::Utc::now().timestamp() {
+                        continue;
+                    }
+
+                    // update last interaction
+                    last_interaction = (Some(interaction.user.id), chrono::Utc::now().timestamp());
+
+                    // create ticket
                     let ticket_type = TicketType::from(values[0].clone());
                     let _ = TicketHandler::get_instance()
                         .new_ticket(resolver, &interaction.user, ticket_type).await;
