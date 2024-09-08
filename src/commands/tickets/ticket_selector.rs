@@ -35,12 +35,10 @@ impl Command for TicketSelectorCommand {
                     .get("bot_id").await.unwrap().into();
                 let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
-                let options = vec![
-                    CreateSelectMenuOption::new("Staff Report", TicketType::StaffReport).emoji(ReactionType::Unicode("📁".to_string())),
-                    CreateSelectMenuOption::new("User Report",  TicketType::UserReport).emoji(ReactionType::Unicode("💼".to_string())),
-                    CreateSelectMenuOption::new("Bug Report",   TicketType::BugReport).emoji(ReactionType::Unicode("📔".to_string())),
-                    CreateSelectMenuOption::new("Question",     TicketType::Question).emoji(ReactionType::Unicode("🤔".to_string())),
-                ];
+                let reactions = vec![ReactionType::Unicode("📁".to_string()),
+                                     ReactionType::Unicode("💼".to_string()),
+                                     ReactionType::Unicode("📔".to_string()),
+                                     ReactionType::Unicode("🤔".to_string())];
 
                 let selector = message.get_log_builder()
                     .target(&bot)
@@ -49,13 +47,9 @@ impl Command for TicketSelectorCommand {
                     .arbitrary_block("💼 User Report",  "> Report a user of the server to the staff team. Be sure to have evidence ready.")
                     .arbitrary_block("📔 Bug Report",   "> Help us improve the server by reporting bugs or issues you encounter.")
                     .arbitrary_block("🤔 Question",     "> Do you have any questions about the server? Ask them here.")
-                    .build().await.to_message()
-                    .select_menu(
-                        CreateSelectMenu::new("ticket_selector", CreateSelectMenuKind::String {
-                            options
-                        })
-                        .placeholder("Select a ticket")
-                    );
+                    .build().await
+                    .to_message()
+                    .reactions(reactions);
 
                 let selector = message.reply(selector).await;
                 if let Ok(selector) = selector {

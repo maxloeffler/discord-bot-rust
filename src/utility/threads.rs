@@ -1,5 +1,5 @@
 
-use serenity::all::ComponentInteractionDataKind::StringSelect;
+use serenity::model::channel::ReactionType::{Unicode, Custom};
 use serenity::all::*;
 use serenity::model::id::ChannelId;
 use serenity::builder::{CreateWebhook, CreateAttachment, ExecuteWebhook, CreateAllowedMentions};
@@ -291,35 +291,51 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 pub fn hook_ticket_selector<'a>(resolver: Resolver, selector: Message) -> BoxedFuture<'a, ()> {
     Box::pin(async move {
         let resolver = &resolver;
-        let mut last_interaction = (None, chrono::Utc::now().timestamp());
-        let mut interactions = selector
-            .await_component_interactions(&resolver.ctx().shard)
+        let mut last_reaction = (None, chrono::Utc::now().timestamp());
+        let mut reactions = selector
+            .await_reaction(&resolver.ctx().shard)
             .stream();
 
-        while let Some(interaction) = interactions.next().await {
-            match interaction.data.kind {
-                StringSelect{ref values} => {
+        while let Some(reaction) = reactions.next().await {
 
-                    // end interaction
-                    let _ = interaction.create_response(&resolver,
-                        CreateInteractionResponse::Acknowledge
-                    ).await;
+            let _ = reaction.delete(&resolver).await;
+
+            // cannot handle tickets if user is not available
+            if reaction.user_id.is_none() {
+                continue;
+            }
+            let target = resolver.resolve_user(reaction.user_id.unwrap()).await.unwrap();
+
+            match reaction.emoji {
+                Unicode(ref emoji) => {
 
                     // same user cannot create multiple tickets within 10 seconds
-                    if last_interaction.0.is_some()
-                        && last_interaction.0.unwrap() == interaction.user.id
-                        && last_interaction.1 + 10 > chrono::Utc::now().timestamp() {
+                    if last_reaction.0.is_some()
+                        && last_reaction.0.unwrap() == target.id
+                        && last_reaction.1 + 10 > chrono::Utc::now().timestamp() {
                         continue;
                     }
 
-                    // update last interaction
-                    last_interaction = (Some(interaction.user.id), chrono::Utc::now().timestamp());
+                    // update last_reaction
+                    last_reaction = (reaction.user_id, chrono::Utc::now().timestamp());
 
-                    // create ticket
-                    let ticket_type = TicketType::from(values[0].clone());
+                    // parse emoji
+                    let ticket_type = match emoji.as_str() {
+                        "📁" => Some(TicketType::StaffReport),
+                        "💼" => Some(TicketType::UserReport),
+                        "📔" => Some(TicketType::BugReport),
+                        "🤔" => Some(TicketType::Question),
+                        _ => None
+                    };
+
+                    // invalid reaction
+                    if ticket_type.is_none() {
+                        continue;
+                    }
+
                     let _ = TicketHandler::get_instance()
-                        .new_ticket(resolver, &interaction.user, ticket_type).await;
-                }
+                        .new_ticket(resolver, &target, ticket_type.unwrap()).await;
+                },
                 _ => {}
             }
         }
