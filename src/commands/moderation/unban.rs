@@ -106,7 +106,7 @@ impl Command for UnbanCommand {
                     let notify_message = message.get_log_builder()
                         .title("You've been unbanned!")
                         .description(&format!(
-                            "You have been unbanned from {}\nFeel free to join us again: discord.gg/vent!",
+                            "You have been unbanned from {}\nFeel free to join us again [here](discord.gg/vent)!",
                             guild.name))
                         .target(&target)
                         .no_thumbnail()
@@ -117,7 +117,12 @@ impl Command for UnbanCommand {
                     match sent {
                         Ok(_)  => message.reply_success().await,
                         Err(_) => {
-                            let _ = message.reply("Notice: I couldn't send a DM to the user.").await;
+                            let embed = MessageManager::create_embed(|embed| {
+                                embed
+                                    .title("Notice")
+                                    .description("I could not send a DM to the user.")
+                            }).await;
+                            let _ = message.reply(embed).await;
                         }
                     };
                 }

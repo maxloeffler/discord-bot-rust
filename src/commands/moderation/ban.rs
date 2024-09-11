@@ -94,7 +94,12 @@ impl Command for BanCommand {
                     match sent {
                         Ok(_)  => message.reply_success().await,
                         Err(_) => {
-                            let _ = message.reply("Notice: I couldn't send a DM to the user.").await;
+                            let embed = MessageManager::create_embed(|embed| {
+                                embed
+                                    .title("Notice")
+                                    .description("I could not send a DM to the user.")
+                            }).await;
+                            let _ = message.reply(embed).await;
                         }
                     };
                 }
