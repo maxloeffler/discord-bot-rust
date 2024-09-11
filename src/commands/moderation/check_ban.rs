@@ -50,57 +50,84 @@ impl Command for CheckBanCommand {
                 };
 
                 // get bans
-                let bans = BansDB::get_instance()
-                    .get_all(target_id).await;
+                if let Some(guild) = message.get_resolver().resolve_guild(None).await {
+                    let bans = guild.bans(message, None, None).await;
+                    if let Ok(bans) = bans {
 
-                if let Ok(bans) = bans {
+                        let current_ban = bans.into_iter()
+                            .filter(|ban| ban.user.id.to_string() == *target_id)
+                            .next();
+                        let mut all_bans = match current_ban {
+                            Some(ban) => vec![ban.reason.unwrap_or("No reason provided.".to_string())],
+                            None => Vec::new(),
+                        };
 
-                    // no bans found
-                    if bans.is_empty() {
+                        // add bans the bot has issued that have been revoked by now
+                        if target.is_some() {
+                            if let Ok(recorded_bans) = BansDB::get_instance().get_all(target_id).await {
 
-                        // resolve bot
-                        let bot_id: UserId = ConfigDB::get_instance()
-                            .get("bot_id").await.unwrap().into();
-                        let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
+                                // add bans that are not already in the list
+                                let additional_bans = recorded_bans.into_iter()
+                                    .filter_map(|ban| {
+                                        match all_bans.contains(&ban.reason) {
+                                            true  => None,
+                                            false => Some(ban.reason),
+                                        }
+                                    })
+                                    .collect::<Vec<_>>();
+                                all_bans.splice(0..0, additional_bans);
+                            }
+                        }
 
-                        // create embed
-                        let embed = message.get_log_builder()
-                            .title(format!("{} has not been banned before.", name))
-                            .target(&bot)
-                            .no_thumbnail()
-                            .build().await;
-                        let _ = message.reply(embed).await;
-                        return;
-                    }
+                        // no bans found
+                        if all_bans.is_empty() {
 
-                    // bans found
-                    else {
+                            // resolve bot
+                            let bot_id: UserId = ConfigDB::get_instance()
+                                .get("bot_id").await.unwrap().into();
+                            let bot = message.get_resolver().resolve_user(bot_id).await.unwrap();
 
-                        // create embed
-                        let mut builder = message.get_log_builder()
-                            .no_thumbnail();
+                            // create embed
+                            let embed = message.get_log_builder()
+                                .title(format!("{} has not been banned before.", name))
+                                .target(&bot)
+                                .no_thumbnail()
+                                .build().await;
+                            let _ = message.reply(embed).await;
+                            return;
+                        }
 
-                        if let Some(ref target) = target {
-                            builder = builder
-                                .target(target)
+                        // bans found
+                        else {
+
+                            // create embed
+                            let mut builder = message.get_log_builder()
+                                .no_thumbnail()
                                 .title(format!("{}'s Bans", name));
-                        } else {
-                            builder = builder.title(format!("{}' Bans", name));
-                        }
 
-                        // add bans to embed
-                        for ban in bans.into_iter() {
-                            builder = builder.mod_log(&ban);
+                            // add target info if available
+                            if let Some(ref target) = target {
+                                builder = builder.target(target);
+                            }
+
+                            // add reasons if available
+                            let reasons = all_bans.iter()
+                                .map(|reason| format!("Reason `>` {}", reason))
+                                .collect::<Vec<_>>();
+                            let description = match reasons.len() {
+                                1 => reasons[0].clone(),
+                                _ => format!("**Oldest**\n----\n{}\n----\n**Latest**", reasons.join("\n"))
+                            };
+                            builder = builder.description(description);
+
+                            // add bans to embed
+                            let embed = builder.build().await;
+                            let _ = message.reply(embed).await;
                         }
-                        let embed = builder.build().await;
-                        let _ = message.reply(embed).await;
                     }
-
                 }
-
             }
         )
     }
-
 }
 
