@@ -98,7 +98,7 @@ impl ChatFilter {
         // fetch additional roles and channels
         let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
-        let link_perm_roles = message.get_resolver().resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
+        let link_perm_roles = message.resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
         let has_link_perms = message.has_role(link_perm_roles).await;
 
         // perform word based analysis

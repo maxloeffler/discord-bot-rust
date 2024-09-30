@@ -62,7 +62,7 @@ impl Command for CloseTicketCommand {
 
                         // obtain ticket information
                         let transcript_url = format!(
-                            "[External Link](http://thevent.xyz:5000/transcripts/transcript-{}---{}---.html?auth)",
+                            "[External Link](https://thevent.xyz:5555/transcripts/transcript-{}---{}---.html?auth)",
                             ticket.channel.name,
                             ticket.uuid);
                         let staff = ticket.present_staff.lock().await.iter()
