@@ -3,7 +3,7 @@ use serenity::async_trait;
 use serenity::model::channel::Message;
 use serenity::model::user::User;
 use serenity::model::guild::Member;
-use serenity::all::{ChannelId, MessageId, GuildId, MessageUpdateEvent, CreateEmbedFooter, EditChannel};
+use serenity::all::{ChannelId, MessageId, GuildId, RoleId, MessageUpdateEvent, CreateEmbedFooter, EditChannel};
 use serenity::model::gateway::Ready;
 use serenity::prelude::*;
 use difference::{Difference, Changeset};
@@ -161,13 +161,17 @@ impl EventHandler for Handler {
                                 ctx: Context,
                                 guild_id: GuildId,
                                 user: User,
-                                _member_data_if_available: Option<Member>,
+                                member_data_if_available: Option<Member>,
     ) {
         let resolver = Resolver::new(ctx, Some(guild_id));
-        let is_muted = resolver.has_role(&user, "Muted").await;
-        if is_muted {
+        let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
+        let was_muted = match member_data_if_available {
+            Some(member) => member.roles.contains(&role_muted.id),
+            None         => false
+        };
+        if was_muted {
             AutoModerator::get_instance()
-                .perform_ban(&resolver, &user, "Left while muted.".to_string()).await;
+                .perform_ban(&resolver, &user, "Left while being muted.".to_string()).await;
         }
     }
 
