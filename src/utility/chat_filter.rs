@@ -98,8 +98,12 @@ impl ChatFilter {
         // fetch additional roles and channels
         let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
-        let link_perm_roles = message.resolve_role(vec!["Level 30+", "Booster"]).await.unwrap();
-        let has_link_perms = message.has_role(link_perm_roles).await;
+        let link_perm_roles = message.resolve_role(vec!["Level 30+", "Booster"]).await;
+
+        // sometimes the role cache of a guild is randomly empty
+        // in this case, we allow all users to post links
+        let has_link_perms = link_perm_roles.is_none()
+            || message.has_role(link_perm_roles.unwrap()).await;
 
         // perform word based analysis
         let url_regex = RegexManager::get_url_regex();
