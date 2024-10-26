@@ -97,9 +97,9 @@ impl Command for UnbanCommand {
                         .arbitrary("Unban Reason", &reason)
                         .timestamp()
                         .build().await;
-                    let modlogs: ChannelId = ConfigDB::get_instance()
-                        .get("channel_modlogs").await.unwrap().into();
-                    let _ = modlogs.send_message(message, embed.to_message()).await;
+                    let unbanlogs: ChannelId = ConfigDB::get_instance()
+                        .get("channel_unbanlogs").await.unwrap().into();
+                    let _ = unbanlogs.send_message(message, embed.to_message()).await;
 
                     // inform member of their unban
                     let guild = resolver.resolve_guild(None).await.unwrap();
