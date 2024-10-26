@@ -24,6 +24,9 @@ impl Command for CloseTicketCommand {
             CommandType::Tickets,
             nonempty!["close".to_string()]
         )
+            .new_usage()
+            .add_constant("-tw", false)
+            .add_optional("trigger warning")
     }
 
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
@@ -76,16 +79,24 @@ impl Command for CloseTicketCommand {
 
                         // construct log
                         let ticket_type: String = ticket.ticket_type.into();
-                        let embed = message.get_log_builder()
+                        let mut builder = message.get_log_builder()
                             .title("Ticket Log")
                             .no_thumbnail()
                             .arbitrary("Category", &ticket_type)
                             .arbitrary("Staff", &staff)
                             .arbitrary("Members", &members)
-                            .arbitrary("Transcript", &transcript_url)
-                            .build().await;
+                            .arbitrary("Transcript", &transcript_url);
+
+                        // add field for trigger warning if specified
+                        if message.has_parameter("tw") {
+                            builder = builder.arbitrary_block(
+                                "⚠️ Trigger Warning",
+                                message.get_parameter("tw")
+                            );
+                        }
 
                         // send log
+                        let embed = builder.build().await;
                         let _ = dump_channel.send_message(message, embed.to_message()).await;
 
                         if ticket.ticket_type == TicketType::Muted {
