@@ -57,8 +57,15 @@ impl Command for CheckBanCommand {
                         let current_ban = bans.into_iter()
                             .filter(|ban| ban.user.id.to_string() == *target_id)
                             .next();
+
+                        // collect information abount bans
                         let mut all_bans = match current_ban {
-                            Some(ban) => vec![ban.reason.unwrap_or("No reason provided.".to_string())],
+                            Some(ban) => {
+                                vec![(
+                                    ban.reason.unwrap_or("No reason provided.".to_string()),
+                                    None
+                                )]
+                            },
                             None => Vec::new(),
                         };
 
@@ -66,16 +73,24 @@ impl Command for CheckBanCommand {
                         if target.is_some() {
                             if let Ok(recorded_bans) = BansDB::get_instance().get_all(target_id).await {
 
-                                // add bans that are not already in the list
-                                let additional_bans = recorded_bans.into_iter()
-                                    .filter_map(|ban| {
-                                        match all_bans.contains(&ban.reason) {
-                                            true  => None,
-                                            false => Some(ban.reason),
+                                recorded_bans.into_iter()
+                                    .for_each(|ban| {
+
+                                        // NOTE: ban reasons are unique!
+                                        // Discord does not store the timestamp of the current ban
+                                        // but the bot logs do. Therefore, if we find the log of
+                                        // the current ban in the bot logs, we can use the
+                                        // timestamp that is stored there.
+                                        let index = all_bans.iter().position(|(reason, _)| reason == &ban.reason);
+                                        if let Some(i) = index {
+                                            all_bans[i].1 = Some(ban.timestamp);
                                         }
-                                    })
-                                    .collect::<Vec<_>>();
-                                all_bans.splice(0..0, additional_bans);
+
+                                        // Regularely append ban information to the list
+                                        else {
+                                            all_bans.push((ban.reason, Some(ban.timestamp)));
+                                        }
+                                    });
                             }
                         }
 
@@ -112,13 +127,14 @@ impl Command for CheckBanCommand {
 
                             // add reasons if available
                             let reasons = all_bans.iter()
-                                .map(|reason| format!("Reason `>` {}", reason))
+                                .map(|ban| {
+                                    match ban.1 {
+                                        Some(timestamp) => format!("<t:{}> `>` {}", timestamp, ban.0),
+                                        None => format!("No timestamp available `>` {}", ban.0),
+                                    }
+                                })
                                 .collect::<Vec<_>>();
-                            let description = match reasons.len() {
-                                1 => reasons[0].clone(),
-                                _ => format!("**Oldest**\n----\n{}\n----\n**Latest**", reasons.join("\n"))
-                            };
-                            builder = builder.description(description);
+                            builder = builder.description(reasons.join("\n"));
 
                             // add bans to embed
                             let embed = builder.build().await;
