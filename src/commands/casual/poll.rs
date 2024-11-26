@@ -50,7 +50,7 @@ impl Command for PollCommand {
                     .filter(|option| !option.is_empty())
                     .collect::<Vec<_>>();
 
-                if options.len() <= 2 {
+                if options.len() < 2 {
                     self.invalid_usage(params).await;
                     return;
                 }
