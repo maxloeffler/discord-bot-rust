@@ -51,10 +51,21 @@ impl Command for BanCommand {
                 let member = resolver.resolve_member(&target).await;
                 if let Some(member) = member {
 
-                    // ban the user
-                    let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
-                    let _ = member.remove_role(&resolver, role_muted.id).await;
-                    let _ = member.ban_with_reason(&resolver, 0, &reason).await;
+                    // ban the user and handle potential problems
+                    if let Err(why) = member.ban_with_reason(&resolver, 0, &reason).await {
+
+                        // log error
+                        let warning = MessageManager::create_embed(|embed| {
+                            embed
+                                .title("Failed to ban user")
+                                .description(&format!(
+                                        "The user could not be banned. The reason for this is: `{:?}`. Please consult an Administrator so that they can perform a manual ban or resolve the problem otherwisely.",
+                                        why))
+                        }).await;
+                        let _ = message.reply(warning).await;
+
+                        return;
+                    }
 
                     // log ban to database
                     let log = ModLog::new(
