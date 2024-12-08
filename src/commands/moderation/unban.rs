@@ -13,7 +13,7 @@ pub struct UnbanCommand;
 
 impl Command for UnbanCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             message.is_mod().await
         })

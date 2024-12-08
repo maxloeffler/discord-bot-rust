@@ -15,7 +15,7 @@ pub struct DeadchatCommand;
 
 impl Command for DeadchatCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             let top_kalie = &message.get_resolver().resolve_role("Top Kalie").await.unwrap()[0];
             message.is_trial().await || message.has_role(top_kalie).await

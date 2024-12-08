@@ -91,6 +91,8 @@ impl<'a> InteractionHelper<'_> {
         None
     }
 
+    // maybe used in the future
+    #[allow(unused)]
     pub async fn create_dropdown_interaction(&self,
                                         target: UserId,
                                         message: impl ToMessage,

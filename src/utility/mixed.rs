@@ -80,10 +80,14 @@ impl RegexManager {
         Regex::new(r"\d{18,19}").unwrap()
     }
 
+    // maybe used in the future
+    #[allow(unused)]
     pub fn get_ping_regex() -> Regex {
         Regex::new(r"<@!?(\d{18,19})>").unwrap()
     }
 
+    // maybe used in the future
+    #[allow(unused)]
     pub fn get_channel_regex() -> Regex {
         Regex::new(r"<#(\d{18,19})>").unwrap()
     }

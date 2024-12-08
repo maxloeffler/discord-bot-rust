@@ -66,7 +66,7 @@ impl ReviewCommand {
 
 impl Command for ReviewCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             message.is_headmod().await
         })

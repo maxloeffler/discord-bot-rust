@@ -13,7 +13,7 @@ pub struct UnflagCommand;
 
 impl Command for UnflagCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             message.is_trial().await
         })

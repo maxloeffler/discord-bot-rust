@@ -69,7 +69,7 @@ impl CommandParams {
 
 pub trait Command: Send + Sync {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             let muted = &message.get_resolver().resolve_role("Muted").await.unwrap()[0];
             !message.has_role(muted).await
@@ -168,7 +168,7 @@ impl UserDecorator {
 
 impl Command for UserDecorator {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         self.command.permission(message)
     }
 
@@ -240,7 +240,7 @@ impl NumberDecorator {
 
 impl Command for NumberDecorator {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         self.command.permission(message)
     }
 
@@ -283,7 +283,7 @@ impl TimeDecorator {
 
 impl Command for TimeDecorator {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         self.command.permission(message)
     }
 

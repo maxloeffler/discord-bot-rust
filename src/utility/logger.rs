@@ -13,6 +13,7 @@ pub struct Logger {}
 
 impl Logger {
 
+    #[allow(unused)]
     fn log(level: Level, label: &str, content: Option<&str>, inline: bool) {
         let prefix = match level {
             Level::Info  => "INFO".green(),
@@ -29,30 +30,37 @@ impl Logger {
         }
     }
 
+    #[allow(unused)]
     pub fn info(label: &str) {
         Logger::log(Level::Info, label, None, false);
     }
 
+    #[allow(unused)]
     pub fn warn(label: &str) {
         Logger::log(Level::Warn, label, None, false);
     }
 
+    #[allow(unused)]
     pub fn err(label: &str) {
         Logger::log(Level::Error, label, None, false);
     }
 
+    #[allow(unused)]
     pub fn info_long(label: &str, content: &str) {
         Logger::log(Level::Info, label, Some(content), false);
     }
 
+    #[allow(unused)]
     pub fn warn_long(label: &str, content: &str) {
         Logger::log(Level::Warn, label, Some(content), false);
     }
 
+    #[allow(unused)]
     pub fn err_long(label: &str, content: &str) {
         Logger::log(Level::Error, label, Some(content), false);
     }
 
+    #[allow(unused)]
     pub fn input(label: &str) -> String {
 
         // input label

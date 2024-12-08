@@ -13,7 +13,7 @@ pub struct MuteCommand;
 
 impl Command for MuteCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             message.is_trial().await
         })

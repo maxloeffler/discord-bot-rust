@@ -18,8 +18,13 @@ use crate::databases::*;
 
 
 pub trait Singleton: Sized {
+
     fn get_instance() -> &'static Self;
+
+    // this is necessary as the usage in the macro is not recognized
+    #[allow(unused)]
     fn new() -> Self;
+
 }
 
 #[macro_export]

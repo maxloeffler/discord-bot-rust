@@ -10,7 +10,7 @@ pub struct NicknameCommand;
 
 impl Command for NicknameCommand {
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             let role = message.resolve_role("Level 10+").await.unwrap();
             message.has_role(role).await

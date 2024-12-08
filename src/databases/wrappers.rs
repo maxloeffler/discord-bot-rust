@@ -212,7 +212,7 @@ macro_rules! impl_database_wrapper {
             pub fn new() -> Self {
                 $name { database: Database::new($db_type) }
             }
-            pub fn get_by_staff<'a>(&'a self, staff_id: &'a str) -> BoxedFuture<'_, Vec<ModLog>> {
+            pub fn get_by_staff<'a>(&'a self, staff_id: &'a str) -> BoxedFuture<'a, Vec<ModLog>> {
                 Box::pin(async move {
                     self.query("", &format!("AND value LIKE '%staff_id%{}%'", staff_id)).await.unwrap()
                 })

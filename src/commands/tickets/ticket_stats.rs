@@ -21,7 +21,7 @@ impl Command for TicketStatsCommand {
             .add_optional("user")
     }
 
-    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'_, bool> {
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
             message.is_headmod().await
         })
