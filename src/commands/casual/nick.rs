@@ -58,6 +58,12 @@ impl Command for NicknameCommand {
                     return;
                 }
 
+                // nickname too long
+                if nickname.len() > 32 {
+                    message.reply_failure("Nickname can be at most 32 characters long.").await;
+                    return;
+                }
+
                 // change nickname
                 let member = message.get_resolver().resolve_member(target).await;
                 if let Some(mut member) = member {
