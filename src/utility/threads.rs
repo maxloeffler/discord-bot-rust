@@ -283,6 +283,34 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                     Err(_) => {},
                 };
             }
+
+            // remind staff if last message in ticket is by a member
+            // and longer than 10 minutes ago
+            #[cfg(feature = "tickets")]
+            {
+
+                let tickets = TicketHandler::get_instance().tickets.read().unwrap().clone();
+                let _ = futures::stream::iter(tickets.values())
+                    .for_each_concurrent(None, |ticket| async {
+
+                        if !(*ticket.pinged_staff.lock().await) {
+                            if let Some(message_id) = ticket.channel.last_message_id {
+                                let message = resolver.resolve_message(ticket.channel.id, message_id).await.unwrap();
+
+                                // if last message is by a member and is older than 10 minutes
+                                if ticket.present_members.lock().await.contains(&message.author.id)
+                                    && message.timestamp.timestamp() + 600 < Utc::now().timestamp() {
+                                    ticket.ping_staff().await;
+                                }
+
+                                // if last message is by staff
+                                else if ticket.present_staff.lock().await.contains(&message.author.id) {
+                                    ticket.reset_ping().await;
+                                }
+                            }
+                        }
+                }).await;
+            }
         }
     })
 }

@@ -67,7 +67,7 @@ pub struct Ticket {
     pub resolver: Resolver,
     pub uuid: Uuid,
 
-    pub pinged_staff: bool,
+    pub pinged_staff: Arc<Mutex<bool>>,
     pub present_members: Arc<Mutex<HashSet<UserId>>>,
     pub present_staff: Arc<Mutex<HashSet<UserId>>>,
     pub allowed_roles: Vec<RoleId>,
@@ -83,7 +83,7 @@ impl Debug for Ticket {
 
 #[cfg(feature = "tickets")]
 pub struct TicketHandler {
-    tickets: Arc<RwLock<HashMap<String, Arc<Ticket>>>>,
+    pub tickets: Arc<RwLock<HashMap<String, Arc<Ticket>>>>,
 }
 
 #[cfg(feature = "tickets")]
@@ -230,7 +230,7 @@ impl TicketHandler {
                     resolver: resolver.clone(),
                     uuid: Uuid::new_v4(),
 
-                    pinged_staff: false,
+                    pinged_staff: Arc::new(Mutex::new(false)),
                     present_members: present_members,
                     present_staff: Arc::new(Mutex::new(HashSet::new())),
                     allowed_roles: allowed_roles.clone(),
@@ -390,7 +390,7 @@ impl Ticket {
                     resolver: resolver.clone(),
                     uuid: Uuid::new_v4(),
 
-                    pinged_staff: false,
+                    pinged_staff: Arc::new(Mutex::new(false)),
                     present_members: Arc::new(Mutex::new(present_members)),
                     present_staff:   Arc::new(Mutex::new(present_staff)),
                     allowed_roles: allowed_roles.clone(),
@@ -523,6 +523,28 @@ impl Ticket {
 
         #[cfg(feature = "debug")]
         Logger::info_long("End", logstr);
+    }
+
+    pub async fn ping_staff(&self) {
+
+        // create reminder
+        let reminder = MessageManager::create_embed(|embed| {
+            embed
+                .title("Ticket Reminder")
+                .description(format!("Members in <#{}> have been left on read for at least **10 minutes**.", self.channel.id))
+        }).await;
+
+        // ping all staff
+        let _ = futures::stream::iter(self.present_staff.lock().await.iter())
+            .for_each_concurrent(None, |staff| async {
+                let user = self.resolver.resolve_user(*staff).await.unwrap();
+                let _ = user.dm(self.resolver.clone(), reminder.to_message()).await;
+            }).await;
+        *self.pinged_staff.lock().await = true;
+    }
+
+    pub async fn reset_ping(&self) {
+        *self.pinged_staff.lock().await = false;
     }
 }
 
