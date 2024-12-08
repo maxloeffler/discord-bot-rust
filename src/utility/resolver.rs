@@ -33,6 +33,8 @@ impl AsRef<Http> for Resolver {
 
 impl Resolver {
 
+    pub const ATTEMPTS: usize = 3;
+
     pub fn new(ctx: Context, guild_id: Option<GuildId>) -> Self {
         Resolver { ctx: ctx, guild_id: guild_id }
     }
@@ -47,6 +49,18 @@ impl Resolver {
 
     pub fn cache(&self) -> &Arc<Cache> {
         &self.ctx.cache
+    }
+
+    pub async fn attempt<T, F>(&self, f: impl Fn() -> F) -> Result<T>
+    where F: std::future::Future<Output = std::result::Result<T, serenity::Error>>
+    {
+        for _ in 0..Self::ATTEMPTS {
+            match f().await {
+                Ok(value) => return Ok(value),
+                Err(_) => continue
+            }
+        }
+        Err("Attempt limit reached".into())
     }
 
     pub async fn resolve_guild(&self, guild_id: Option<GuildId>) -> Option<Guild> {
@@ -75,7 +89,8 @@ impl Resolver {
         }
 
         // if cache fails, attempt to get user over discord api
-        if let Ok(user) = self.ctx.http.get_user(user_id).await {
+        let user = self.attempt(|| async { self.ctx.http.get_user(user_id).await }).await;
+        if let Ok(user) = user {
             return Some(user);
         }
 
@@ -95,7 +110,8 @@ impl Resolver {
             }
 
             // if cache fails, attempt to get member over discord api
-            if let Ok(member) = guild_id.member(&self.ctx.http, user.id).await {
+            let member = self.attempt(|| async { guild_id.member(&self, user.id).await }).await;
+            if let Ok(member) = member {
                 return Some(member);
             }
 
@@ -122,7 +138,8 @@ impl Resolver {
             }
 
             // if cache fails, attempt to get roles over discord api
-            if let Ok(guild_roles) = guild_id.roles(&self.ctx.http).await {
+            let roles = self.attempt(|| async { guild_id.roles(&self).await }).await;
+            if let Ok(guild_roles) = roles {
                 let values: Vec<_> = role_name.to_list()
                     .into_iter()
                     .flat_map(|name| {
@@ -153,7 +170,7 @@ impl Resolver {
             }
 
             // if cache fails, attempt to get channels over discord api
-            let channels = guild_id.channels(&self.http()).await;
+            let channels = self.attempt(|| async { guild_id.channels(&self).await }).await;
             if let Ok(channels) = channels {
                 let values = channels
                     .values()
@@ -190,7 +207,7 @@ impl Resolver {
     }
 
     pub async fn resolve_message(&self, channel_id: ChannelId, message_id: MessageId) -> Option<Message> {
-        let message = self.http().get_message(channel_id, message_id).await;
+        let message = self.attempt(|| async { self.ctx.http.get_message(channel_id, message_id).await }).await;
         match message {
             Ok(message) => Some(message),
             Err(_) => match self.ctx.cache.message(channel_id, message_id) {
