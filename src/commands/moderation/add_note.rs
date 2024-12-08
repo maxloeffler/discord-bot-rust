@@ -23,6 +23,12 @@ impl Command for AddNoteCommand {
             .example("-label Edate -content Edating is a great fallacy!")
     }
 
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
+        Box::pin(async move {
+            message.is_headmod().await
+        })
+    }
+
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {

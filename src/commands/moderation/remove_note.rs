@@ -23,6 +23,12 @@ impl Command for RemoveNoteCommand {
             .example("Deprecated Note")
     }
 
+    fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
+        Box::pin(async move {
+            message.is_headmod().await
+        })
+    }
+
     fn run(&self, params: CommandParams) -> BoxedFuture<'_, ()> {
         Box::pin(
             async move {
