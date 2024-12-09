@@ -207,43 +207,41 @@ impl AutoModerator {
 
     pub async fn perform_ban(&self, resolver: &Resolver, target: &User, reason: String) {
 
-        let member = &resolver.resolve_member(target).await;
-        if let Some(member) = member {
+        // ban user
+        let guild = resolver.resolve_guild(None).await.unwrap();
+        let success = guild.ban_with_reason(&resolver, target.id, 0, &reason).await;
 
-            // ban user
-            let success = member.ban_with_reason(&resolver.http(), 0, &reason).await;
-            match success {
-                Ok(_) => {
+        match success {
+            Ok(_) => {
 
-                    // log ban to database
-                    let bot_id = ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
-                    let log = ModLog::new(
-                        bot_id.clone(),
-                        format!("Automatically banned ('{}')", reason),
-                    );
-                    BansDB::get_instance().append(&target.id.to_string(), &log.into()).await;
+                // log ban to database
+                let bot_id = ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
+                let log = ModLog::new(
+                    bot_id.clone(),
+                    reason.clone(),
+                );
+                BansDB::get_instance().append(&target.id.to_string(), &log.into()).await;
 
-                    // create embed
-                    let embed = MessageManager::create_embed(|embed| {
-                        embed
-                            .title("Automatic Ban")
-                            .description(&format!(
-                                "{} has been automatically banned for `>` {}",
-                                resolver.resolve_name(target),
-                                reason))
-                            .color(0xFF0000)
-                    }).await;
+                // create embed
+                let embed = MessageManager::create_embed(|embed| {
+                    embed
+                        .title("Automatic Ban")
+                        .description(&format!(
+                            "{} has been automatically banned for `>` {}",
+                            resolver.resolve_name(target),
+                            reason))
+                        .color(0xFF0000)
+                }).await;
 
-                    // get modlogs channel
-                    let channel: ChannelId = ConfigDB::get_instance()
-                        .get("channel_modlogs").await.unwrap().into();
+                // get modlogs channel
+                let channel: ChannelId = ConfigDB::get_instance()
+                    .get("channel_modlogs").await.unwrap().into();
 
-                    // send autoban message
-                    let _ = channel.send_message(resolver, embed.to_message()).await;
-                },
-                Err(err) => Logger::err_long("Failed to ban user", &err.to_string())
-            };
-        }
+                // send autoban message
+                let _ = channel.send_message(resolver, embed.to_message()).await;
+            },
+            Err(err) => Logger::err_long("Failed to ban user", &err.to_string())
+        };
     }
 }
 

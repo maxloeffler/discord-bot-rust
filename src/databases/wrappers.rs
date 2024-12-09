@@ -212,6 +212,10 @@ macro_rules! impl_database_wrapper {
             pub fn new() -> Self {
                 $name { database: Database::new($db_type) }
             }
+
+            // this function is an optional convenience function
+            // but does not need to be called necessarily
+            #[allow(unused)]
             pub fn get_by_staff<'a>(&'a self, staff_id: &'a str) -> BoxedFuture<'a, Vec<ModLog>> {
                 Box::pin(async move {
                     self.query("", &format!("AND value LIKE '%staff_id%{}%'", staff_id)).await.unwrap()
@@ -250,6 +254,7 @@ macro_rules! impl_database_wrapper {
 impl_database_wrapper!(ConfigDB, DB::Config);
 impl_database_wrapper!(WarningsDB, DB::Warnings, ModLog);
 impl_database_wrapper!(MutesDB, DB::Mutes, ModLog);
+impl_database_wrapper!(UnmutesDB, DB::Unmutes, ModLog);
 impl_database_wrapper!(BansDB, DB::Bans, ModLog);
 impl_database_wrapper!(FlagsDB, DB::Flags, FlagLog);
 impl_database_wrapper!(AfkDB, DB::Afk);

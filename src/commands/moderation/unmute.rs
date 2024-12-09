@@ -64,20 +64,28 @@ impl Command for UnmuteCommand {
                     .user(&target)
                     .timestamp();
 
+                let last_mute = MutesDB::get_instance()
+                    .get_last(&target.id.to_string(), 1).await.unwrap();
+
+                // obtain the reason
+                let mut reason = message.payload_without_mentions(None, None);
+                if reason.is_empty() {
+                    match last_mute.is_empty() {
+                        true  => reason = "No reason provided".to_string(),
+                        false => reason = last_mute[0].reason.clone(),
+                    }
+                }
+
+                // log mute to database
+                let log = ModLog::new(
+                    message.get_author().id.to_string(),
+                    reason.clone()
+                );
+                UnmutesDB::get_instance()
+                    .append(&target.id.to_string(), &log.into()).await;
+
                 // flag member if specified
                 if message.has_parameter("flag") {
-
-                    let last_mute = MutesDB::get_instance()
-                        .get_last(&target.id.to_string(), 1).await.unwrap();
-
-                    // obtain the reason
-                    let mut reason = message.payload_without_mentions(None, None);
-                    if reason.is_empty() {
-                        match last_mute.is_empty() {
-                            true  => reason = "No reason provided".to_string(),
-                            false => reason = last_mute[0].reason.clone(),
-                        }
-                    }
 
                     let monthly = message.has_parameter("monthly");
 

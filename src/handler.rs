@@ -158,17 +158,40 @@ impl EventHandler for Handler {
 
     #[cfg(feature = "auto_moderation")]
     async fn guild_member_removal(&self,
-                                ctx: Context,
-                                guild_id: GuildId,
-                                user: User,
-                                member_data_if_available: Option<Member>,
+                                  ctx: Context,
+                                  guild_id: GuildId,
+                                  user: User,
+                                  member_data_if_available: Option<Member>,
     ) {
         let resolver = Resolver::new(ctx, Some(guild_id));
         let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
+
+        // determine if user left while being muted
         let was_muted = match member_data_if_available {
             Some(member) => member.roles.contains(&role_muted.id),
-            None         => false
+            None => {
+
+                // obtain last mute and unmute
+                let id = user.id.to_string();
+                let last_mute = MutesDB::get_instance().get_last(&id, 1).await.unwrap();
+                let last_unmute = UnmutesDB::get_instance().get_last(&id, 1).await.unwrap();
+                let mut was_recently_muted_but_not_unmuted = false;
+
+                // check if user was muted in the last hour
+                if last_mute.len() > 0 && last_mute[0].timestamp + 60 * 60 > chrono::Utc::now().timestamp() {
+
+                    // check if user was unmuted after being muted
+                    was_recently_muted_but_not_unmuted = match last_unmute.len() {
+                        0 => true,
+                        _ => last_unmute[0].timestamp < last_mute[0].timestamp,
+                    };
+                }
+
+                was_recently_muted_but_not_unmuted
+            }
         };
+
+        // if user left while being muted, ban user
         if was_muted {
             AutoModerator::get_instance()
                 .perform_ban(&resolver, &user, "Left while being muted.".to_string()).await;

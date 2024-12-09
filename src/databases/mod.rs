@@ -16,6 +16,7 @@ pub use wrappers::Note;
 pub use wrappers::ConfigDB;
 pub use wrappers::WarningsDB;
 pub use wrappers::MutesDB;
+pub use wrappers::UnmutesDB;
 pub use wrappers::FlagsDB;
 pub use wrappers::BansDB;
 pub use wrappers::AfkDB;
