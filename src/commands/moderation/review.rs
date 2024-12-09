@@ -159,6 +159,7 @@ impl Command for ReviewCommand {
 
                     let edit = EditMessage::new().embed(embed);
                     let _ = channel.edit_message(&message, referenced_message.id, edit).await;
+                    let _ = referenced_message.delete_reactions(&message).await;
 
                 }
 
@@ -228,7 +229,6 @@ impl Command for ReviewCommand {
             }
         )
     }
-
 }
 
 
