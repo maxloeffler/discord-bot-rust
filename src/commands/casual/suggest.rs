@@ -20,6 +20,9 @@ impl Command for SuggestCommand {
             nonempty!["suggest".to_string()]
         )
             .add_required("message")
+            .new_usage()
+            .add_required("message")
+            .add_constant("-event", false)
             .example("Add unicorns to planet earth!")
     }
 
@@ -28,7 +31,7 @@ impl Command for SuggestCommand {
             async move {
 
                 let message = &params.message;
-                let content = message.payload(None, None);
+                let content = message.payload(None, Some(vec!["event".to_string()]));
 
                 if content.is_empty() {
                     self.invalid_usage(params).await;
@@ -48,11 +51,15 @@ impl Command for SuggestCommand {
                                      ReactionType::Unicode("❌".to_string())];
                 let suggestion = embed.to_message().reactions(reactions);
 
-                // send to suggestions channel
+                // determine channel
+                let channel_name = match message.has_parameter("event") {
+                    true  => "channel_event_suggestions",
+                    false => "channel_suggestions"
+                };
                 let channel: ChannelId = ConfigDB::get_instance()
-                    .get("channel_suggestions").await.unwrap().into();
-                let _ = channel.send_message(&message, suggestion).await;
+                    .get(channel_name).await.unwrap().into();
 
+                let _ = channel.send_message(&message, suggestion).await;
                 let _ = message.reply_success().await;
             }
         )
