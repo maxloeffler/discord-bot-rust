@@ -56,7 +56,8 @@ impl ChatFilter {
                 "gypped",
                 "ching chong",
                 "tranny",
-                "beaner"
+                "beaner",
+                "batty boy",
             ].into_iter().map(|slur| slur.to_string()).collect(),
             domains: vec![
                 "tenor.com",
@@ -95,6 +96,28 @@ impl ChatFilter {
             };
         }
 
+        // perform content analysis
+        let content = message.payload(None, None).to_lowercase();
+
+        // check for slurs
+        for slur in &self.slurs {
+            if let Some(index) = content.find(slur) {
+
+                // get a ±7 character context window
+                let lower_bound = index.saturating_sub(             7).clamp(0, content.len());
+                let upper_bound = index.saturating_add(slur.len() + 7).clamp(0, content.len());
+
+                let context_window = &content[lower_bound..upper_bound].trim();
+                let prefix = match lower_bound { 0 => "", _ => "[…] " };
+                let suffix = match upper_bound { len if len == content.len() => "", _ => " […]" };
+
+                return Filter {
+                    filter_type: FilterType::Slur,
+                    context: format!("{}{}{}", prefix, context_window, suffix)
+                };
+            }
+        }
+
         // fetch additional roles and channels
         let category_music: ChannelId = ConfigDB::get_instance()
             .get("category_music").await.unwrap().into();
@@ -105,58 +128,47 @@ impl ChatFilter {
         let has_link_perms = link_perm_roles.is_none()
             || message.has_role(link_perm_roles.unwrap()).await;
 
-        // perform word based analysis
-        let url_regex = RegexManager::get_url_regex();
-        for word in message.words.iter() {
-            let word_lc = word.to_lowercase();
+        if !has_link_perms {
 
-            // check for slurs
-            for slur in &self.slurs {
-                if word_lc.contains(slur) {
-                    return Filter {
-                        filter_type: FilterType::Slur,
-                        context: word.to_string()
-                    };
-                }
-            }
+            let url_regex = RegexManager::get_url_regex();
 
-            // allows permitted users to post links
-            if has_link_perms {
-                continue;
-            }
+            // check for links (first perform a low-cost check)
+            if url_regex.is_match(&content) {
 
-            // check for links
-            if url_regex.is_match(word.as_str()) && !word_lc.ends_with(".gif") {
-                let mut external = true;
+                let link = url_regex.find(&content).unwrap().as_str();
+                if !link.ends_with(".gif") {
 
-                // compare against regular list of whitelisted domains
-                for whitelisted_domain in &self.domains {
-                    if word.contains(whitelisted_domain) {
-                        external = false;
-                        break;
+                    let mut allowed_link = false;
+
+                    // compare against regular list of whitelisted domains
+                    for whitelisted_domain in &self.domains {
+                        if link.contains(whitelisted_domain) {
+                            allowed_link = true;
+                            break;
+                        }
                     }
-                }
 
-                // check music category
-                if external {
-                    if let Some(category) = channel.parent_id {
-                        if category == category_music {
-                            for whitelisted_music_domain in &self.music_domains {
-                                if word_lc.contains(whitelisted_music_domain) {
-                                    external = false;
-                                    break;
+                    // check music category
+                    if !allowed_link {
+                        if let Some(category) = channel.parent_id {
+                            if category == category_music {
+                                for whitelisted_music_domain in &self.music_domains {
+                                    if link.contains(whitelisted_music_domain) {
+                                        allowed_link = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                }
 
-                // if non-whitelisted domain is hit
-                if external {
-                    return Filter {
-                        filter_type: FilterType::Link,
-                        context: word.to_string()
-                    };
+                    // if domain is not allowed
+                    if !allowed_link {
+                        return Filter {
+                            filter_type: FilterType::Link,
+                            context: link.to_string()
+                        };
+                    }
                 }
             }
         }
