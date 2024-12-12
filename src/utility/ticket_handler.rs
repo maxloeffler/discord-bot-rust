@@ -218,8 +218,6 @@ impl TicketHandler {
                     embed.description(introduction_message)
                 }).await;
 
-                let _ = channel.send_message(resolver, pings.to_message()).await;
-                let _ = channel.send_message(resolver, embed.to_message()).await;
                 let present_members = Arc::new(Mutex::new(HashSet::new()));
                 present_members.lock().await.insert(target.id);
 
@@ -237,6 +235,12 @@ impl TicketHandler {
                 });
 
                 ticket.allow_participants().await;
+
+                // ping members and staff after they have been allowed
+                let _ = channel.send_message(resolver, pings.to_message()).await;
+                let _ = channel.send_message(resolver, embed.to_message()).await;
+
+                // add ticket to the ticket handler
                 self.tickets.write().expect("Could not get tickets")
                     .insert(channel.id.to_string(), Arc::clone(&ticket));
 
