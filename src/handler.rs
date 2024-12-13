@@ -167,32 +167,38 @@ impl EventHandler for Handler {
         let role_muted = &resolver.resolve_role("Muted").await.unwrap()[0];
 
         // determine if user left while being muted
-        let was_muted = match member_data_if_available {
+        let left_while_muted = match member_data_if_available {
             Some(member) => member.roles.contains(&role_muted.id),
             None => {
 
-                // obtain last mute and unmute
+                // get last mute, unmute, and ban
                 let id = user.id.to_string();
                 let last_mute = MutesDB::get_instance().get_last(&id, 1).await.unwrap();
                 let last_unmute = UnmutesDB::get_instance().get_last(&id, 1).await.unwrap();
-                let mut was_recently_muted_but_not_unmuted = false;
+                let last_ban = BansDB::get_instance().get_last(&id, 1).await.unwrap();
 
-                // check if user was muted in the last hour
-                if last_mute.len() > 0 && last_mute[0].timestamp + 60 * 60 > chrono::Utc::now().timestamp() {
+                let mut left_while_muted = false;
 
-                    // check if user was unmuted after being muted
-                    was_recently_muted_but_not_unmuted = match last_unmute.len() {
-                        0 => true,
-                        _ => last_unmute[0].timestamp < last_mute[0].timestamp,
-                    };
+                // determine if user left while being muted
+                if let Some(mute) = last_mute.first() {
+
+                    let recently_muted = mute.timestamp + 60 * 60 > chrono::Utc::now().timestamp();
+                    let unmuted_after_mute = last_unmute
+                        .first()
+                        .map_or(false, |unmute| unmute.timestamp > mute.timestamp);
+                    let banned_after_mute = last_ban
+                        .first()
+                        .map_or(false, |ban| ban.timestamp > mute.timestamp);
+
+                    left_while_muted = recently_muted && !unmuted_after_mute && !banned_after_mute
                 }
 
-                was_recently_muted_but_not_unmuted
+                left_while_muted
             }
         };
 
         // if user left while being muted, ban user
-        if was_muted {
+        if left_while_muted {
             AutoModerator::get_instance()
                 .perform_ban(&resolver, &user, "Left while being muted.".to_string()).await;
         }
