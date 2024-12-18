@@ -99,6 +99,7 @@ impl Database {
     pub fn new(identifier: DB) -> Self {
         let path = format!("src/databases/{}.db", identifier.to_string());
         let connection = Connection::open(path).expect("Failed to open database");
+        connection.set_prepared_statement_cache_capacity(10);
         connection.execute(&format!(
             "CREATE TABLE IF NOT EXISTS {} (
                 id        INTEGER PRIMARY KEY,
@@ -115,7 +116,7 @@ impl Database {
         let connection = self.connection.read().expect("Failed to get connection");
         let mut keys = HashSet::new();
         let mut statement = connection
-            .prepare(&format!("SELECT key FROM {}", self.identifier.to_string()))
+            .prepare_cached(&format!("SELECT key FROM {}", self.identifier.to_string()))
             .expect("Failed to prepare statement");
         let rows = statement.query_map(
             [],
@@ -129,7 +130,7 @@ impl Database {
 
     pub async fn query(&self, key: &str, query_string: &str) -> Result<Vec<DBEntry>> {
         let connection = self.connection.read().expect("Failed to get connection");
-        let mut statement = connection.prepare(&format!(
+        let mut statement = connection.prepare_cached(&format!(
             "SELECT id, key, value, timestamp FROM {} WHERE key = ? {}",
             self.identifier.to_string(),
             query_string
