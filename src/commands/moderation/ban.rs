@@ -51,6 +51,14 @@ impl Command for BanCommand {
                 let member = resolver.resolve_member(&target).await;
                 if let Some(member) = member {
 
+                    // log ban to database
+                    let log = ModLog::new(
+                        message.get_author().id.to_string(),
+                        reason.clone()
+                    );
+                    BansDB::get_instance()
+                        .append(&target.id.to_string(), &log.into()).await;
+
                     // ban the user and handle potential problems
                     if let Err(why) = member.ban_with_reason(&resolver, 0, &reason).await {
 
@@ -66,14 +74,6 @@ impl Command for BanCommand {
 
                         return;
                     }
-
-                    // log ban to database
-                    let log = ModLog::new(
-                        message.get_author().id.to_string(),
-                        reason.clone()
-                    );
-                    BansDB::get_instance()
-                        .append(&target.id.to_string(), &log.into()).await;
 
                     // log ban to mod logs
                     let log_message = message.get_log_builder()
