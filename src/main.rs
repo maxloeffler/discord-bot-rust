@@ -26,7 +26,7 @@ async fn main() {
 
     // configure cache
     let mut cache_settings = Settings::default();
-    cache_settings.max_messages = 50;
+    cache_settings.max_messages = 200;
 
     // start threads
     let intents = GatewayIntents::GUILDS                    |

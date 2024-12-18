@@ -159,6 +159,10 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
     Box::pin(async move {
         let resolver = &resolver;
         let allowed_mentions = &CreateAllowedMentions::new();
+
+        #[cfg(feature = "message_logs")]
+        let mut last_message_logs_cleanup = Utc::now().timestamp();
+
         loop {
 
             // check for scheduled messages
@@ -170,7 +174,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                 let webhooks = guild.webhooks(resolver).await;
                 if let Ok(webhooks) = webhooks {
                     for webhook in webhooks {
-                        webhook.delete(resolver).await.unwrap();
+                        let _ = webhook.delete(resolver).await;
                     }
                 }
             }
@@ -181,35 +185,48 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                 .for_each_concurrent(None, |user| {
                     async move {
 
-                        // get scheduled messages
-                        let scheduled_messages = ScheduleDB::get_instance()
-                            .get_all(&user.to_string()).await;
-                        let user = resolver.resolve_user(user).await.unwrap();
+                        // if user could be resolved
+                        if let Some(user) = resolver.resolve_user(user).await {
 
-                        // for all scheduled messages
-                        if let Ok(scheduled_messages) = scheduled_messages {
-                            for scheduled_message in scheduled_messages.into_iter() {
+                            // get scheduled messages
+                            let scheduled_messages = ScheduleDB::get_instance()
+                                .get_all(&user.id.to_string()).await;
 
-                                // check if message is expired
-                                if scheduled_message.is_expired(now) {
+                            if let Ok(scheduled_messages) = scheduled_messages {
 
-                                    // delete scheduled message from database
-                                    ScheduleDB::get_instance().delete_by_id(scheduled_message.id).await;
+                                // for all scheduled messages
+                                for scheduled_message in scheduled_messages.into_iter() {
 
-                                    // create webhook
-                                    let channel_id = ChannelId::from_str(&scheduled_message.channel_id).unwrap();
-                                    let hook = channel_id.create_webhook(resolver,
-                                        CreateWebhook::new(resolver.resolve_name(&user))
-                                            .avatar(&CreateAttachment::url(resolver, &user.face()).await.unwrap())
-                                    ).await.unwrap();
+                                    // check if message is expired
+                                    if scheduled_message.is_expired(now) {
 
-                                    // create embed
-                                    let execute = ExecuteWebhook::new()
-                                        .content(scheduled_message.message)
-                                        .allowed_mentions(allowed_mentions.clone());
-                                    let _ = hook.execute(resolver, false, execute).await;
+                                        // delete scheduled message from database
+                                        ScheduleDB::get_instance().delete_by_id(scheduled_message.id).await;
+
+                                        // create webhook
+                                        let channel_id = ChannelId::from_str(&scheduled_message.channel_id).unwrap();
+                                        let hook = channel_id.create_webhook(resolver,
+                                            CreateWebhook::new(resolver.resolve_name(&user))
+                                                .avatar(&CreateAttachment::url(resolver, &user.face()).await.unwrap())
+                                        ).await;
+
+                                        // if hook could be created
+                                        if let Ok(hook) = hook {
+
+                                            // create embed
+                                            let execute = ExecuteWebhook::new()
+                                                .content(scheduled_message.message)
+                                                .allowed_mentions(allowed_mentions.clone());
+                                            let _ = hook.execute(resolver, false, execute).await;
+                                        }
+                                    }
                                 }
                             }
+                        }
+
+                        // discard all pending schedules
+                        else {
+                            ScheduleDB::get_instance().delete(&user.to_string()).await;
                         }
                     }
                 }).await;
@@ -219,24 +236,24 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
             let users = RemindersDB::get_instance().get_keys().await;
             let now = chrono::Utc::now().timestamp();
 
-            // for all users that have scheduled messages
+            // for all users that have reminders
             futures::stream::iter(users)
                 .map(|user| UserId::from(user.parse::<u64>().unwrap()))
                 .for_each_concurrent(None, |user| {
                     async move {
 
-                        // get scheduled messages
+                        // get reminders messages
                         let reminders = RemindersDB::get_instance().get_all(&user.to_string()).await;
-                        let user = resolver.resolve_user(user).await.unwrap();
 
-                        // for all reminders
                         if let Ok(reminders) = reminders {
+
+                            // for all reminders
                             for reminder in reminders.into_iter() {
 
-                                // check if message is expired
+                                // check if reminder is expired
                                 if reminder.is_expired(now) {
 
-                                    // delete scheduled message from database
+                                    // delete reminder from database
                                     RemindersDB::get_instance().delete_by_id(reminder.id).await;
 
                                     // create embed
@@ -247,7 +264,7 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                             .color(0x00FF00)
                                     }).await;
                                     let embed = CreateMessage::new()
-                                        .content(format!("<@{}>", user.id.to_string()))
+                                        .content(format!("<@{}>", user.to_string()))
                                         .embed(embed);
 
                                     let channel = ChannelId::from_str(&reminder.channel_id).unwrap();
@@ -261,27 +278,91 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
             // clean message logs
             #[cfg(feature = "message_logs")]
             {
-                let channel_id: ChannelId = ConfigDB::get_instance().get("channel_messagelogs").await.unwrap().into();
-                let channel = resolver.resolve_guild_channel(channel_id).await.unwrap();
 
-                let mut last_message = channel.last_message_id.unwrap();
-                let mut count = 500;
+                // clean message logs every hour
+                if last_message_logs_cleanup + 60 * 60 < chrono::Utc::now().timestamp() {
 
-                while count > 0 {
-                    let messages = channel.messages(resolver, GetMessages::new().before(last_message).limit(100)).await.unwrap();
-                    if messages.len() == 0 {
-                        break;
+                    // get message logs channel
+                    let channel_id: ChannelId = ConfigDB::get_instance().get("channel_messagelogs").await.unwrap().into();
+                    let channel = resolver.resolve_guild_channel(channel_id).await.unwrap();
+
+                    // initialize search parameters
+                    let one_week_ago = Utc::now().timestamp() - 60 * 60 * 24 * 7;
+                    let get_oldest = GetMessages::new().after(MessageId::from(1)).limit(100);
+
+                    loop {
+
+                        // get oldest messages
+                        let oldest_messages = channel.messages(resolver, get_oldest.clone()).await;
+                        if let Ok(mut oldest_messages) = oldest_messages {
+
+                            // break if no messages are found
+                            if oldest_messages.len() == 0 {
+                                break;
+                            }
+
+                            // if oldest message is newer than one week break
+                            let oldest_message_timestamp = oldest_messages.last().unwrap().timestamp.timestamp();
+                            if oldest_message_timestamp > one_week_ago {
+                                break;
+                            }
+
+                            // if newest message is older than one week delete whole chunk and continue
+                            let newest_message_timestamp = oldest_messages.first().unwrap().timestamp.timestamp();
+                            if newest_message_timestamp < one_week_ago {
+
+                                // delete all messages
+                                let message_ids = oldest_messages.iter()
+                                    .map(|message| message.id)
+                                    .collect::<Vec<MessageId>>();
+                                let bulk_delete = channel.delete_messages(resolver, message_ids.clone()).await;
+
+                                // if messages are too old to be bulk deleted, delete them one by one
+                                if bulk_delete.is_err() {
+                                    for message_id in message_ids {
+                                        let _ = channel.id.delete_message(resolver, message_id).await;
+                                    }
+                                }
+
+                                continue;
+                            }
+
+                            // find first message older than one week using binary search
+                            else {
+
+                                // reverse messages
+                                oldest_messages.reverse();
+
+                                let first = binary_search::<Message, i64>(
+                                    &oldest_messages,
+                                    one_week_ago,
+                                    |message| message.timestamp.timestamp()
+                                );
+
+                                // delete all messages older than one week
+                                let message_ids = oldest_messages[first..].iter()
+                                    .map(|message| message.id)
+                                    .collect::<Vec<MessageId>>();
+                                let bulk_delete = channel.delete_messages(resolver, message_ids.clone()).await;
+
+                                // if messages are too old to be bulk deleted, delete them one by one
+                                if bulk_delete.is_err() {
+                                    for message_id in message_ids {
+                                        let _ = channel.id.delete_message(resolver, message_id).await;
+                                    }
+                                }
+                                break;
+
+                            }
+
+                        // break if rate limited
+                        } else {
+                            break;
+                        }
                     }
-                    last_message = messages.last().unwrap().id;
-                    count -= messages.len();
-                }
 
-                let builder = GetMessages::new().before(last_message).limit(100);
-                let messages = channel.messages(resolver, builder).await;
-                match messages {
-                    Ok(messages) => { let _ = channel_id.delete_messages(resolver, messages).await; },
-                    Err(_) => {},
-                };
+                    last_message_logs_cleanup = Utc::now().timestamp();
+                }
             }
 
             // remind staff if last message in ticket is by a member

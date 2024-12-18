@@ -72,6 +72,24 @@ pub fn parse_time(input: impl Into<String>) -> Result<u64> {
     Ok(total_seconds)
 }
 
+pub fn binary_search<T, O: Into<i64>>(array: &Vec<T>, target: O, eval: fn(&T) -> O) -> usize {
+
+    let mut left = 0;
+    let mut right = array.len();
+    let target = target.into();
+
+    while left < right {
+        let middle = (left + right) / 2;
+        match eval(&array[middle]).into() {
+            x if x == target => return middle,
+            x if x < target  => left = middle + 1,
+            _                => right = middle,
+        }
+    }
+
+    left
+}
+
 pub struct RegexManager {}
 
 impl RegexManager {
