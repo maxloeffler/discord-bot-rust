@@ -21,22 +21,37 @@ pub type Result<T> = std::result::Result<T, String>;
 )]
 pub fn string_distance(a: &str, b: &str) -> usize {
 
+    // if a is empty, the distance is the length of b
     if a.is_empty() {
         return b.len();
     }
 
+    // if b is empty, the distance is the length of a
     if b.is_empty() {
         return a.len();
     }
 
-    if a[0..1] == b[0..1] {
-        return string_distance(&a[1..], &b[1..]);
+    // split 'a' into head and tail
+    let mut a_chars = a.chars();
+    let a_head = a_chars.next();
+    let a_tail = a_chars.collect::<String>();
+
+    // split 'b' into head and tail
+    let mut b_chars = b.chars();
+    let b_head = b_chars.next();
+    let b_tail = b_chars.collect::<String>();
+
+    // if the heads are the same, evaluate the tail
+    if a_head == b_head {
+        return string_distance(&a_tail, &b_tail);
     }
 
+    // if the heads are different, evaluate the
+    // tail of 'a' and 'b' and return the minimum
     1 + [
-        string_distance(&a[1..], b),
-        string_distance(a, &b[1..]),
-        string_distance(&a[1..], &b[1..]),
+        string_distance(&a_tail, b),
+        string_distance(a, &b_tail),
+        string_distance(&a_tail, &b_tail),
     ].iter().min().unwrap().clone()
 
 }
