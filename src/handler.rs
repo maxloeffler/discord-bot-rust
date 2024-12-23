@@ -215,7 +215,7 @@ impl EventHandler for Handler {
 
         // get all excluded channels
         let channel_protected_log: Vec<_> = ConfigDB::get_instance()
-            .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
+            .get_all("channel_protected_log").await.unwrap()
             .iter()
             .map(|entry| entry.value.to_string())
             .collect();
@@ -290,7 +290,7 @@ impl EventHandler for Handler {
 
         // get all excluded channels
         let channel_protected_log: Vec<_> = ConfigDB::get_instance()
-            .get_multiple(vec!["channel_messagelogs", "channel_admin", "channel_headmod"]).await.unwrap()
+            .get_all("channel_protected_log").await.unwrap()
             .iter()
             .map(|entry| entry.value.to_string())
             .collect();
