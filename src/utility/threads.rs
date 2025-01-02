@@ -376,17 +376,18 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
 
                         if !(*ticket.pinged_staff.lock().await) {
                             if let Some(message_id) = ticket.channel.last_message_id {
-                                let message = resolver.resolve_message(ticket.channel.id, message_id).await.unwrap();
+                                if let Some(message) = resolver.resolve_message(ticket.channel.id, message_id).await {
 
-                                // if last message is by a member and is older than 10 minutes
-                                if ticket.present_members.lock().await.contains(&message.author.id)
-                                    && message.timestamp.timestamp() + 600 < Utc::now().timestamp() {
-                                    ticket.ping_staff().await;
-                                }
+                                    // if last message is by a member and is older than 10 minutes
+                                    if ticket.present_members.lock().await.contains(&message.author.id)
+                                        && message.timestamp.timestamp() + 600 < Utc::now().timestamp() {
+                                        ticket.ping_staff().await;
+                                    }
 
-                                // if last message is by staff
-                                else if ticket.present_staff.lock().await.contains(&message.author.id) {
-                                    ticket.reset_ping().await;
+                                    // if last message is by staff
+                                    else if ticket.present_staff.lock().await.contains(&message.author.id) {
+                                        ticket.reset_ping().await;
+                                    }
                                 }
                             }
                         }
