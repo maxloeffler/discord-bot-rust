@@ -71,8 +71,10 @@ pub trait Command: Send + Sync {
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
-            let muted = &message.get_resolver().resolve_role("Muted").await.unwrap()[0];
-            !message.has_role(muted).await
+            if let Some(muted_role) = &message.get_resolver().resolve_role("Muted").await {
+                return !message.has_role(muted_role[0].id).await;
+            }
+            true
         })
     }
 
