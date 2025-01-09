@@ -11,6 +11,8 @@ use futures::stream::StreamExt;
 
 use std::sync::Arc;
 use std::str::FromStr;
+use std::thread;
+use std::time::Duration;
 
 use crate::commands::command_manager::CommandManager;
 use crate::utility::*;
@@ -170,6 +172,9 @@ impl EventHandler for Handler {
         let left_while_muted = match member_data_if_available {
             Some(member) => member.roles.contains(&role_muted.id),
             None => {
+
+                // wait 5 seconds to allow database to update
+                thread::sleep(Duration::from_secs(5));
 
                 // get last mute, unmute, and ban
                 let id = user.id.to_string();
