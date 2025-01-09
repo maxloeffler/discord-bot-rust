@@ -87,22 +87,26 @@ pub fn parse_time(input: impl Into<String>) -> Result<u64> {
     Ok(total_seconds)
 }
 
+// Returns the index of the last element in `array` that is less than or equal to `target`
 pub fn binary_search<T, O: Into<i64>>(array: &Vec<T>, target: O, eval: fn(&T) -> O) -> usize {
 
     let mut left = 0;
     let mut right = array.len();
+    let mut result = None;
     let target = target.into();
 
     while left < right {
         let middle = (left + right) / 2;
-        match eval(&array[middle]).into() {
-            x if x == target => return middle,
-            x if x < target  => left = middle + 1,
-            _                => right = middle,
+        match eval(&array[middle]).into() <= target {
+            false => right = middle,
+            true => {
+                result = Some(middle);
+                left = middle + 1
+            }
         }
     }
 
-    left
+    result.unwrap_or(0)
 }
 
 pub struct RegexManager {}

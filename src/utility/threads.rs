@@ -333,14 +333,14 @@ pub fn periodic_checks<'a>(resolver: Resolver) -> BoxedFuture<'a, ()> {
                                 // reverse messages
                                 oldest_messages.reverse();
 
-                                let first = binary_search::<Message, i64>(
+                                let last_message_this_week = binary_search::<Message, i64>(
                                     &oldest_messages,
                                     one_week_ago,
                                     |message| message.timestamp.timestamp()
                                 );
 
                                 // delete all messages older than one week
-                                let message_ids = oldest_messages[first..].iter()
+                                let message_ids = oldest_messages[(last_message_this_week + 1)..].iter()
                                     .map(|message| message.id)
                                     .collect::<Vec<MessageId>>();
                                 let bulk_delete = channel.delete_messages(resolver, message_ids.clone()).await;
