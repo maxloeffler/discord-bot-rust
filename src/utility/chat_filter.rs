@@ -103,13 +103,32 @@ impl ChatFilter {
         for slur in &self.slurs {
             if let Some(index) = content.find(slur) {
 
-                // get a ±7 character context window
-                let lower_bound = index.saturating_sub(             7).clamp(0, content.len());
-                let upper_bound = index.saturating_add(slur.len() + 7).clamp(0, content.len());
+                let chars = content.chars().collect::<Vec<_>>();
+                let len = chars.len();
 
-                let context_window = &content[lower_bound..upper_bound].trim();
-                let prefix = match lower_bound { 0 => "", _ => "[…] " };
-                let suffix = match upper_bound { len if len == content.len() => "", _ => " […]" };
+                // get a ±7 byte context window around the slur
+                let mut lower_bound = index.saturating_sub(             7).clamp(0, len);
+                let mut upper_bound = index.saturating_add(slur.len() + 7).clamp(0, len);
+
+                // extend bounds to full words without indexing into multi-byte unicode characters
+                let mut chr: Option<&char> = None;
+                while lower_bound > 0 && ((chr.is_some() && *chr.unwrap() != ' ') || chr.is_none()) {
+                    lower_bound -= 1;
+                    chr = chars.get(lower_bound);
+                }
+                chr = None;
+                while upper_bound < len && ((chr.is_some() && *chr.unwrap() != ' ') || chr.is_none())  {
+                    upper_bound += 1;
+                    chr = chars.get(upper_bound);
+                }
+
+                // obtain context window
+                let context_window = &chars[(lower_bound + 1)..upper_bound]
+                    .into_iter()
+                    .collect::<String>()
+                    .replace(slur, &format!("**{}**", slur));
+                let prefix = match lower_bound == 0   { true => "", false => "[…] " };
+                let suffix = match upper_bound == len { true => "", false => " […]" };
 
                 return Filter {
                     filter_type: FilterType::Slur,
