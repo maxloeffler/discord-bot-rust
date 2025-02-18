@@ -18,7 +18,7 @@ impl Command for PurgeCommand {
 
     fn permission<'a>(&'a self, message: &'a MessageManager) -> BoxedFuture<'a, bool> {
         Box::pin(async move {
-            message.is_mod().await
+            message.is_headmod().await
         })
     }
 
