@@ -10,6 +10,8 @@ use handler::Handler;
 use databases::*;
 use utility::*;
 
+use std::fs;
+
 mod handler;
 mod utility;
 mod databases;
@@ -50,8 +52,9 @@ async fn main() {
 
 
 async fn setup() -> String {
+    let token = fs::read_to_string("token.txt").unwrap();
     let config = ConfigDB::get_instance();
     config.set("uptime", &chrono::Utc::now().timestamp().to_string()).await;
-    config.set("token", "OTk2MzY0MTkzNTg4NTkyNzQw.G8ly6b.Ox24TCFZIQsEc1r-OOXBLbBdWhPIdyc6yKJu0U").await;
+    config.set("token", &token).await;
     config.get("token").await.unwrap().to_string()
 }
