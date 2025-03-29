@@ -125,7 +125,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
             let entry = self.get_database().get(key).await;
             match entry {
                 Ok(entry) => Ok(T::from(entry)),
-                Err(_)    => Err("Key not found".to_string())
+                Err(_)    => Err(format!("Key '{}' not found", key))
             }
         })
     }
@@ -145,7 +145,7 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
             let entries = self.get_database().get_all(key).await;
             match entries {
                 Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
-                Err(_)      => Err("Key not found".to_string())
+                Err(_)      => Err(format!("Key '{}' not found", key))
             }
         })
     }
@@ -155,17 +155,17 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
             let entries = self.get_database().get_last(key, limit).await;
             match entries {
                 Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
-                Err(_)      => Err("Key not found".to_string())
+                Err(_)      => Err(format!("Key '{}' not found", key))
             }
         })
     }
 
     fn get_multiple<'a>(&'a self, keys: Vec<&'a str>) -> BoxedFuture<'a, Result<Vec<T>>> {
         Box::pin(async move {
-            let entries = self.get_database().get_multiple(keys).await;
+            let entries = self.get_database().get_multiple(keys.clone()).await;
             match entries {
                 Ok(entries) => Ok(entries.into_iter().map(|entry| T::from(entry)).collect()),
-                Err(_)      => Err("Key not found".to_string())
+                Err(_)      => Err(format!("Keys '{:?}' not found", keys))
             }
         })
     }
@@ -173,6 +173,12 @@ pub trait DatabaseWrapper<T: From<DBEntry>>: Send + Sync {
     fn set<'a>(&'a self, key: &'a str, value: &'a str) -> BoxedFuture<'a, ()> {
         Box::pin(async move {
             self.get_database().set(key, vec![value]).await
+        })
+    }
+
+    fn has<'a>(&'a self, key: &'a str) -> BoxedFuture<'a, bool> {
+        Box::pin(async move {
+            self.get_database().has(key).await
         })
     }
 

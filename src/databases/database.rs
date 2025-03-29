@@ -187,6 +187,18 @@ impl Database {
         }
     }
 
+    pub async fn has(&self, key: &str) -> bool {
+
+        let connection = self.connection.read().expect("Failed to get connection");
+        let mut statement = connection.prepare(&format!(
+            "SELECT id FROM {} WHERE key = ?",
+            self.identifier.to_string()
+        )).expect("Failed to prepare statement");
+
+        let entry_iter = statement.query_map([key], |_| Ok(())).expect("Failed to query map");
+        entry_iter.count() > 0
+    }
+
     pub async fn append(&self, key: &str, value: &str) {
         let connection = self.connection.write().expect("Failed to get connection");
         connection.execute(

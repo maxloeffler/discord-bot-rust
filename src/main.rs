@@ -54,6 +54,9 @@ async fn main() {
 async fn setup() -> String {
     let token = fs::read_to_string("token.txt").unwrap();
     let config = ConfigDB::get_instance();
+    if !config.has("executed_commands").await {
+        config.set("executed_commands", "0").await;
+    }
     config.set("uptime", &chrono::Utc::now().timestamp().to_string()).await;
     config.set("token", &token).await;
     config.get("token").await.unwrap().to_string()
