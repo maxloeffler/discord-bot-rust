@@ -59,9 +59,6 @@ impl EventHandler for Handler {
         let resolver = Resolver::new(ctx, msg.guild_id);
         let mut message = Arc::new(MessageManager::new(resolver, msg).await);
 
-        #[cfg(feature = "debug")]
-        Logger::info("Message parsed");
-
         // if message pings the bot
         let bot_id = &ConfigDB::get_instance().get("bot_id").await.unwrap().to_string();
         let bot_pings = vec![format!("<@!{}>", bot_id), format!("<@{}>",  bot_id)];
@@ -70,18 +67,12 @@ impl EventHandler for Handler {
             message = message.spoof(format!("{}about", prefix)).await.into();
         }
 
-        #[cfg(feature = "debug")]
-        Logger::info("Processed bot pings");
-
         // directly delete messages in the verify channel
         let channel_verify: ChannelId = ConfigDB::get_instance()
             .get("channel_verify").await.unwrap().into();
         if message.get_channel() == channel_verify {
             message.delete().await;
         }
-
-        #[cfg(feature = "debug")]
-        Logger::info("Processed verify channel");
 
         // check if author is afk
         let author = &message.get_author();
@@ -94,9 +85,6 @@ impl EventHandler for Handler {
             let _ = message.reply_temporary(embed).await;
             AfkDB::get_instance().delete(&author_id).await;
         }
-
-        #[cfg(feature = "debug")]
-        Logger::info("Processed afks");
 
         // check if message mentions an afk user
         let mut mentions = message.get_mentions().await;
@@ -121,31 +109,18 @@ impl EventHandler for Handler {
                 }}).await;
 
 
-        #[cfg(feature = "debug")]
-        Logger::info("Processed mentions");
-
         // check guideline violations
         let filter = ChatFilter::get_instance().apply(&message).await;
         if filter.filter_type == FilterType::Fine || message.is_trial().await || author.bot {
-
-            #[cfg(feature = "debug")]
-            Logger::info("Passed filter");
 
             // react to welcome messages
             if message.payload(None, None).to_lowercase().contains("welcome") {
                 let _ = message.react("💫").await;
             }
 
-            #[cfg(feature = "debug")]
-            Logger::info("Processed welcome messages");
-
             // execute command
             #[cfg(feature = "commands")]
             if message.is_command() {
-
-                #[cfg(feature = "debug")]
-                Logger::info("Executing command");
-
                 self.command_manager.execute(&message).await;
             }
 
