@@ -63,9 +63,13 @@ impl Command for CloseTicketCommand {
                         TicketHandler::get_instance()
                             .close_ticket(&ticket.channel.id).await;
 
+                        // get the host url (where this bot is hosted)
+                        let web_url = ConfigDB::get_instance().get("web_url").await.unwrap();
+
                         // obtain ticket information
                         let transcript_url = format!(
-                            "[External Link](https://thevent.xyz:5555/transcripts/transcript-{}---{}---.html?auth)",
+                            "[External Link]({}/transcripts/transcript-{}---{}---.html?auth)",
+                            web_url,
                             ticket.channel.name,
                             ticket.uuid);
                         let staff = ticket.present_staff.lock().await.iter()
