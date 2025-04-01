@@ -1,5 +1,7 @@
 
 #![allow(unused_imports)]
+extern crate alloc;
+
 use strum::IntoEnumIterator;
 use tokio::runtime::Runtime;
 use serenity::cache::Settings;

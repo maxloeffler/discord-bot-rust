@@ -1,6 +1,6 @@
 
 use serenity::all::ChannelId;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use nonempty::{NonEmpty, nonempty};
 
 use std::str::FromStr;
@@ -29,7 +29,7 @@ impl VerifyCommand {
     ];
 
     fn random_welcome_message() -> &'static str {
-        VerifyCommand::WELCOME_MESSAGES.choose(&mut rand::thread_rng()).unwrap()
+        VerifyCommand::WELCOME_MESSAGES.choose(&mut rand::rng()).unwrap()
     }
 
 }

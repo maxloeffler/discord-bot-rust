@@ -1,7 +1,7 @@
 
 use serenity::builder::CreateEmbedFooter;
 use serenity::all::UserId;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use nonempty::{NonEmpty, nonempty};
 
 use crate::commands::command::*;
@@ -30,7 +30,7 @@ impl EightBallCommand {
     ];
 
     fn random_option() -> &'static str {
-        EightBallCommand::OPTIONS.choose(&mut rand::thread_rng()).unwrap()
+        EightBallCommand::OPTIONS.choose(&mut rand::rng()).unwrap()
     }
 
 }
