@@ -224,7 +224,7 @@ macro_rules! impl_database_wrapper {
             #[allow(unused)]
             pub fn get_by_staff<'a>(&'a self, staff_id: &'a str) -> BoxedFuture<'a, Vec<ModLog>> {
                 Box::pin(async move {
-                    self.query("", &format!("AND value LIKE '%staff_id%{}%'", staff_id)).await.unwrap()
+                    self.query("", &format!("OR value LIKE '[\"{}%'", staff_id)).await.unwrap()
                 })
             }
         }
