@@ -59,6 +59,19 @@ impl Command for BanCommand {
                     BansDB::get_instance()
                         .append(&target.id.to_string(), &log.into()).await;
 
+                    // inform member of the ban and how to appeal
+                    let guild = resolver.resolve_guild(None).await.unwrap();
+                    let notify_message = message.get_log_builder()
+                        .title("You've been banned!")
+                        .description(&format!("You have been banned from {} for \"{}\"\nYou can appeal your ban [here](https://dyno.gg/form/f2f3a893) if you believe that we made a mistake!",
+                            guild.name,
+                            reason))
+                        .target(&target)
+                        .no_thumbnail()
+                        .color(0xff0000)
+                        .build().await;
+                    let sent = target.dm(resolver, notify_message.to_message()).await;
+
                     // ban the user and handle potential problems
                     if let Err(why) = member.ban_with_reason(&resolver, 0, &reason).await {
 
@@ -88,19 +101,6 @@ impl Command for BanCommand {
                     let modlogs: ChannelId = ConfigDB::get_instance()
                         .get("channel_modlogs").await.unwrap().into();
                     let _ = modlogs.send_message(resolver, log_message.to_message()).await;
-
-                    // inform member of the ban and how to appeal
-                    let guild = resolver.resolve_guild(None).await.unwrap();
-                    let notify_message = message.get_log_builder()
-                        .title("You've been banned!")
-                        .description(&format!("You have been banned from {} for \"{}\"\nYou can appeal your ban [here](https://dyno.gg/form/f2f3a893) if you believe that we made a mistake!",
-                            guild.name,
-                            reason))
-                        .target(&target)
-                        .no_thumbnail()
-                        .color(0xff0000)
-                        .build().await;
-                    let sent = target.dm(resolver, notify_message.to_message()).await;
 
                     match sent {
                         Ok(_)  => message.reply_success().await,
